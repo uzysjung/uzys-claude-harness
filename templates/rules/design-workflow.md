@@ -6,7 +6,7 @@ UI가 포함된 작업 시 적용. (csr-*, ssr-* Track)
 
 1. `DESIGN.md` 존재 확인 → 있으면 디자인 방향/톤 참조
 2. `.impeccable.md` 존재 확인 → 있으면 브랜드/청중/톤 컨텍스트 참조
-3. 둘 다 없으면 → `/imm:teach`로 디자인 컨텍스트 설정 제안
+3. 둘 다 없으면 → `/teach`로 디자인 컨텍스트 설정 제안
 
 ## Impeccable Integration
 
