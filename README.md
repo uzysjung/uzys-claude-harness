@@ -53,6 +53,7 @@
 | `ssr-nextjs` | Railway + Next.js + React + shadcn/ui | Developer |
 | `data` | Python + DuckDB + Trino + ML/DL + PySide6 | Data Scientist |
 | `executive` | PPT/Excel/Word/PDF/Proposals/DD | CPO/CSO/CTO |
+| `tooling` | Bash + Markdown + CLI tools (meta-projects) | Tool/Harness Developer |
 | `full` | Union of all | All roles |
 
 ## Core Principles
@@ -115,6 +116,12 @@ bash setup-harness.sh --track ssr-nextjs --gsd
 
 # Global setup only (no project files)
 bash setup-harness.sh --global-only
+
+# Project setup only (skip ~/.claude/ modifications)
+bash setup-harness.sh --track tooling --project-only
+
+# Tooling track for meta-projects (bash, markdown, CLI)
+bash setup-harness.sh --track tooling --project-only
 ```
 
 ## References

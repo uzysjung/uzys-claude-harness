@@ -1,1 +1,8 @@
 .dev-references/
+.DS_Store
+.agents/
+.goose/
+skills-lock.json
+.claude/CLAUDE.md.backup
+.claude/settings.local.json.backup
+.claude/gate-status.json

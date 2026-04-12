@@ -141,6 +141,24 @@ bash setup-harness.sh --track executive
 # → strategist agent + document-skills:pptx 자동 활성화
 ```
 
+### Tooling / Meta Project (Bash + Markdown + CLI)
+
+```bash
+# 1. 프로젝트 초기화 (글로벌 영향 없이 프로젝트 스코프만)
+bash setup-harness.sh --track tooling --project-only
+
+# 2. 활성화되는 rules (10개):
+#    - common: git-policy, change-management
+#    - dev: test-policy, commit-policy, ship-checklist, code-style, error-handling
+#    - ECC: ecc-git-workflow, ecc-testing
+#    - track: cli-development (Bash 표준, cross-platform, hook 컨벤션)
+
+# 3. 워크플로우는 다른 dev track과 동일
+/uzys:spec → /uzys:plan → /uzys:build → /uzys:test → /uzys:review → /uzys:ship
+
+# 4. 디자인/프레임워크 rules는 설치 안 됨 (tauri/htmx/nextjs/shadcn 등)
+```
+
 ## Rules Reference
 
 | Rule | Tracks | What It Enforces |
@@ -164,6 +182,7 @@ bash setup-harness.sh --track executive
 | data-analysis | data | DuckDB/Trino/polars 패턴, ML pipeline |
 | ecc-git-workflow | Dev | Conventional Commits, PR 워크플로우 (ECC) |
 | ecc-testing | Dev | 80% 커버리지, TDD, AAA 패턴 (ECC) |
+| cli-development | tooling | Bash 표준, cross-platform, jq 폴백, hook 컨벤션 |
 
 ## Change Management
 

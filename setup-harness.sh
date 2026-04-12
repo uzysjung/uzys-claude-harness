@@ -19,6 +19,7 @@ TEMPLATES="$SCRIPT_DIR/templates"
 TRACK=""
 GSD=false
 GLOBAL_ONLY=false
+PROJECT_ONLY=false
 PROJECT_DIR="$(pwd)"
 
 while [[ $# -gt 0 ]]; do
@@ -26,11 +27,17 @@ while [[ $# -gt 0 ]]; do
     --track) TRACK="$2"; shift 2 ;;
     --gsd) GSD=true; shift ;;
     --global-only) GLOBAL_ONLY=true; shift ;;
+    --project-only) PROJECT_ONLY=true; shift ;;
     --project-dir) PROJECT_DIR="$2"; shift 2 ;;
-    -h|--help) echo "Usage: $0 [--track <track>] [--gsd] [--global-only] [--project-dir <path>]"; exit 0 ;;
+    -h|--help) echo "Usage: $0 [--track <track>] [--gsd] [--global-only|--project-only] [--project-dir <path>]"; exit 0 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
+
+if [ "$GLOBAL_ONLY" = true ] && [ "$PROJECT_ONLY" = true ]; then
+  echo "ERROR: --global-only와 --project-only는 상호 배타입니다." >&2
+  exit 1
+fi
 
 # ============================================================
 # Utility Functions
@@ -95,7 +102,10 @@ info "Node.js v$(node -v | sed 's/v//') (≥22 OK)"
 # ============================================================
 # Step 1: Global Setup (one-time)
 # ============================================================
-section "1/7" "Global Setup"
+if [ "$PROJECT_ONLY" = true ]; then
+  section "1/7" "Global Setup (skipped — --project-only)"
+else
+  section "1/7" "Global Setup"
 
 CLAUDE_HOME="$HOME/.claude"
 mkdir -p "$CLAUDE_HOME/agents" "$CLAUDE_HOME/backups"
@@ -155,17 +165,18 @@ else
   warn "statusline source not found. Run bootstrap-dev.sh first."
 fi
 
-if [ "$GLOBAL_ONLY" = true ]; then
-  echo -e "\n${GREEN}Global setup complete.${NC}"
-  exit 0
-fi
+  if [ "$GLOBAL_ONLY" = true ]; then
+    echo -e "\n${GREEN}Global setup complete.${NC}"
+    exit 0
+  fi
+fi  # end of PROJECT_ONLY check
 
 # ============================================================
 # Step 2: Track Selection
 # ============================================================
 section "2/7" "Track Selection"
 
-TRACKS=("csr-supabase" "csr-fastify" "csr-fastapi" "ssr-htmx" "ssr-nextjs" "data" "executive" "full")
+TRACKS=("csr-supabase" "csr-fastify" "csr-fastapi" "ssr-htmx" "ssr-nextjs" "data" "executive" "tooling" "full")
 
 if [ -z "$TRACK" ]; then
   echo ""
@@ -216,15 +227,21 @@ COMMON_RULES="git-policy change-management"
 DEV_RULES="test-policy commit-policy ship-checklist code-style error-handling ecc-git-workflow ecc-testing"
 UI_RULES="design-workflow"
 
-declare -A TRACK_EXTRA_RULES
-TRACK_EXTRA_RULES[csr-supabase]="tauri shadcn api-contract"
-TRACK_EXTRA_RULES[csr-fastify]="tauri shadcn api-contract database"
-TRACK_EXTRA_RULES[csr-fastapi]="tauri shadcn api-contract database"
-TRACK_EXTRA_RULES[ssr-htmx]="htmx seo"
-TRACK_EXTRA_RULES[ssr-nextjs]="nextjs seo shadcn"
-TRACK_EXTRA_RULES[data]="pyside6 data-analysis"
-TRACK_EXTRA_RULES[executive]=""
-TRACK_EXTRA_RULES[full]="tauri shadcn api-contract database htmx seo nextjs pyside6 data-analysis"
+# Track-specific rules (case statement for bash 3.2 compatibility on macOS)
+get_track_rules() {
+  case "$1" in
+    csr-supabase) echo "tauri shadcn api-contract" ;;
+    csr-fastify)  echo "tauri shadcn api-contract database" ;;
+    csr-fastapi)  echo "tauri shadcn api-contract database" ;;
+    ssr-htmx)     echo "htmx seo" ;;
+    ssr-nextjs)   echo "nextjs seo shadcn" ;;
+    data)         echo "pyside6 data-analysis" ;;
+    executive)    echo "" ;;
+    tooling)      echo "cli-development" ;;
+    full)         echo "tauri shadcn api-contract database htmx seo nextjs pyside6 data-analysis cli-development" ;;
+    *)            echo "" ;;
+  esac
+}
 
 # Determine which rules to install
 RULES_TO_INSTALL="$COMMON_RULES"
@@ -235,7 +252,7 @@ fi
 case "$TRACK" in
   csr-*|ssr-*|full) RULES_TO_INSTALL="$RULES_TO_INSTALL $UI_RULES" ;;
 esac
-RULES_TO_INSTALL="$RULES_TO_INSTALL ${TRACK_EXTRA_RULES[$TRACK]}"
+RULES_TO_INSTALL="$RULES_TO_INSTALL $(get_track_rules "$TRACK")"
 
 # Copy rules
 for rule in $RULES_TO_INSTALL; do
@@ -263,6 +280,7 @@ done
 
 # --- ECC Cherry-pick ---
 safe_copy_dir "$TEMPLATES/skills/continuous-learning-v2" "$PROJ/skills/continuous-learning-v2"
+safe_copy_dir "$TEMPLATES/skills/strategic-compact" "$PROJ/skills/strategic-compact"
 safe_copy "$TEMPLATES/skills/spec-scaling/SKILL.md" "$PROJ/skills/spec-scaling/SKILL.md"
 safe_copy "$TEMPLATES/agents/code-reviewer.md" "$PROJ/agents/code-reviewer.md"
 safe_copy "$TEMPLATES/agents/security-reviewer.md" "$PROJ/agents/security-reviewer.md"
@@ -455,18 +473,22 @@ section "7/7" "Verification"
 
 ERRORS=0
 
-# V1: Core files exist
-for f in "$CLAUDE_HOME/CLAUDE.md" "$CLAUDE_HOME/agents/reviewer.md"; do
-  [ -f "$f" ] && info "Global: $(basename "$f")" || { fail "Missing: $f"; ERRORS=$((ERRORS+1)); }
-done
+if [ "$PROJECT_ONLY" != true ]; then
+  # V1: Core files exist (글로벌 설치한 경우만 검증)
+  for f in "$CLAUDE_HOME/CLAUDE.md" "$CLAUDE_HOME/agents/reviewer.md"; do
+    [ -f "$f" ] && info "Global: $(basename "$f")" || { fail "Missing: $f"; ERRORS=$((ERRORS+1)); }
+  done
 
-# V8: Global CLAUDE.md ≤ 200 lines
-LINE_COUNT=$(wc -l < "$CLAUDE_HOME/CLAUDE.md" 2>/dev/null || echo "999")
-if [ "$LINE_COUNT" -le 200 ]; then
-  info "Global CLAUDE.md: ${LINE_COUNT} lines (≤200)"
+  # V8: Global CLAUDE.md ≤ 200 lines
+  LINE_COUNT=$(wc -l < "$CLAUDE_HOME/CLAUDE.md" 2>/dev/null || echo "999")
+  if [ "$LINE_COUNT" -le 200 ]; then
+    info "Global CLAUDE.md: ${LINE_COUNT} lines (≤200)"
+  else
+    fail "Global CLAUDE.md: ${LINE_COUNT} lines (>200 limit!)"
+    ERRORS=$((ERRORS+1))
+  fi
 else
-  fail "Global CLAUDE.md: ${LINE_COUNT} lines (>200 limit!)"
-  ERRORS=$((ERRORS+1))
+  info "Global verification skipped (--project-only)"
 fi
 
 # V2: Executive check

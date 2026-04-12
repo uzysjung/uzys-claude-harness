@@ -54,6 +54,9 @@ Define(/uzys:spec) -> Plan(/uzys:plan) -> Build(/uzys:build) -> Verify(/uzys:tes
 | seo | SSR | SEO 최적화 |
 | pyside6 | DATA | PySide6 위젯/시그널 |
 | data-analysis | DATA | 데이터 품질, 재현성 |
+| ecc-git-workflow | DEV | Conventional Commits, PR (ECC) |
+| ecc-testing | DEV | 80% 커버리지, TDD, AAA (ECC) |
+| cli-development | TOOLING | Bash 표준, cross-platform, hook 컨벤션 |
 
 **참고**: 에이전트가 현재 작업 파일의 컨텍스트에 따라 관련 규칙만 활성화.
 

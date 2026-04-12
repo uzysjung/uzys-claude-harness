@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-Claude Code Agent Harness는 Jay의 멀티 역할(CEO/CTO/CISO/CPO/CSO/데이터 사이언티스트)과 멀티 트랙(8개) 기술 스택을 위한 통합 Claude Code 개발 환경이다. agent-skills의 6단계 게이트 워크플로우(Define-Plan-Build-Verify-Review-Ship)를 뼈대로, ECC(Everything Claude Code)에서 cherry-pick한 도구를 레이어로, 11개 행동 원칙(CLAUDE.md)을 기반으로 동작한다.
+Claude Code Agent Harness는 Jay의 멀티 역할(CEO/CTO/CISO/CPO/CSO/데이터 사이언티스트)과 멀티 트랙(9개) 기술 스택을 위한 통합 Claude Code 개발 환경이다. agent-skills의 6단계 게이트 워크플로우(Define-Plan-Build-Verify-Review-Ship)를 뼈대로, ECC(Everything Claude Code)에서 cherry-pick한 도구를 레이어로, 11개 행동 원칙(CLAUDE.md)을 기반으로 동작한다.
 
 성공 기준: 프로젝트 유형에 관계없이 `setup-harness.sh` 한 번 실행으로 Track별 환경이 자동 구성되고, 6단계 워크플로우가 Hook으로 강제되며, 경험이 자동 축적되는 시스템.
 
@@ -44,7 +44,7 @@ Claude Code Agent Harness는 Jay의 멀티 역할(CEO/CTO/CISO/CPO/CSO/데이터
 
 | 사용자 유형 | 핵심 니즈 | 현재 대안(workaround) |
 |---|---|---|
-| Jay (개발자 역할) | 8개 Track별 자동 초기화, 일관된 워크플로우 | 프로젝트마다 수동 설정, 기억에 의존 |
+| Jay (개발자 역할) | 9개 Track별 자동 초기화, 일관된 워크플로우 | 프로젝트마다 수동 설정, 기억에 의존 |
 | Jay (CTO/CPO/CSO 역할) | PPT/Excel/Word/PDF 산출물 빠른 생성 | Anthropic document-skills 직접 호출 |
 | Jay (데이터 사이언티스트 역할) | Python/DuckDB/ML 파이프라인 + PySide6 GUI | 별도 환경 없이 범용 Claude Code 사용 |
 
@@ -61,7 +61,7 @@ Claude Code Agent Harness는 Jay의 멀티 역할(CEO/CTO/CISO/CPO/CSO/데이터
 ### 4.1 Goals
 
 1. **6단계 게이트 워크플로우 + Hook 기반 강제**: Define-Plan-Build-Verify-Review-Ship 순서를 Hook(gate-check.sh)으로 프로그래밍적으로 차단. 단계 건너뛰기 시 exit code 2 반환.
-2. **8개 Track별 자동 초기화**: `setup-harness.sh --track <name>` 한 번으로 해당 Track에 필요한 Rules, Skills, Agents, Hooks, MCP 전체 설치.
+2. **9개 Track별 자동 초기화**: `setup-harness.sh --track <name>` 한 번으로 해당 Track에 필요한 Rules, Skills, Agents, Hooks, MCP 전체 설치.
 3. **구현/검증 분리 (SOD)**: reviewer subagent(context: fork)가 구현 에이전트와 격리된 상태에서 코드/문서/UI를 검증. 만든 사람이 평가하지 않는다.
 4. **경험 축적**: auto memory + CL-v2 instinct로 세션 중 자동 학습. high-confidence instinct는 Rule 승격 제안.
 
@@ -101,7 +101,7 @@ Claude Code Agent Harness는 Jay의 멀티 역할(CEO/CTO/CISO/CPO/CSO/데이터
 |---|---|---|
 | 6단계 게이트 워크플로우 | Must | uzys:spec - uzys:plan - uzys:build - uzys:test - uzys:review - uzys:ship |
 | Hook 기반 게이트 차단 | Must | gate-check.sh로 이전 단계 미완료 시 차단 (exit code 2) |
-| Track별 자동 초기화 (8종) | Must | csr-supabase, csr-fastify, csr-fastapi, ssr-htmx, ssr-nextjs, data, executive, full |
+| Track별 자동 초기화 (9종) | Must | csr-supabase, csr-fastify, csr-fastapi, ssr-htmx, ssr-nextjs, data, executive, tooling, full |
 | ECC cherry-pick | Must | CL-v2, code-reviewer, security-reviewer, security-scan, checkpoint, strategic-compact |
 | reviewer subagent (SOD) | Must | context: fork로 구현과 검증 분리 |
 | auto memory + CL-v2 instinct | Must | 경험 축적, confidence scoring, Rule 승격 제안 |
@@ -221,12 +221,12 @@ DO NOT CHANGE:
 - Depends on: 없음
 - Deliverable: 88개 파일, 동작하는 setup-harness.sh
 - Done Criteria:
-  - V1: setup-harness.sh로 각 Track 초기화 성공
-  - V2: executive Track에 agent-skills 미설치 확인
-  - V8: 글로벌 CLAUDE.md 200줄 이하
-  - V9: ECC cherry-pick 로드 확인
+  - V1: setup-harness.sh로 각 Track 초기화 성공 [검증 완료]
+  - V2: executive Track에 agent-skills 미설치 확인 [검증 완료]
+  - V8: 글로벌 CLAUDE.md 200줄 이하 (122줄) [검증 완료]
+  - V9: ECC cherry-pick 로드 확인 [검증 완료]
 
-**Phase 2: 게이트 강화 + 정제 [In Progress]**
+**Phase 2: 게이트 강화 + 정제 [Complete]**
 
 - Scope:
   - 게이트 Hook 프로그래밍적 차단 (gate-check.sh, exit code 2)
@@ -239,25 +239,40 @@ DO NOT CHANGE:
 - Depends on: Phase 1
 - Deliverable: 게이트 Hook 동작, 정제된 커맨드 구조, PRD
 - Done Criteria:
-  - V14: 단계 건너뛰기 시도 시 게이트 차단 동작
-  - V15: /ship 실행 시 E2E 미통과면 배포 차단
-  - V17: 코드 변경 후 커밋 없이 다음 작업 진행 시 경고
-  - V18: SPEC.md 300줄 초과 시 분리 제안
+  - V4: reviewer가 context: fork로 격리 실행 [검증 완료 — 부모 컨텍스트 미공유 확인]
+  - V10: auto memory + CL-v2 동작 [검증 완료 — observations.jsonl 5+ 이벤트 기록]
+  - V14: 단계 건너뛰기 시도 시 게이트 차단 동작 [검증 완료 — exit code 2 차단 확인]
+  - V15: /ship 실행 시 E2E 미통과면 배포 차단 [LLM 지시 수준]
+  - V17: 코드 변경 후 커밋 없이 다음 작업 진행 시 경고 [uncommitted-check.sh 동작]
+  - V18: SPEC.md 300줄 초과 시 분리 제안 [spec-scaling skill 활성]
 
-**Phase 3: 실전 적용 + E2E 검증 [Future]**
+**Phase 3: Tooling Track + Dogfooding [In Progress]**
 
 - Scope:
-  - 실제 프로젝트에 하네스 적용
+  - 신규 tooling Track 추가 (cli-development.md rule + tooling.md project template)
+  - --project-only 플래그 추가
+  - 이 프로젝트에 자체 적용 (dogfooding)
+  - 1차 검증 (gate Hook, reviewer fork, CL-v2 등)
+  - PRD 동기화 (D14, D15, V 검증 반영)
+- Depends on: Phase 2
+- Deliverable: 9 Track 지원 setup-harness.sh, 자기 적용 완료, 동기화된 PRD
+- Done Criteria:
+  - tooling Track으로 setup-harness.sh 동작
+  - 이 프로젝트의 .claude/에 하네스 설치 완료
+  - 다음 작업이 /uzys:spec으로 시작 가능
+
+**Phase 4: 실전 적용 + E2E 검증 [Future]**
+
+- Scope:
+  - 외부 실제 프로젝트에 하네스 적용
   - 전체 워크플로우 E2E 검증 (Define~Ship)
-  - CL-v2 instinct 축적 검증
+  - CL-v2 instinct 축적 장기 검증
   - Track 간 전환 테스트
   - 불필요한 scaffold 식별 및 제거
-- Depends on: Phase 2
+- Depends on: Phase 3
 - Deliverable: 검증 완료 보고서, 필요 시 조정된 Rules/Hooks
 - Done Criteria:
   - V3: 6단계 워크플로우 전체 동작
-  - V4: reviewer가 context: fork로 격리 실행
-  - V10: auto memory + CL-v2 동작
   - V13: /build 시 UI 파일이면 frontend-ui-engineering + Impeccable 자동 활성화
 
 ### 7.3 Rollback Criteria
@@ -340,10 +355,10 @@ DO NOT CHANGE:
 | 항목 | 내용 |
 |------|------|
 | **Status** | In Progress |
-| **Current Phase** | Phase 2 (게이트 강화 + 정제) |
-| **Last Updated** | 2026-04-12 |
-| **Next Milestone** | Phase 2 완료 -- 게이트 Hook 검증, PRD 확정 |
-| **Blockers** | Q1-Q6 미검증 (Phase 3 진입 전 해결 필요) |
+| **Current Phase** | Phase 3 (Tooling Track + Dogfooding) |
+| **Last Updated** | 2026-04-13 |
+| **Next Milestone** | Phase 3 완료 -- 자기 적용, 1차 검증, PRD 동기화 |
+| **Blockers** | 없음 (Phase 2 V4/V10/V14 검증 완료) |
 
 ---
 
@@ -376,6 +391,8 @@ DO NOT CHANGE:
 | D11 | 2026-04 | 게이트 Hook으로 프로그래밍적 차단 | CLAUDE.md 선언만으로는 강제 불가. exit code 2로 실제 차단 | 선언적 게이트만 유지 | gate-check.sh, settings.local.json |
 | D12 | 2026-04 | ECC checkpoint + strategic-compact 추가 cherry-pick | 컨텍스트 관리와 작업 복구에 필수 | 미포함 (기존 6개 유지) | ECC cherry-pick 범위 확장 (6개 -> 8개) |
 | D13 | 2026-04 | protect-files.sh Python 의존 제거 | jq/bash 폴백으로 Python 미설치 환경 지원 | Python 필수 의존 유지 | protect-files.sh |
+| D14 | 2026-04-13 | tooling Track 신규 추가 | bash/markdown/CLI 도구 위주 메타 프로젝트는 기존 9개 Track 어디에도 맞지 않음. 자기 자신(이 프로젝트)을 dogfooding하기 위한 Track 필요 | 기존 Track 확장 (csr 등에 cli-development 추가) | setup-harness.sh, cli-development.md, tooling.md, README/USAGE |
+| D15 | 2026-04-13 | --project-only 플래그 추가 | 글로벌 영향 없이 프로젝트 스코프만 설치 가능해야 함. 메타 프로젝트가 자기 자신에 적용 시 글로벌 충돌 방지 | 기존 --global-only만 유지 | setup-harness.sh |
 
 ### 12.3 Roadmap
 
@@ -386,6 +403,7 @@ DO NOT CHANGE:
 | R3 | Rule 효과 측정 자동화: Rule 비활성화 전후의 에이전트 성능(토큰 사용량, 실패율) 비교 | Claude Code /stats API 활용 |
 | R4 | 메타 에이전트: 프로젝트 전체 learnings/instincts를 분석해서 CLAUDE.md 개선안을 제안하는 별도 subagent | R1-R3 데이터 축적 후 |
 | R5 | 게이트 Hook deterministic 강화: 현재 gate-check.sh의 상태 추적을 파일 기반에서 구조화된 상태 머신으로 전환 | Phase 3 E2E 검증 결과 |
+| R6 | 추가 Track 검토: ML/research, 모바일(iOS/AOS), 게임 등 도메인별 Track 확장 | 사용자 피드백 + 실제 프로젝트 운영 |
 
 ---
 
