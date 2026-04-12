@@ -6,7 +6,8 @@
 # 용도: Claude Code 프로젝트에 하네스 시스템을 설치
 # 실행: bash setup-harness.sh [--track <track>] [--gsd] [--global-only]
 # ============================================================
-set -e
+# set -e는 plugin 설치 실패 시 전체 중단을 방지하기 위해 사용하지 않음
+# 각 critical section에서 명시적으로 에러 처리
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -188,7 +189,7 @@ info "Track: $TRACK"
 # ============================================================
 # Step 3: GSD Selection
 # ============================================================
-if [ "$GSD" = false ] && [ "$TRACK" != "executive" ]; then
+if [ "$GSD" = false ] && [ "$TRACK" != "executive" ] && [ -t 0 ]; then
   read -rp "  Install GSD (large project orchestrator)? [y/N]: " GSD_ANSWER
   if [[ "$GSD_ANSWER" =~ ^[Yy]$ ]]; then
     GSD=true
@@ -409,8 +410,8 @@ if [ "$GSD" = true ]; then
   npx get-shit-done-cc@latest 2>/dev/null && info "installed" || install_fail "GSD"
 fi
 
-# Optional: Advanced plugins
-if [ "$TRACK" != "executive" ]; then
+# Optional: Advanced plugins (interactive only)
+if [ "$TRACK" != "executive" ] && [ -t 0 ]; then
   echo ""
   echo -e "  ${BOLD}Optional Plugins:${NC}"
   read -rp "  Install cc-devops-skills (CI/CD, Docker, GitHub Actions)? [y/N]: " DEVOPS_ANSWER
