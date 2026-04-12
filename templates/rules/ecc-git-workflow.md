@@ -9,7 +9,7 @@
 
 Types: feat, fix, refactor, docs, test, chore, perf, ci
 
-Note: Attribution disabled globally via ~/.claude/settings.json.
+Note: Co-Authored-By 사용 시 프로젝트 설정에 따른다.
 
 ## Pull Request Workflow
 

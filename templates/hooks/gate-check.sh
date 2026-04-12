@@ -7,8 +7,16 @@ set -e
 GATE_FILE=".claude/gate-status.json"
 INPUT_JSON=$(cat)
 
-# tool_input에서 skill 이름 추출
-SKILL_NAME=$(echo "$INPUT_JSON" | jq -r '.tool_input.skill // .tool_input.args // ""' 2>/dev/null || echo "")
+# tool_input에서 skill 이름 추출 (jq 우선, bash 폴백)
+if command -v jq &> /dev/null; then
+  SKILL_NAME=$(echo "$INPUT_JSON" | jq -r '.tool_input.skill // .tool_input.args // ""' 2>/dev/null || echo "")
+else
+  # jq 없을 때 bash 폴백
+  SKILL_NAME=$(echo "$INPUT_JSON" | grep -o '"skill"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*: *"//;s/"//')
+  if [ -z "$SKILL_NAME" ]; then
+    SKILL_NAME=$(echo "$INPUT_JSON" | grep -o '"args"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*: *"//;s/"//')
+  fi
+fi
 
 # uzys: 커맨드가 아니면 통과
 case "$SKILL_NAME" in
@@ -32,13 +40,21 @@ if [ ! -f "$GATE_FILE" ]; then
 INIT
 fi
 
-# 게이트 상태 읽기
+# 게이트 상태 읽기 (jq 우선, grep 폴백)
 is_completed() {
-  jq -r ".$1.completed // false" "$GATE_FILE" 2>/dev/null
+  if command -v jq &> /dev/null; then
+    jq -r ".$1.completed // false" "$GATE_FILE" 2>/dev/null
+  else
+    grep -A1 "\"$1\"" "$GATE_FILE" 2>/dev/null | grep -o '"completed"[[:space:]]*:[[:space:]]*true' | head -1 | grep -q 'true' && echo "true" || echo "false"
+  fi
 }
 
 is_hotfix() {
-  jq -r ".hotfix // false" "$GATE_FILE" 2>/dev/null
+  if command -v jq &> /dev/null; then
+    jq -r ".hotfix // false" "$GATE_FILE" 2>/dev/null
+  else
+    grep -o '"hotfix"[[:space:]]*:[[:space:]]*true' "$GATE_FILE" 2>/dev/null | head -1 | grep -q 'true' && echo "true" || echo "false"
+  fi
 }
 
 HOTFIX=$(is_hotfix)
@@ -46,7 +62,18 @@ HOTFIX=$(is_hotfix)
 # 게이트 순서 검증
 case "$SKILL_NAME" in
   uzys:spec)
-    # Define은 항상 허용 (첫 단계)
+    # Define은 항상 허용 (첫 단계). 새 사이클 시작이므로 모든 게이트 리셋
+    cat > "$GATE_FILE" << 'RESET'
+{
+  "define": { "completed": false },
+  "plan": { "completed": false },
+  "build": { "completed": false },
+  "verify": { "completed": false },
+  "review": { "completed": false },
+  "ship": { "completed": false },
+  "hotfix": false
+}
+RESET
     exit 0
     ;;
   uzys:plan)
