@@ -10,14 +10,16 @@ UI가 포함된 작업 시 적용. (csr-*, ssr-* Track)
 
 ## Impeccable Integration
 
-설치된 Impeccable 스킬은 `imm:` 네임스페이스로 사용 가능:
+Impeccable 스킬은 직접 호출 가능:
 
-- `/imm:teach` — 브랜드/청중/톤 설정 → `.impeccable.md` 생성
-- `/imm:shape` — UX/UI 계획 (코드 전 설계)
-- `/imm:impeccable` — 프로덕션 수준 인터페이스 생성
-- `/imm:polish` — 최종 품질 패스 (정렬, 간격, 일관성)
-- `/imm:critique` — UX 관점 평가
-- `/imm:audit` — 접근성, 성능, 테마, 반응형 품질 체크
+- `/teach` — 브랜드/청중/톤 설정 → `.impeccable.md` 생성
+- `/shape` — UX/UI 계획 (코드 전 설계)
+- `/impeccable` — 프로덕션 수준 인터페이스 생성
+- `/polish` — 최종 품질 패스 (정렬, 간격, 일관성)
+- `/critique` — UX 관점 평가
+- `/audit` — 접근성, 성능, 테마, 반응형 품질 체크
+
+기타: `/adapt`, `/animate`, `/bolder`, `/clarify`, `/colorize`, `/delight`, `/distill`, `/layout`, `/optimize`, `/overdrive`, `/quieter`, `/typeset`
 
 ## Design Principles
 

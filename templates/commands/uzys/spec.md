@@ -19,3 +19,11 @@ SPEC.md가 존재하고, 최소 Objective + Boundaries가 정의되어 있어야
 
 - SPEC.md가 300줄을 초과하면 spec-scaling 스킬로 기능별 분리 제안.
 - change-management.md 규칙 적용: 이후 SPEC 변경 시 CR 분류.
+
+## Gate Status Update
+
+이 단계가 성공적으로 완료되면 `.claude/gate-status.json`의 `define.completed`를 `true`로, `define.timestamp`를 현재 시각으로 업데이트한다.
+
+```bash
+jq '.define.completed = true | .define.timestamp = now | .define.timestamp = (now | strftime("%Y-%m-%dT%H:%M:%SZ"))' .claude/gate-status.json > /tmp/gate-tmp.json && mv /tmp/gate-tmp.json .claude/gate-status.json
+```

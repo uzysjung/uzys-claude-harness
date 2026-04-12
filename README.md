@@ -17,16 +17,17 @@
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
 │  │  commands/    │  │  rules/      │  │  skills/     │      │
 │  │  uzys:* (6)  │  │  git-policy  │  │  CL-v2 (ECC) │      │
-│  │  ecc:*  (7)  │  │  test-policy │  │  spec-scaling │      │
-│  │  imm:*  (17) │  │  [track...]  │  │              │      │
+│  │  ecc:*  (8)  │  │  test-policy │  │  spec-scaling │      │
+│  │              │  │  [track...]  │  │  strategic-  │      │
+│  │              │  │              │  │  compact     │      │
 │  └──────────────┘  └──────────────┘  └──────────────┘      │
 │                                                              │
 │  ┌──────────────┐  ┌──────────────┐                         │
 │  │  agents/     │  │  hooks/      │                         │
 │  │  code-review │  │  session-    │                         │
 │  │  security-   │  │  start.sh   │                         │
-│  │  reviewer    │  │  protect-   │                         │
-│  │  (ECC)       │  │  files.sh   │                         │
+│  │  reviewer    │  │  protect.sh │                         │
+│  │  (ECC)       │  │  gate.sh   │                         │
 │  └──────────────┘  └──────────────┘                         │
 └─────────────────────────────────────────────────────────────┘
                             │

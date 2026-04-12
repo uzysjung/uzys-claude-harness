@@ -29,3 +29,11 @@ Build phase — TDD로 점진적 구현한다.
 - SPEC.md가 300줄 초과 시 spec-scaling 스킬로 분리 제안.
 - 커밋 없이 다음 task로 넘어가면 경고.
 - 각 task 완료 시 todo.md 자동 업데이트.
+
+## Gate Status Update
+
+이 단계가 성공적으로 완료되면 `.claude/gate-status.json`의 `build.completed`를 `true`로, `build.timestamp`를 현재 시각으로 업데이트한다.
+
+```bash
+jq '.build.completed = true | .build.timestamp = now | .build.timestamp = (now | strftime("%Y-%m-%dT%H:%M:%SZ"))' .claude/gate-status.json > /tmp/gate-tmp.json && mv /tmp/gate-tmp.json .claude/gate-status.json
+```

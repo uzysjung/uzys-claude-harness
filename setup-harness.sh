@@ -34,9 +34,13 @@ done
 # ============================================================
 # Utility Functions
 # ============================================================
+INSTALL_FAILURES=0
+FAILED_ITEMS=""
+
 info()  { echo -e "  ${GREEN}✓${NC} $1"; }
 warn()  { echo -e "  ${YELLOW}!${NC} $1"; }
 fail()  { echo -e "  ${RED}✗${NC} $1"; }
+install_fail() { INSTALL_FAILURES=$((INSTALL_FAILURES+1)); FAILED_ITEMS="$FAILED_ITEMS\n  - $1"; warn "$1 (INSTALL FAILED)"; }
 section() { echo -e "\n${CYAN}[$1]${NC} $2"; }
 
 check_cmd() {
@@ -198,7 +202,7 @@ section "3/7" "Project Structure"
 
 cd "$PROJECT_DIR"
 PROJ=".claude"
-mkdir -p "$PROJ"/{commands/{uzys,ecc,imm},rules,skills,agents,hooks}
+mkdir -p "$PROJ"/{commands/{uzys,ecc},rules,skills,agents,hooks}
 mkdir -p docs/decisions
 
 # ============================================================
@@ -208,7 +212,7 @@ section "4/7" "Track Components ($TRACK)"
 
 # --- Track → Rule Mapping ---
 COMMON_RULES="git-policy change-management"
-DEV_RULES="test-policy commit-policy ship-checklist code-style error-handling"
+DEV_RULES="test-policy commit-policy ship-checklist code-style error-handling ecc-git-workflow ecc-testing"
 UI_RULES="design-workflow"
 
 declare -A TRACK_EXTRA_RULES
@@ -254,14 +258,7 @@ for cmd in "$TEMPLATES/commands/ecc/"*.md; do
   [ -f "$cmd" ] && safe_copy "$cmd" "$PROJ/commands/ecc/$(basename "$cmd")"
 done
 
-# imm: commands (UI tracks only)
-case "$TRACK" in
-  csr-*|ssr-*|full)
-    for cmd in "$TEMPLATES/commands/imm/"*.md; do
-      [ -f "$cmd" ] && safe_copy "$cmd" "$PROJ/commands/imm/$(basename "$cmd")"
-    done
-    ;;
-esac
+# imm: 커맨드 제거됨 — Impeccable 스킬은 /polish, /critique 등으로 직접 호출 가능
 
 # --- ECC Cherry-pick ---
 safe_copy_dir "$TEMPLATES/skills/continuous-learning-v2" "$PROJ/skills/continuous-learning-v2"
@@ -272,7 +269,9 @@ safe_copy "$TEMPLATES/agents/security-reviewer.md" "$PROJ/agents/security-review
 # --- Hooks ---
 safe_copy "$TEMPLATES/hooks/session-start.sh" "$PROJ/hooks/session-start.sh"
 safe_copy "$TEMPLATES/hooks/protect-files.sh" "$PROJ/hooks/protect-files.sh"
-chmod +x "$PROJ/hooks/session-start.sh" "$PROJ/hooks/protect-files.sh"
+safe_copy "$TEMPLATES/hooks/gate-check.sh" "$PROJ/hooks/gate-check.sh"
+safe_copy "$TEMPLATES/hooks/uncommitted-check.sh" "$PROJ/hooks/uncommitted-check.sh"
+chmod +x "$PROJ/hooks/"*.sh
 
 # --- settings.local.json (with absolute paths) ---
 PROJECT_ABS="$(pwd)"
@@ -292,6 +291,19 @@ cat > "$PROJ/settings.local.json" << SETTINGS
           "type": "command",
           "command": "bash \"${PROJECT_ABS}/${PROJ}/hooks/protect-files.sh\""
         }]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${PROJECT_ABS}/${PROJ}/hooks/gate-check.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"${PROJECT_ABS}/${PROJ}/hooks/uncommitted-check.sh\""
+          }
+        ]
       },
       {
         "matcher": "*",
@@ -394,7 +406,26 @@ esac
 # GSD (optional)
 if [ "$GSD" = true ]; then
   echo -n "  GSD..."
-  npx get-shit-done-cc@latest 2>/dev/null && info "installed" || warn "failed"
+  npx get-shit-done-cc@latest 2>/dev/null && info "installed" || install_fail "GSD"
+fi
+
+# Optional: Advanced plugins
+if [ "$TRACK" != "executive" ]; then
+  echo ""
+  echo -e "  ${BOLD}Optional Plugins:${NC}"
+  read -rp "  Install cc-devops-skills (CI/CD, Docker, GitHub Actions)? [y/N]: " DEVOPS_ANSWER
+  if [[ "$DEVOPS_ANSWER" =~ ^[Yy]$ ]]; then
+    echo -n "  cc-devops-skills..."
+    claude plugin marketplace add akin-ozer/cc-devops-skills 2>/dev/null || true
+    claude plugin install cc-devops-skills@cc-devops-skills 2>/dev/null && info "installed" || install_fail "cc-devops-skills"
+  fi
+
+  read -rp "  Install Trail of Bits security (CodeQL, Semgrep)? [y/N]: " TOB_ANSWER
+  if [[ "$TOB_ANSWER" =~ ^[Yy]$ ]]; then
+    echo -n "  Trail of Bits security..."
+    claude plugin marketplace add trailofbits/skills 2>/dev/null || true
+    claude plugin install trailofbits-skills@trailofbits-skills 2>/dev/null && info "installed" || install_fail "Trail of Bits"
+  fi
 fi
 
 # ============================================================
@@ -468,10 +499,15 @@ echo ""
 echo -e "Installed:"
 echo -e "  Track: ${BOLD}$TRACK${NC}"
 echo -e "  Rules: $(ls "$PROJ/rules/"*.md 2>/dev/null | wc -l | tr -d ' ') files"
-echo -e "  Commands: uzys($(ls "$PROJ/commands/uzys/"*.md 2>/dev/null | wc -l | tr -d ' ')) ecc($(ls "$PROJ/commands/ecc/"*.md 2>/dev/null | wc -l | tr -d ' ')) imm($(ls "$PROJ/commands/imm/"*.md 2>/dev/null | wc -l | tr -d ' '))"
+echo -e "  Commands: uzys($(ls "$PROJ/commands/uzys/"*.md 2>/dev/null | wc -l | tr -d ' ')) ecc($(ls "$PROJ/commands/ecc/"*.md 2>/dev/null | wc -l | tr -d ' '))"
 echo -e "  Skills: $(find "$PROJ/skills" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' ') skills"
 echo -e "  Agents: $(ls "$PROJ/agents/"*.md 2>/dev/null | wc -l | tr -d ' ') project + 3 global"
 echo -e "  GSD: $([ "$GSD" = true ] && echo "yes" || echo "no")"
+if [ "$INSTALL_FAILURES" -gt 0 ]; then
+  echo ""
+  echo -e "  ${RED}Install failures ($INSTALL_FAILURES):${NC}"
+  echo -e "$FAILED_ITEMS"
+fi
 echo ""
 echo -e "${BOLD}Next steps:${NC}"
 echo -e "  1. Start Claude Code: ${CYAN}claude${NC}"

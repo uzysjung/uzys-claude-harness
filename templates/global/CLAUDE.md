@@ -106,9 +106,10 @@ Define(/uzys:spec) → Plan(/uzys:plan) → Build(/uzys:build) → Verify(/uzys:
 | prefix | 출처 | 용도 |
 |--------|------|------|
 | `uzys:` | 자체 워크플로우 | 6개 필수 커맨드 |
-| `ecc:` | ECC cherry-pick | security-scan, instinct 관리 |
-| `imm:` | Impeccable | 디자인 품질 (teach/polish/critique/audit) |
+| `ecc:` | ECC cherry-pick | security-scan, instinct 관리, checkpoint |
 | `gsd:` | GSD (선택 설치) | 대형 프로젝트 오케스트레이션 |
+
+Impeccable 스킬은 직접 호출: `/polish`, `/critique`, `/audit`, `/teach` 등.
 
 ## Agents
 
