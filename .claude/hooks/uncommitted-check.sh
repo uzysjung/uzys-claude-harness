@@ -22,7 +22,7 @@ git rev-parse --git-dir > /dev/null 2>&1 || exit 0
 UNCOMMITTED=$(git status --porcelain 2>/dev/null | head -5)
 if [ -n "$UNCOMMITTED" ]; then
   COUNT=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
-  echo "WARNING: ${COUNT}개의 커밋되지 않은 변경이 있습니다. commit-policy에 따라 즉시 커밋하세요." >&2
+  echo "WARNING: ${COUNT}개의 커밋되지 않은 변경이 있습니다. git-policy에 따라 즉시 커밋하세요." >&2
   echo "$UNCOMMITTED" >&2
   if [ "$COUNT" -gt 5 ]; then
     echo "... (${COUNT}개 중 5개만 표시)" >&2

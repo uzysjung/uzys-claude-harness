@@ -28,7 +28,7 @@ Claude Code Agent Harness는 Jay의 멀티 역할(CEO/CTO/CISO/CPO/CSO/데이터
 
 ### 2.2 Evidence
 
-- **정량 근거**: ECC 156개 중 cherry-pick 대상 8개 (CL-v2, code-reviewer, security-reviewer, security-scan, git-workflow, testing, checkpoint, strategic-compact). 나머지 148개는 미사용.
+- **정량 근거**: ECC 156개 중 cherry-pick 대상 14개 (D22 추가 후). 나머지 142개는 미사용.
 - **정성 근거**: 프로젝트 초기 설정에 매번 30분 이상 소요. Track별 스택 차이(Supabase vs Railway, React vs HTMX)를 매번 수동 판단.
 
 ### 2.3 Impact (풀지 않았을 때의 비용)
@@ -90,7 +90,7 @@ Claude Code Agent Harness는 Jay의 멀티 역할(CEO/CTO/CISO/CPO/CSO/데이터
 3개 레이어로 구성한다:
 
 - **뼈대**: agent-skills 6단계 워크플로우 (`uzys:` 네임스페이스). Define-Plan-Build-Verify-Review-Ship.
-- **도구**: ECC cherry-pick 8개 (CL-v2, code-reviewer, security-reviewer, security-scan, git-workflow, testing, checkpoint, strategic-compact). 전체 포크가 아닌 필요한 것만 선별.
+- **도구**: ECC cherry-pick 14개 (D21+D22 후. agents:2, skills:9, rules:1, commands:2). 매니페스트는 .dev-references/cherrypicks.lock. 전체 포크가 아닌 필요한 것만 선별.
 - **원칙**: 11개 행동 원칙 (CLAUDE.md, 현재 121줄). Karpathy LLM 관찰 + Anthropic Harness Design + HyperAgents 사상 종합.
 
 자동화는 `setup-harness.sh`가 담당하고, 게이트 강제는 Hook 기반(gate-check.sh, exit code 2)으로 구현한다.
@@ -163,7 +163,7 @@ DO NOT CHANGE:
 | 영역 | 결정 사항 | 근거 |
 |---|---|---|
 | 워크플로우 뼈대 | agent-skills (Addy Osmani) | 6단계 게이트가 Jay의 개발 철학과 일치 |
-| 도구 레이어 | ECC cherry-pick (8개) | 156개 중 실사용 도구만 선별, 토큰 절약 |
+| 도구 레이어 | ECC cherry-pick (14개, cherrypicks.lock) | 156개 중 실사용 도구만 선별, 토큰 절약 |
 | 디자인 품질 | Impeccable (pbakaus) | /polish, /critique, /audit 직접 호출 |
 | 배포 | Railway MCP + Plugin | MCP와 플러그인 동시 설치 (기능 보완) |
 | 문서 산출물 | Anthropic document-skills | pptx/docx/xlsx/pdf 공식 지원 |
@@ -336,7 +336,7 @@ DO NOT CHANGE:
 | 소스 | URL | 용도 |
 |------|-----|------|
 | agent-skills | github.com/addyosmani/agent-skills | 워크플로우 뼈대 (6-gate) |
-| ECC | github.com/affaan-m/everything-claude-code | cherry-pick 소스 (8개) |
+| ECC | github.com/affaan-m/everything-claude-code | cherry-pick 소스 (14개) |
 | Anthropic skills | github.com/anthropics/skills | pptx/docx/xlsx/pdf 공식 |
 | Railway | docs.railway.com | 배포/로그 |
 | Impeccable | github.com/pbakaus/impeccable | 디자인 품질 |
