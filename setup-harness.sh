@@ -225,6 +225,19 @@ if [ "$TRACK" = "executive" ] || [ "$TRACK" = "full" ]; then
   safe_copy_dir "$TEMPLATES/skills/market-research" "$PROJ/skills/market-research"
 fi
 
+# Test/eval skills (D22 — behavior-level testing)
+if [ "$TRACK" != "executive" ]; then
+  safe_copy_dir "$TEMPLATES/skills/eval-harness" "$PROJ/skills/eval-harness"
+  safe_copy_dir "$TEMPLATES/skills/verification-loop" "$PROJ/skills/verification-loop"
+  safe_copy_dir "$TEMPLATES/skills/agent-introspection-debugging" "$PROJ/skills/agent-introspection-debugging"
+fi
+# e2e-testing은 UI Track 한정
+case "$TRACK" in
+  csr-*|ssr-*|full)
+    safe_copy_dir "$TEMPLATES/skills/e2e-testing" "$PROJ/skills/e2e-testing"
+    ;;
+esac
+
 # --- Hooks ---
 safe_copy "$TEMPLATES/hooks/session-start.sh" "$PROJ/hooks/session-start.sh"
 safe_copy "$TEMPLATES/hooks/protect-files.sh" "$PROJ/hooks/protect-files.sh"

@@ -91,6 +91,69 @@
       "type": "directory",
       "modified": false,
       "modification_note": "Phase 4b A4에서 신규 추가. executive Track 한정."
+    },
+    {
+      "id": "ecc-eval-harness",
+      "source": "ecc",
+      "src": ".agents/skills/eval-harness/",
+      "dst": "templates/skills/eval-harness/",
+      "type": "directory",
+      "modified": false,
+      "modification_note": "Phase 4b D22 사용자 지적 후 추가. behavior-level testing — capability/regression evals + pass@k metrics + grader types"
+    },
+    {
+      "id": "ecc-verification-loop",
+      "source": "ecc",
+      "src": ".agents/skills/verification-loop/",
+      "dst": "templates/skills/verification-loop/",
+      "type": "directory",
+      "modified": false,
+      "modification_note": "build → type → lint → test → security → diff 6단계 검증 사이클"
+    },
+    {
+      "id": "ecc-e2e-testing",
+      "source": "ecc",
+      "src": ".agents/skills/e2e-testing/",
+      "dst": "templates/skills/e2e-testing/",
+      "type": "directory",
+      "modified": false,
+      "modification_note": "Playwright POM 패턴, flaky test 처리, 아티팩트 캡처. UI Track 한정"
+    },
+    {
+      "id": "ecc-agent-introspection-debugging",
+      "source": "ecc",
+      "src": ".agents/skills/agent-introspection-debugging/",
+      "dst": "templates/skills/agent-introspection-debugging/",
+      "type": "directory",
+      "modified": false,
+      "modification_note": "looping/hanging 워크플로우 복구. Failure → Diagnosis → Recovery → Report 4단계"
+    },
+    {
+      "id": "ecc-cmd-e2e",
+      "source": "ecc",
+      "src": ".opencode/commands/e2e.md",
+      "dst": "templates/commands/ecc/e2e.md",
+      "type": "file",
+      "modified": false,
+      "modification_note": "/ecc:e2e — Playwright E2E 테스트 생성/실행"
+    },
+    {
+      "id": "ecc-cmd-eval",
+      "source": "ecc",
+      "src": ".opencode/commands/eval.md",
+      "dst": "templates/commands/ecc/eval.md",
+      "type": "file",
+      "modified": false,
+      "modification_note": "/ecc:eval — acceptance criteria 기반 평가 실행"
+    },
+    {
+      "id": "ecc-cmd-harness-audit",
+      "source": "ecc",
+      "src": ".opencode/commands/harness-audit.md",
+      "dst": "templates/commands/ecc/harness-audit.md",
+      "type": "file",
+      "modified": false,
+      "modification_note": "/ecc:harness-audit — 7카테고리 deterministic 점수 (P10 분기 검토용)"
     }
   ],
   "removals": [
