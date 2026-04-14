@@ -319,6 +319,29 @@
 | 항목 | 내용 |
 |------|------|
 | Status | Define 완료, /uzys:plan 진행 가능 |
-| 결정 | 9개 제거 + 7개 추가 + 4개 신규 인프라 + 글로벌 mcp 이관 |
-| **절대 제약** | **`~/.claude/` 불변** |
+| 결정 | 9개 제거 + 7개 추가 + 4개 신규 인프라 + 글로벌 mcp 이관 + **templates/global/ 폐기 (D16)** |
+| **절대 제약** | **`~/.claude/` 불변** (구조적으로 강제됨 — 글로벌 코드 경로 자체가 없음) |
 | Next | /uzys:plan으로 Phase A-F 분해 후 /uzys:build 진입 |
+
+---
+
+## 10. 추가 변경 (D16): templates/global/ 폐기 + setup-harness.sh 정화
+
+**문제**: `templates/global/` 디렉토리 존재 자체가 "글로벌 설치 경로 있음"을 의미. 글로벌 절대 불변 원칙과 모순.
+
+**해결 (구현 완료)**:
+- `templates/global/CLAUDE.md` → `templates/CLAUDE.md` (프로젝트 .claude/CLAUDE.md로 설치)
+- `templates/global/agents/{reviewer,data-analyst,strategist}.md` → `templates/agents/` (ECC agent들과 통합, 5개 agent 모두 프로젝트 .claude/agents/로 설치)
+- `templates/global/` 디렉토리 제거
+- setup-harness.sh:
+  - "Global Setup" 섹션 완전 제거
+  - `--global-only`, `--project-only` 플래그 제거 (기본이 프로젝트 스코프)
+  - jq의 글로벌 settings.json merge 제거
+  - statusline 글로벌 install 블록 제거
+  - 검증 섹션에 **글로벌 미수정 자동 검증** 추가 (~/.claude/CLAUDE.md mtime 비교)
+
+**효과**:
+- 글로벌 수정 코드 경로가 **물리적으로 존재하지 않음**
+- 5개 agent가 프로젝트 격리 (각 프로젝트 독립 사본)
+- 사용자의 `~/.claude/CLAUDE.md`는 자체 관리 (bootstrap-dev.sh 별도)
+- self-dogfood 검증 통과: 글로벌 mtime 변화 0초

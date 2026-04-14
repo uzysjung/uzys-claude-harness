@@ -16,28 +16,20 @@ TEMPLATES="$SCRIPT_DIR/templates"
 # ============================================================
 # Argument Parsing
 # ============================================================
+# 이 스크립트는 프로젝트 스코프 전용. 글로벌 ~/.claude/는 절대 건드리지 않음.
 TRACK=""
 GSD=false
-GLOBAL_ONLY=false
-PROJECT_ONLY=false
 PROJECT_DIR="$(pwd)"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     --track) TRACK="$2"; shift 2 ;;
     --gsd) GSD=true; shift ;;
-    --global-only) GLOBAL_ONLY=true; shift ;;
-    --project-only) PROJECT_ONLY=true; shift ;;
     --project-dir) PROJECT_DIR="$2"; shift 2 ;;
-    -h|--help) echo "Usage: $0 [--track <track>] [--gsd] [--global-only|--project-only] [--project-dir <path>]"; exit 0 ;;
+    -h|--help) echo "Usage: $0 [--track <track>] [--gsd] [--project-dir <path>]"; echo ""; echo "프로젝트 스코프 전용. 글로벌 ~/.claude/는 건드리지 않음."; exit 0 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
-
-if [ "$GLOBAL_ONLY" = true ] && [ "$PROJECT_ONLY" = true ]; then
-  echo "ERROR: --global-only와 --project-only는 상호 배타입니다." >&2
-  exit 1
-fi
 
 # ============================================================
 # Utility Functions
@@ -90,7 +82,7 @@ section "0/7" "Prerequisites"
 check_cmd node || { fail "Node.js 22+ required. https://nodejs.org"; exit 1; }
 check_cmd git  || { fail "Git required."; exit 1; }
 check_cmd claude || { fail "Claude Code required. https://claude.ai/code"; exit 1; }
-check_cmd jq || { warn "jq not found. settings.json merge will be skipped. Install: brew install jq"; }
+check_cmd jq || { warn "jq not found. Hook fallback로 동작하지만 설치 권장: brew install jq"; }
 
 NODE_VER=$(node -v | sed 's/v//' | cut -d. -f1)
 if [ "$NODE_VER" -lt 22 ]; then
@@ -100,76 +92,10 @@ fi
 info "Node.js v$(node -v | sed 's/v//') (≥22 OK)"
 
 # ============================================================
-# Step 1: Global Setup (one-time)
+# (글로벌 설치 단계 제거됨 — 글로벌 ~/.claude/는 절대 수정하지 않음)
+# 모든 파일은 프로젝트 .claude/에 설치됨.
+# 사용자가 글로벌 설정을 원하면 bootstrap-dev.sh 또는 수동 설치 사용.
 # ============================================================
-if [ "$PROJECT_ONLY" = true ]; then
-  section "1/7" "Global Setup (skipped — --project-only)"
-else
-  section "1/7" "Global Setup"
-
-CLAUDE_HOME="$HOME/.claude"
-mkdir -p "$CLAUDE_HOME/agents" "$CLAUDE_HOME/backups"
-
-# 1.1 Global CLAUDE.md
-safe_copy "$TEMPLATES/global/CLAUDE.md" "$CLAUDE_HOME/CLAUDE.md"
-
-# 1.2 Global Agents
-for agent in reviewer data-analyst strategist; do
-  safe_copy "$TEMPLATES/global/agents/${agent}.md" "$CLAUDE_HOME/agents/${agent}.md"
-done
-
-# 1.3 Global settings.json merge
-SETTINGS_FILE="$CLAUDE_HOME/settings.json"
-if command -v jq &> /dev/null; then
-  if [ -f "$SETTINGS_FILE" ]; then
-    cp "$SETTINGS_FILE" "$CLAUDE_HOME/backups/settings.json.$(date +%s)"
-    jq '. * {
-      "defaultMode": "bypassPermissions",
-      "env": ((.env // {}) * {"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"}),
-      "teammateMode": "tmux"
-    }' "$SETTINGS_FILE" > /tmp/settings_merged.json
-    mv /tmp/settings_merged.json "$SETTINGS_FILE"
-    info "settings.json merged (backup saved)"
-  else
-    cat > "$SETTINGS_FILE" << 'SETTINGS'
-{
-  "defaultMode": "bypassPermissions",
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
-  },
-  "teammateMode": "tmux"
-}
-SETTINGS
-    info "settings.json created"
-  fi
-else
-  warn "jq not found — settings.json merge skipped. Add manually:"
-  echo '    "defaultMode": "bypassPermissions"'
-  echo '    "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" }'
-  echo '    "teammateMode": "tmux"'
-fi
-
-# 1.4 Common Skills
-section "1.5/7" "Common Skills Installation"
-echo -n "  postgres-best-practices..."
-npx skills add supabase/postgres-best-practices 2>/dev/null && info "installed" || warn "already installed or failed"
-echo -n "  architecture-decision-record..."
-npx skills add yonatangross/orchestkit 2>/dev/null && info "installed" || warn "already installed or failed"
-
-# 1.5 Status Line
-echo -n "  claude-code-statusline..."
-if [ -d "$SCRIPT_DIR/.dev-references/claude-code-statusline" ]; then
-  cd "$SCRIPT_DIR/.dev-references/claude-code-statusline" && ./install.sh 2>/dev/null && cd - > /dev/null
-  info "installed"
-else
-  warn "statusline source not found. Run bootstrap-dev.sh first."
-fi
-
-  if [ "$GLOBAL_ONLY" = true ]; then
-    echo -e "\n${GREEN}Global setup complete.${NC}"
-    exit 0
-  fi
-fi  # end of PROJECT_ONLY check
 
 # ============================================================
 # Step 2: Track Selection
@@ -278,12 +204,20 @@ done
 
 # imm: 커맨드 제거됨 — Impeccable 스킬은 /polish, /critique 등으로 직접 호출 가능
 
-# --- ECC Cherry-pick ---
+# --- 메타 원칙 CLAUDE.md (프로젝트 .claude/CLAUDE.md) ---
+safe_copy "$TEMPLATES/CLAUDE.md" "$PROJ/CLAUDE.md"
+
+# --- Agents (모두 프로젝트 .claude/agents/, 글로벌 없음) ---
+safe_copy "$TEMPLATES/agents/reviewer.md" "$PROJ/agents/reviewer.md"
+safe_copy "$TEMPLATES/agents/data-analyst.md" "$PROJ/agents/data-analyst.md"
+safe_copy "$TEMPLATES/agents/strategist.md" "$PROJ/agents/strategist.md"
+safe_copy "$TEMPLATES/agents/code-reviewer.md" "$PROJ/agents/code-reviewer.md"     # ECC
+safe_copy "$TEMPLATES/agents/security-reviewer.md" "$PROJ/agents/security-reviewer.md" # ECC
+
+# --- Skills (ECC + 자체) ---
 safe_copy_dir "$TEMPLATES/skills/continuous-learning-v2" "$PROJ/skills/continuous-learning-v2"
 safe_copy_dir "$TEMPLATES/skills/strategic-compact" "$PROJ/skills/strategic-compact"
 safe_copy "$TEMPLATES/skills/spec-scaling/SKILL.md" "$PROJ/skills/spec-scaling/SKILL.md"
-safe_copy "$TEMPLATES/agents/code-reviewer.md" "$PROJ/agents/code-reviewer.md"
-safe_copy "$TEMPLATES/agents/security-reviewer.md" "$PROJ/agents/security-reviewer.md"
 
 # --- Hooks ---
 safe_copy "$TEMPLATES/hooks/session-start.sh" "$PROJ/hooks/session-start.sh"
@@ -473,25 +407,23 @@ section "7/7" "Verification"
 
 ERRORS=0
 
-if [ "$PROJECT_ONLY" != true ]; then
-  # V1: Core files exist (글로벌 설치한 경우만 검증)
-  for f in "$CLAUDE_HOME/CLAUDE.md" "$CLAUDE_HOME/agents/reviewer.md"; do
-    [ -f "$f" ] && info "Global: $(basename "$f")" || { fail "Missing: $f"; ERRORS=$((ERRORS+1)); }
-  done
-
-  # V8: Global CLAUDE.md ≤ 200 lines
-  LINE_COUNT=$(wc -l < "$CLAUDE_HOME/CLAUDE.md" 2>/dev/null || echo "999")
+# Project-level CLAUDE.md
+[ -f "$PROJ/CLAUDE.md" ] && {
+  LINE_COUNT=$(wc -l < "$PROJ/CLAUDE.md" 2>/dev/null || echo "999")
   if [ "$LINE_COUNT" -le 200 ]; then
-    info "Global CLAUDE.md: ${LINE_COUNT} lines (≤200)"
+    info "Project CLAUDE.md: ${LINE_COUNT} lines (≤200)"
   else
-    fail "Global CLAUDE.md: ${LINE_COUNT} lines (>200 limit!)"
+    fail "Project CLAUDE.md: ${LINE_COUNT} lines (>200 limit!)"
     ERRORS=$((ERRORS+1))
   fi
-else
-  info "Global verification skipped (--project-only)"
-fi
+} || { fail "Missing: $PROJ/CLAUDE.md"; ERRORS=$((ERRORS+1)); }
 
-# V2: Executive check
+# Project agents (5개)
+for agent in reviewer data-analyst strategist code-reviewer security-reviewer; do
+  [ -f "$PROJ/agents/${agent}.md" ] && info "Agent: ${agent}" || { fail "Missing: ${agent}"; ERRORS=$((ERRORS+1)); }
+done
+
+# Executive check
 if [ "$TRACK" = "executive" ]; then
   if [ ! -d "$PROJ/commands/uzys" ] || [ -z "$(ls -A "$PROJ/commands/uzys" 2>/dev/null)" ]; then
     info "Executive: agent-skills commands not installed (correct)"
@@ -501,10 +433,20 @@ if [ "$TRACK" = "executive" ]; then
   fi
 fi
 
-# V9: ECC cherry-pick
+# ECC skills
 [ -d "$PROJ/skills/continuous-learning-v2" ] && info "ECC: CL-v2 skill" || { fail "Missing: CL-v2"; ERRORS=$((ERRORS+1)); }
-[ -f "$PROJ/agents/code-reviewer.md" ] && info "ECC: code-reviewer" || { fail "Missing: code-reviewer"; ERRORS=$((ERRORS+1)); }
-[ -f "$PROJ/agents/security-reviewer.md" ] && info "ECC: security-reviewer" || { fail "Missing: security-reviewer"; ERRORS=$((ERRORS+1)); }
+
+# 글로벌 미수정 검증 (절대 조건)
+if [ -f "$HOME/.claude/CLAUDE.md" ]; then
+  GLOBAL_MTIME=$(stat -f "%m" "$HOME/.claude/CLAUDE.md" 2>/dev/null || stat -c "%Y" "$HOME/.claude/CLAUDE.md" 2>/dev/null)
+  NOW=$(date +%s)
+  if [ -n "$GLOBAL_MTIME" ] && [ $((NOW - GLOBAL_MTIME)) -lt 60 ]; then
+    fail "ALERT: ~/.claude/CLAUDE.md was modified within last 60s — should NEVER happen"
+    ERRORS=$((ERRORS+1))
+  else
+    info "Global ~/.claude/CLAUDE.md untouched (correct)"
+  fi
+fi
 
 # Summary
 echo ""
@@ -524,7 +466,7 @@ echo -e "  Track: ${BOLD}$TRACK${NC}"
 echo -e "  Rules: $(ls "$PROJ/rules/"*.md 2>/dev/null | wc -l | tr -d ' ') files"
 echo -e "  Commands: uzys($(ls "$PROJ/commands/uzys/"*.md 2>/dev/null | wc -l | tr -d ' ')) ecc($(ls "$PROJ/commands/ecc/"*.md 2>/dev/null | wc -l | tr -d ' '))"
 echo -e "  Skills: $(find "$PROJ/skills" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' ') skills"
-echo -e "  Agents: $(ls "$PROJ/agents/"*.md 2>/dev/null | wc -l | tr -d ' ') project + 3 global"
+echo -e "  Agents: $(ls "$PROJ/agents/"*.md 2>/dev/null | wc -l | tr -d ' ') project (전부 .claude/agents/, 글로벌 없음)"
 echo -e "  GSD: $([ "$GSD" = true ] && echo "yes" || echo "no")"
 if [ "$INSTALL_FAILURES" -gt 0 ]; then
   echo ""

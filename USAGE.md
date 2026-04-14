@@ -145,7 +145,7 @@ bash setup-harness.sh --track executive
 
 ```bash
 # 1. 프로젝트 초기화 (글로벌 영향 없이 프로젝트 스코프만)
-bash setup-harness.sh --track tooling --project-only
+bash setup-harness.sh --track tooling
 
 # 2. 활성화되는 rules (10개):
 #    - common: git-policy, change-management

@@ -392,7 +392,9 @@ DO NOT CHANGE:
 | D12 | 2026-04 | ECC checkpoint + strategic-compact 추가 cherry-pick | 컨텍스트 관리와 작업 복구에 필수 | 미포함 (기존 6개 유지) | ECC cherry-pick 범위 확장 (6개 -> 8개) |
 | D13 | 2026-04 | protect-files.sh Python 의존 제거 | jq/bash 폴백으로 Python 미설치 환경 지원 | Python 필수 의존 유지 | protect-files.sh |
 | D14 | 2026-04-13 | tooling Track 신규 추가 | bash/markdown/CLI 도구 위주 메타 프로젝트는 기존 9개 Track 어디에도 맞지 않음. 자기 자신(이 프로젝트)을 dogfooding하기 위한 Track 필요 | 기존 Track 확장 (csr 등에 cli-development 추가) | setup-harness.sh, cli-development.md, tooling.md, README/USAGE |
-| D15 | 2026-04-13 | --project-only 플래그 추가 | 글로벌 영향 없이 프로젝트 스코프만 설치 가능해야 함. 메타 프로젝트가 자기 자신에 적용 시 글로벌 충돌 방지 | 기존 --global-only만 유지 | setup-harness.sh |
+| D15 | 2026-04-13 | --project-only 플래그 추가 (D16에서 더 강화) | 글로벌 영향 없이 프로젝트 스코프만 설치 | 기존 --global-only만 유지 | setup-harness.sh |
+| D16 | 2026-04-14 | **글로벌 설치 경로 완전 제거 + templates/global/ 폐기** | "글로벌 절대 불변" 원칙을 구조에 강제. 글로벌 코드 1줄도 없는 setup-harness.sh | --project-only/--global-only 플래그 유지 | templates/, setup-harness.sh, 모든 agent를 .claude/agents/로 |
+| D17 | 2026-04-14 | **CLAUDE.md에 Decision Making Universal Meta-Rule 추가** | "스킬 좋고 나쁨을 임의 결정"하는 패턴 차단. 명시적 기준 강제 | 11개 원칙만 유지 | templates/CLAUDE.md, .claude/CLAUDE.md |
 
 ### 12.3 Roadmap
 

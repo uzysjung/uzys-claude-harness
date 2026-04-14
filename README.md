@@ -4,15 +4,13 @@
 
 ## Architecture
 
+**프로젝트 스코프 전용**. 글로벌 `~/.claude/`는 절대 건드리지 않음.
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Global (~/.claude/)                       │
-│  CLAUDE.md (11 Principles + Gates + Git Policy)             │
-│  agents/ (reviewer, data-analyst, strategist)               │
-└─────────────────────────────────────────────────────────────┘
-                            │
-┌─────────────────────────────────────────────────────────────┐
 │                Project (.claude/)                            │
+│  CLAUDE.md (11 Principles + Decision Meta-Rule + Gates)     │
+│  agents/ (reviewer, data-analyst, strategist + ECC 2개)     │
 │                                                              │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
 │  │  commands/    │  │  rules/      │  │  skills/     │      │
@@ -114,15 +112,11 @@ bash setup-harness.sh --track csr-fastapi
 # Include GSD
 bash setup-harness.sh --track ssr-nextjs --gsd
 
-# Global setup only (no project files)
-bash setup-harness.sh --global-only
-
-# Project setup only (skip ~/.claude/ modifications)
-bash setup-harness.sh --track tooling --project-only
-
 # Tooling track for meta-projects (bash, markdown, CLI)
-bash setup-harness.sh --track tooling --project-only
+bash setup-harness.sh --track tooling
 ```
+
+> **Note**: setup-harness.sh는 항상 프로젝트 스코프. 글로벌 `~/.claude/`는 절대 수정하지 않음.
 
 ## References
 
@@ -149,8 +143,7 @@ bash setup-harness.sh --track tooling --project-only
 
 ### Modifying Agents
 
-Global agents: `templates/global/agents/`
-Project agents (ECC): `templates/agents/`
+All agents: `templates/agents/` (글로벌 디렉토리 없음, 전부 프로젝트 스코프 설치)
 
 ### Adding Commands
 
