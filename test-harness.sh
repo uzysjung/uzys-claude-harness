@@ -145,7 +145,7 @@ fi
 # T5. Track Installation Integration
 # ============================================================
 section "T5. Track Installation (6 tracks)"
-for TRACK in tooling csr-fastapi ssr-htmx executive full data; do
+for TRACK in tooling csr-supabase csr-fastapi ssr-htmx executive full data; do
   T5_DIR=$(mktemp -d)
   cd "$T5_DIR" && git init -q && echo "# Test" > README.md && git add . && git commit -m init -q 2>/dev/null
   bash "$ROOT/setup-harness.sh" --track "$TRACK" --project-dir . < /dev/null > /tmp/setup-$TRACK.log 2>&1

@@ -337,6 +337,18 @@ fi
 
 # Supabase MCP는 .mcp.json으로 이관됨 (claude mcp add 제거)
 
+# Supabase agent-skills (csr-supabase 전용 + full) — D23
+case "$TRACK" in
+  csr-supabase|full)
+    echo -n "  Supabase agent-skills..."
+    claude plugin marketplace add supabase/agent-skills 2>/dev/null || true
+    claude plugin install supabase@supabase-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+
+    echo -n "  Supabase postgres-best-practices..."
+    claude plugin install postgres-best-practices@supabase-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+    ;;
+esac
+
 case "$TRACK" in
   csr-*|ssr-nextjs|full)
     echo -n "  react-best-practices..."

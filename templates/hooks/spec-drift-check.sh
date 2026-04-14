@@ -53,8 +53,8 @@ if [ -f "$GATE_FILE" ] && [ -f "$DOCS_DIR/SPEC.md" ] && command -v jq &> /dev/nu
   BUILD_DONE=$(jq -r '.build.completed // false' "$GATE_FILE")
   VERIFY_DONE=$(jq -r '.verify.completed // false' "$GATE_FILE")
 
-  # SPEC Status가 "Define"인지 확인
-  if grep -q "Status.*Define" "$DOCS_DIR/SPEC.md"; then
+  # SPEC Status가 "Define"인지 확인 (frontmatter 형식만, 본문 파이프라인 설명 제외)
+  if grep -qE "^> \*\*Status\*\*:.*Define" "$DOCS_DIR/SPEC.md"; then
     if [ "$BUILD_DONE" = "true" ] || [ "$VERIFY_DONE" = "true" ]; then
       echo "DRIFT: SPEC.md Status='Define'인데 Build/Verify gate가 완료됨" >&2
       DRIFT=$((DRIFT + 1))

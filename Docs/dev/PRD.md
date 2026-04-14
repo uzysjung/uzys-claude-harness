@@ -327,7 +327,7 @@ DO NOT CHANGE:
 | Q3 | CL-v2 독립 동작 여부 | Open | — | — |
 | Q4 | GSD + agent-skills 명령 충돌 여부 | Open | — | — |
 | Q5 | Railway 플러그인과 MCP 동시 설치 시 중복 여부 | Open | — | — |
-| Q6 | Supabase MCP와 postgres-best-practices 스킬 간 역할 중복 | Open | — | — |
+| Q6 | Supabase MCP와 postgres-best-practices 스킬 간 역할 중복 | **Resolved** | MCP는 DB 연결/쿼리 실행, 스킬은 설계 가이드(인덱스/RLS/성능). 중복 아님 — 보완재. | 2026-04-15 |
 
 ---
 
@@ -356,7 +356,7 @@ DO NOT CHANGE:
 |------|------|
 | **Status** | In Progress |
 | **Current Phase** | Phase 3 (Tooling Track + Dogfooding) |
-| **Last Updated** | 2026-04-13 |
+| **Last Updated** | 2026-04-15 |
 | **Next Milestone** | Phase 3 완료 -- 자기 적용, 1차 검증, PRD 동기화 |
 | **Blockers** | 없음 (Phase 2 V4/V10/V14 검증 완료) |
 
@@ -400,6 +400,7 @@ DO NOT CHANGE:
 | D20 | 2026-04-14 | **`.mcp.json` 프로젝트 스코프** (`claude mcp add` 글로벌 호출 제거) | MCP를 프로젝트별로 관리. 글로벌 ~/.claude/ 미수정 원칙 강화 | 글로벌 mcp add 유지 | templates/mcp.json + setup-harness.sh Track별 동적 조립 |
 | D21 | 2026-04-14 | **8개 파일 제거 + 7개 공통 도구 추가** (Phase 4b 본체) | 필수성 기준 적용 (commit-policy/ecc-testing/projects/CL-v2 agents/test_parse 제거 + deep-research/find-skills/agent-browser/playwright 공통 이동/chrome-devtools/claude-powerline/market-research 추가) | 현행 유지 | templates/, setup-harness.sh, project-claude templates 8종 |
 | D22 | 2026-04-14 | **SPEC drift 자동 검출 (`spec-drift-check.sh`)** | 사용자 지적: "스펙 정의 후 빌드에서 기능 수정 시 SPEC 반영" 미보장. 이전엔 LLM 지시 수준. 이제 SPEC/todo의 unchecked + Status 불일치를 deterministic 검출. ship 모드에서는 exit 2로 차단 | LLM 지시 유지 | templates/hooks/spec-drift-check.sh + ship-checklist.md 통합 |
+| D23 | 2026-04-15 | **Supabase agent-skills 공식 플러그인 통합** (csr-supabase/full Track) | csr-supabase Track 직결. Supabase 전문 지식(RLS, 인덱스, SSR 통합)은 대체 불가. 사용자 명시 지시 + 리서치 감사(`Docs/research/harness-engineering-audit-2026-04.md` P0-1, 커밋 `a494c3c`) 7기준 판정 결과 | 옵션 A (`npx skills add`), 옵션 C (로컬 cherry-pick) | setup-harness.sh csr-supabase case, project-claude/csr-supabase.md, PRD Q6 Resolved |
 
 ### 12.3 Roadmap
 

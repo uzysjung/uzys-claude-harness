@@ -1,6 +1,6 @@
 # SPEC: Phase 4b — 필수성 검증 + 프로젝트 스코프화 + 버전관리
 
-> **Status**: Define (확정)
+> **Status**: Ship 완료 (Phase 4b v26.2.1, 2026-04-14)
 > **Created**: 2026-04-14
 > **Trigger**: 사용자 요청 — "정말 다 꼭 필요한가?" + 글로벌 절대 불변 + ECC 버전관리
 

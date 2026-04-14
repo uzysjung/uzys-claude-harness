@@ -50,11 +50,14 @@ Define(/uzys:spec) -> Plan(/uzys:plan) -> Build(/uzys:build) -> Verify(/uzys:tes
 - **Impeccable**: 프론트엔드 디자인 품질 (polish, critique, audit)
 - **react-best-practices**: React 패턴, 훅 규칙, 상태 관리
 - **shadcn-ui**: shadcn/ui 컴포넌트 가이드, 테마 커스터마이징
+- **supabase**: Supabase 종합 (DB/Auth/Edge/Realtime/Storage/Vectors/Cron/Queues)
+- **postgres-best-practices**: 쿼리 최적화, RLS, 인덱스, 연결 풀링, SSR 통합
 
 ## Plugins
 
 - **agent-skills**: 6-gate 워크플로우 엔진
 - **Railway**: 배포 자동화 (Supabase 트랙에서는 보조 용도)
+- **supabase-agent-skills**: Supabase 전용 전문 지식 (공식 플러그인, D23)
 
 ## Commands
 
@@ -71,6 +74,7 @@ Define(/uzys:spec) -> Plan(/uzys:plan) -> Build(/uzys:build) -> Verify(/uzys:tes
 - 코드 변경 후 code-reviewer 실행
 - 커밋 전 보안 체크 (하드코딩된 시크릿 탐지)
 - Supabase RLS 정책 변경 시 security-reviewer 실행
+- Supabase 쿼리 작성 시 postgres-best-practices 스킬 참조 (인덱스, RLS 영향)
 - git pull로 세션 시작
 
 **Ask First (확인 후 실행)**:
