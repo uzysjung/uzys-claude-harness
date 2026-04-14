@@ -1,217 +1,234 @@
-# Plan: Phase 4 — 자체 점검 개선 실행
+# Plan: Phase 4b 실행
 
-> **Linked SPEC**: `docs/SPEC.md`
+> **Linked SPEC**: `Docs/SPEC.md`
 > **Created**: 2026-04-14
 > **Status**: Plan
+> **Predecessor**: D16 (templates/global/ 폐기), D17 (Decision Meta-Rule) 완료됨
 
 ---
 
 ## Sprint Contract
 
-### 범위
+### 범위 (In Scope)
 
-**포함 (In Scope)**:
-- T1: uzys: 커맨드 순서 번호 (1)~(6) 표시
-- T2: gate-update.sh 신규 PostToolUse Hook — deterministic gate update
-- T3: uzys: 커맨드에서 "Gate Status Update" 섹션 제거 (Hook으로 대체)
-- T4: /ecc:self-test 커맨드 신규 — 설치된 하네스 검증
-- T5: USAGE.md에 --project-only 사용 시점 가이드
-- T6: cli-development.md에 bash 3.2 호환 노트
-- T7: ship-checklist.md 의존성 감사 강화
-- T8: PRD에 점검 결과(M1-M6, W1-W3) 추가 + D16 기록
+**제거 (남은 8개 파일 + 2개 글로벌 MCP 호출)**
+- `templates/rules/commit-policy.md`
+- `templates/rules/ecc-testing.md`
+- `templates/commands/ecc/projects.md`
+- `templates/skills/continuous-learning-v2/agents/{observer.md, observer-loop.sh, session-guardian.sh, start-observer.sh}`
+- `templates/skills/continuous-learning-v2/scripts/test_parse_instinct.py`
+- `setup-harness.sh`의 `claude mcp add railway-mcp-server`
+- `setup-harness.sh`의 `claude mcp add supabase`
 
-**제외 (Out of Scope)**:
-- F1: Tauri iOS/AOS 가이드
-- F2: npm/pip audit 자동 실행 (CI 통합)
-- F3: 토큰/비용 모니터링
-- F4: knowledge-base 리포 구조
-- F5: Track별 rule 외부 config 파일
+**추가 (7개 공통 도구)**
+- `templates/skills/deep-research/` (ECC cherry-pick)
+- `templates/skills/market-research/` (ECC cherry-pick, executive 한정)
+- find-skills (vercel-labs, npx skills add)
+- agent-browser (vercel-labs, npm -g)
+- playwright (UI 한정 → 공통 이동)
+- chrome-devtools (.mcp.json)
+- claude-powerline (.claude/settings.json statusLine)
+
+**신규 인프라 (4개)**
+- `templates/mcp.json` (Track별 조합 템플릿)
+- `templates/settings.json` (statusLine + hooks via $CLAUDE_PROJECT_DIR)
+- `.dev-references/cherrypicks.lock` (모든 cherry-pick 매니페스트)
+- `sync-cherrypicks.sh` (동기화 스크립트)
+
+**setup-harness.sh 변경**
+- `.mcp.json` 생성 단계 추가
+- `.claude/settings.json` 생성 ($CLAUDE_PROJECT_DIR 사용, 절대 경로 제거)
+- 공통 도구 설치 (find-skills, agent-browser, playwright 이동)
+- 글로벌 `claude mcp add` 2개 제거
+
+### 제외 (Out of Scope)
+
+- F1-F5 (향후): Tauri iOS/AOS, npm/pip audit 자동, 토큰 모니터링, KB repo, config 외부화
+- 자동 sync (CI/cron)
+- harness-audit, eval-harness (Phase 5+)
+- **`~/.claude/` 일체 수정** (구조적 차단됨)
 
 ### 완료 기준
 
-1. 모든 T1-T8 acceptance criteria 충족
-2. gate-update.sh 동작 검증 (모의 stdin 테스트)
-3. PRD.md, SPEC.md, plan.md, todo.md 동기화
-4. 변경 사항 전부 커밋 + 푸시
-5. Self-audit 통과 (원칙 11)
+1. 8개 파일 제거 + 2개 글로벌 mcp add 호출 제거 검증
+2. 7개 공통 도구가 모든 dev Track에 설치됨 검증
+3. 신규 4개 인프라 파일 작성 + 동기화 스크립트 동작
+4. setup-harness.sh self-dogfood 통과 (글로벌 미수정 자동 검증 포함)
+5. README/USAGE/PRD/CLAUDE.md 동기화
+6. 전체 커밋 + 푸시 + v26.2.0 태그
 
 ### 제약 조건
 
-- **bash 3.2 호환 유지** (macOS 기본)
-- **safe_copy 패턴 유지** (기존 파일 보존)
-- **DO NOT CHANGE 영역 준수**: 11 원칙 구조, ECC cherry-pick 8개, 9 Track, gate 차단 메커니즘
-- **인간 게이트 통과** (Phase 간 임의 진행 금지)
+- bash 3.2 호환 유지 (case statement, jq + bash 폴백)
+- safe_copy 패턴 유지
+- 매니페스트와 실제 파일 일관성
+- 글로벌 미수정 (자동 검증 포함)
 
 ---
 
 ## Phase 분해
 
-작업을 3개 Phase로 분해. 각 Phase는 독립적으로 커밋 가능.
+### Phase A: Foundation (병렬 가능)
 
-### Phase 1: Deterministic Gate Update (Critical Path)
+**목표**: 인프라 4개 + cherry-pick 2개 추가.
 
-**목표**: SPEC의 W1(gate update가 LLM 의존) 해결. LLM이 jq 명령을 빠뜨려도 게이트가 정확히 진행되도록.
+- **A1** `.dev-references/cherrypicks.lock` 매니페스트 작성
+  - 모든 cherry-pick (CL-v2, strategic-compact, code-reviewer, security-reviewer, ecc-git-workflow, deep-research, market-research) 등록
+  - source repo, commit SHA, src_path, dst_path, src_hash, modified flag
+- **A2** `sync-cherrypicks.sh` 작성
+  - 매니페스트 읽기 → 각 source repo pull → 변경 감지 → diff/auto-update/conflict 처리
+  - bash 3.2 호환
+- **A3** ECC `deep-research` 스킬 cherry-pick
+  - `.dev-references/ecc/.agents/skills/deep-research/SKILL.md` → `templates/skills/deep-research/SKILL.md`
+- **A4** ECC `market-research` 스킬 cherry-pick (executive 한정)
+  - `.dev-references/ecc/.agents/skills/market-research/SKILL.md` → `templates/skills/market-research/SKILL.md`
+- **A5** `templates/mcp.json` 작성
+  - 공통: chrome-devtools, context7, github
+  - Track별 조건부는 setup-harness.sh가 동적 추가
+- **A6** `templates/settings.json` 작성
+  - statusLine: claude-powerline
+  - hooks: $CLAUDE_PROJECT_DIR (절대 경로 제거)
+  - committable
 
-**Scope**: T2 + T3
-
-**Tasks**:
-
-- **P1.1** `templates/hooks/gate-update.sh` 신규 작성
-  - Input: PostToolUse stdin (tool_name=Skill, tool_input.skill=uzys:*, tool_output)
-  - 로직: 
-    1. skill 이름이 `uzys:*`인지 확인
-    2. tool_output이 성공인지 확인 (error 없음)
-    3. skill → gate 매핑 (spec→define, plan→plan, build→build, test→verify, review→review, ship→ship)
-    4. `.claude/gate-status.json`에 `<gate>.completed=true` + timestamp 기록
-  - bash 3.2 호환 (jq 우선, grep 폴백)
-  - 실패 시 silent pass (exit 0)
-
-- **P1.2** `setup-harness.sh`의 settings.local.json에 gate-update.sh 등록
-  - PostToolUse matcher="Skill"에 추가
-  - 기존 CL-v2 PostToolUse와 공존
-
-- **P1.3** 6개 uzys: 커맨드에서 "Gate Status Update" 섹션 제거
-  - 대체 주석: `> 게이트 상태는 PostToolUse Hook(gate-update.sh)이 자동 업데이트.`
-
-- **P1.4** 검증: 모의 stdin으로 gate-update.sh 테스트
-  - `/uzys:spec` 성공 이벤트 → define=true 확인
-  - `/uzys:build` 성공 이벤트 → build=true 확인
-
-**Acceptance Criteria**:
-- [ ] gate-update.sh 파일 존재 및 executable
-- [ ] settings.local.json의 PostToolUse에 gate-update.sh 등록
-- [ ] 6개 uzys 파일에서 "Gate Status Update" 섹션 제거 완료
-- [ ] 모의 stdin 테스트: uzys:spec → define.completed=true 자동 설정 확인
-- [ ] 에러 케이스(tool_output에 error 포함)에 gate 업데이트 안 됨 확인
-
-**Dependencies**: 없음 (독립 실행 가능)
+**Acceptance**:
+- [ ] cherrypicks.lock에 7+ 항목 등재
+- [ ] sync-cherrypicks.sh 모의 실행 동작
+- [ ] templates/skills/deep-research/SKILL.md 존재
+- [ ] templates/skills/market-research/SKILL.md 존재
+- [ ] templates/mcp.json 유효 JSON
+- [ ] templates/settings.json에 $CLAUDE_PROJECT_DIR 사용
 
 ---
 
-### Phase 2: UX Improvements (Parallel)
+### Phase B: Removal (Phase A와 병렬 가능)
 
-**목표**: 사용자 요청(순서 표시) + self-test 유틸.
+**목표**: 불필요 8개 파일 제거.
 
-**Scope**: T1 + T4
+- **B1** `templates/rules/commit-policy.md` 제거
+- **B2** `templates/rules/ecc-testing.md` 제거
+- **B3** `templates/commands/ecc/projects.md` 제거
+- **B4** `templates/skills/continuous-learning-v2/agents/` 디렉토리 제거 (4 파일)
+- **B5** `templates/skills/continuous-learning-v2/scripts/test_parse_instinct.py` 제거
 
-**Tasks**:
-
-- **P2.1** 6개 uzys: 커맨드에 YAML frontmatter 추가
-  - spec.md: `description: "(1) Define phase — 구조화된 스펙 작성"`
-  - plan.md: `description: "(2) Plan phase — 작업 분해 + Sprint Contract"`
-  - build.md: `description: "(3) Build phase — TDD 점진 구현"`
-  - test.md: `description: "(4) Verify phase — 테스트 + 커버리지"`
-  - review.md: `description: "(5) Review phase — reviewer subagent (SOD)"`
-  - ship.md: `description: "(6) Ship phase — 프리런치 + 배포"`
-
-- **P2.2** `/ecc:self-test` 커맨드 신규
-  - 파일: `templates/commands/ecc/self-test.md`
-  - 로직:
-    1. `.claude/rules/*.md` 개수
-    2. `.claude/commands/uzys/*.md`, `.claude/commands/ecc/*.md` 개수
-    3. `.claude/agents/*.md` 개수
-    4. `.claude/hooks/*.sh` 개수
-    5. `.claude/skills/` 하위 SKILL.md 개수
-    6. `.claude/settings.local.json`의 hooks 수
-    7. `.claude/gate-status.json` 현재 상태
-    8. 예상 수량과 대조 (Track별 다름)
-  - 출력: Markdown 표 형태
-
-**Acceptance Criteria**:
-- [ ] 6개 uzys 파일에 YAML frontmatter `description: "(N) ..."` 존재
-- [ ] Claude Code skill listing에서 (1)~(6) 표시 확인
-- [ ] `/ecc:self-test` 파일 존재 + 실행 시 구조 보고
-
-**Dependencies**: Phase 1과 병렬 가능
+**Acceptance**:
+- [ ] 8개 파일 모두 미존재
+- [ ] CL-v2 핵심 동작 유지 (observe.sh, instinct-cli.py)
 
 ---
 
-### Phase 3: Documentation Sync (After 1+2)
+### Phase C: setup-harness.sh 대수술 (Phase A 이후)
 
-**목표**: 모든 변경을 문서에 반영.
+**목표**: 설치 흐름 재구성.
 
-**Scope**: T5 + T6 + T7 + T8
+- **C1** 글로벌 `claude mcp add` 2개 제거 (railway, supabase)
+- **C2** `.mcp.json` 생성 단계 추가 (Track별 조립, jq 사용)
+- **C3** `.claude/settings.json` 생성 (settings.local.json 대체, $CLAUDE_PROJECT_DIR)
+- **C4** DEV_RULES에서 `commit-policy ecc-testing` 제거
+- **C5** 공통 도구 설치 추가 (find-skills, agent-browser, playwright 이동)
+- **C6** ECC cherry-pick 추가 (deep-research → 전체, market-research → executive)
 
-**Tasks**:
+**Acceptance**:
+- [ ] `grep "claude mcp add" setup-harness.sh` 결과 0건
+- [ ] 빈 디렉토리에서 setup-harness.sh 실행 시 .mcp.json 생성
+- [ ] .claude/settings.json에 $CLAUDE_PROJECT_DIR 사용 (절대 경로 없음)
+- [ ] DEV_RULES 출력에 commit-policy/ecc-testing 미포함
 
-- **P3.1** USAGE.md에 --project-only 사용 시점 섹션
-  - 케이스 1: 메타 프로젝트(이 repo 같은 하네스 자체)
-  - 케이스 2: 글로벌 ~/.claude를 건드리지 않는 테스트 설치
-  - 케이스 3: CI/CD에서 임시 프로젝트 설치
+---
 
-- **P3.2** cli-development.md에 bash 3.2 호환 섹션 추가
-  - "declare -A 금지" 명시
-  - 대안: case statement 또는 함수로 매핑
-  - 실제 버그 사례: TRACK_EXTRA_RULES
+### Phase D: Documentation (E 이후)
 
-- **P3.3** ship-checklist.md 의존성 감사 강화
-  - `npm audit` (Node.js 프로젝트)
-  - `pip audit` (Python 프로젝트)
-  - CRITICAL/HIGH 0건이 게이트 통과 조건
+**목표**: 문서 동기화.
 
-- **P3.4** PRD.md에 Phase 4 audit 반영
-  - Section 7.2: Phase 4 (In Progress) 추가
-  - Section 12 Decision Log: D16 (gate update Hook 자동화)
-  - Section 12 새 섹션 12.4: Audit Log (M1-M6, W1-W3) 또는 D17로 요약
-  - Status Tracker 업데이트
+- **D1** README.md — Architecture, Common tools, Cherry-pick sync 섹션
+- **D2** USAGE.md — Common tools 시나리오, .mcp.json/settings.json 설명
+- **D3** PRD.md — D18-D20 추가, Phase 4b Complete
+- **D4** CONTRIBUTING.md (또는 README) — sync 절차
+- **D5** project-claude 9종 — Rules 목록에서 commit-policy/ecc-testing 제거
 
-**Acceptance Criteria**:
-- [ ] USAGE.md에 --project-only 3가지 사용 케이스 섹션 존재
-- [ ] cli-development.md에 "bash 3.2 호환" 섹션 추가
-- [ ] ship-checklist.md에 `npm audit`/`pip audit` 체크 항목 추가
-- [ ] PRD.md Section 12에 D16 추가, Status Tracker Phase 4 반영
+---
 
-**Dependencies**: Phase 1, Phase 2 완료 후
+### Phase E: Self-dogfood (B+C 이후)
+
+**목표**: 변경 반영 + 자동 검증.
+
+- **E1** `.claude/rules/`, `.claude/commands/` 일부 정리
+- **E2** setup-harness.sh 재실행 (`--track tooling`)
+- **E3** 자동 검증
+  - 글로벌 미수정 (mtime)
+  - 8개 제거 확인
+  - 7개 추가 확인
+  - .mcp.json, .claude/settings.json 존재
+  - cherrypicks.lock 매니페스트 정합성
+- **E4** 모의 hook 테스트 (gate-check, protect-files, $CLAUDE_PROJECT_DIR 해석)
+
+---
+
+### Phase F: Commit + Tag
+
+- **F1** 전체 변경 git add
+- **F2** Phase별 분할 커밋 권장 (A/B → C → E → D → F)
+- **F3** push
+- **F4** v26.2.0 태그
 
 ---
 
 ## 의존성 그래프
 
 ```
-Phase 1 (T2+T3) ─┐
-                 ├──► Phase 3 (T5+T6+T7+T8) ──► 커밋 + 푸시
-Phase 2 (T1+T4) ─┘
+Phase A (Foundation) ──┐
+                       ├──► Phase C (setup-harness)
+Phase B (Removal)    ──┘         │
+                                 ▼
+                          Phase E (Self-dogfood)
+                                 │
+                                 ▼
+                          Phase D (Documentation)
+                                 │
+                                 ▼
+                          Phase F (Commit + Tag)
 ```
 
-Phase 1, 2는 병렬. Phase 3는 1, 2 완료 후.
+A, B 병렬 가능. C는 A 이후. E는 B+C 이후. D는 E 이후 (실제 상태 반영). F는 마지막.
 
 ---
 
 ## 리스크 & 완화
 
-| 리스크 | 완화 방안 |
-|--------|---------|
-| gate-update.sh가 tool_output 구조를 잘못 파싱 | 모의 stdin 테스트로 사전 검증 |
-| PostToolUse Hook이 비동기(async: true)면 race condition | 동기 실행(async: false) 또는 기본값 사용 |
-| Claude Code skill listing에서 frontmatter description 인식 실패 | 본문 첫 줄에도 순서 번호 중복 기재 (fallback) |
-| 기존 .claude/gate-status.json 형식과 충돌 | 동일 스키마 유지 (define/plan/build/verify/review/ship) |
-| self-test가 Track을 자동 판별 못함 | Track을 argument로 받거나 현재 track을 gate-status에 기록 |
+| 리스크 | 완화 |
+|--------|------|
+| `$CLAUDE_PROJECT_DIR`가 hook에서 미동작 | 모의 테스트 + 안 되면 절대 경로 폴백 |
+| .mcp.json 형식 오류 → MCP 안 뜸 | jq로 검증 후 작성 |
+| sync-cherrypicks.sh가 ECC 디렉토리 변경 추적 못 함 | 매니페스트에 path 절대 명시 |
+| ECC market-research 위치(.agents/skills/) 차이 | 매니페스트에 src 경로 명시 |
+| dogfood 재설치 시 .claude/CLAUDE.md 손실 | safe_copy로 보존 |
 
 ---
 
-## 예상 산출물
+## 산출물
 
-### 신규 파일 (3개)
-- `templates/hooks/gate-update.sh`
-- `templates/commands/ecc/self-test.md`
+### 신규 (~7개)
+- `templates/skills/deep-research/SKILL.md`
+- `templates/skills/market-research/SKILL.md`
+- `templates/mcp.json`
+- `templates/settings.json`
+- `.dev-references/cherrypicks.lock`
+- `sync-cherrypicks.sh`
+- `CONTRIBUTING.md` (또는 README sync 섹션)
 
-### 수정 파일 (~12개)
-- `templates/commands/uzys/{spec,plan,build,test,review,ship}.md` — frontmatter 추가 + Gate Status Update 섹션 제거 (6)
-- `setup-harness.sh` — settings.local.json PostToolUse 등록
-- `templates/rules/cli-development.md` — bash 3.2 섹션
-- `templates/rules/ship-checklist.md` — 의존성 감사
-- `USAGE.md` — --project-only 가이드
-- `Docs/dev/PRD.md` — Phase 4, D16, audit log
+### 수정 (~10개)
+- `setup-harness.sh` (Phase C 대규모)
+- `README.md`, `USAGE.md`, `Docs/dev/PRD.md`, `Docs/SPEC.md`
+- `Docs/plan.md`, `Docs/todo.md`
+- `templates/project-claude/*.md` 9종
 
-### 재설치 필요 (self-dogfood)
-- 이 프로젝트의 `.claude/` 재설치 (변경 반영)
+### 삭제 (8개 파일 + 2개 호출)
+- Phase B + Phase C-1 항목
 
 ---
 
-## Done Criteria (Phase 4 Complete)
+## Done Criteria
 
-- [ ] Phase 1 완료: gate-update.sh + 검증 통과
-- [ ] Phase 2 완료: uzys 순서 표시 + self-test 동작
-- [ ] Phase 3 완료: 4개 문서 동기화
-- [ ] 이 프로젝트 self-reinstall 후 gate-status.json 자동 업데이트 확인
-- [ ] 전체 커밋 + 푸시 + 태그 v26.1.0 (minor bump — 개선 작업)
+- [ ] Phase A-F 전부 완료
+- [ ] 글로벌 미수정 자동 검증 통과 (mtime 변화 0초)
+- [ ] 매니페스트와 실제 파일 일관성
+- [ ] v26.2.0 태그 푸시 완료
