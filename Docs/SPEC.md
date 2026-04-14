@@ -265,14 +265,15 @@
 - **When** 매니페스트 검증
 - **Then** 모든 cherrypick 파일이 매니페스트에 등재, src_hash 정확
 
-### Verification Checklist
-- [ ] 9개 제거 완료
-- [ ] 7개 추가 완료
-- [ ] mcp.json, settings.json, cherrypicks.lock, sync-cherrypicks.sh 신규 작성
-- [ ] setup-harness.sh: 글로벌 claude mcp add 제거 확인
-- [ ] **글로벌 파일 미수정 확인 (절대 조건)**
-- [ ] self-dogfood 재설치 통과
-- [ ] README/USAGE/PRD 동기화
+### Verification Checklist (Phase 4b 완료, 2026-04-14)
+- [x] 9개 제거 완료 (commit `8102a24`)
+- [x] 7개 추가 완료 (commit `ac9107c` + dogfood)
+- [x] mcp.json, settings.json, cherrypicks.lock, sync-cherrypicks.sh 신규 작성 (`58f5e61`)
+- [x] setup-harness.sh: 글로벌 claude mcp add 제거 확인 (T7 grep 0건)
+- [x] **글로벌 파일 미수정 확인 (절대 조건)** — T6 mtime guard 통과
+- [x] self-dogfood 재설치 통과 (Track 6/6)
+- [x] README/USAGE/PRD 동기화 (`ac9107c`)
+- [x] Review HIGH 4건 fix (`2e0a4f4`)
 
 ---
 
@@ -318,10 +319,13 @@
 
 | 항목 | 내용 |
 |------|------|
-| Status | Define 완료, /uzys:plan 진행 가능 |
+| Status | **Review 완료** (Define→Plan→Build→Verify→Review 5/6 게이트 통과, Ship 대기) |
 | 결정 | 9개 제거 + 7개 추가 + 4개 신규 인프라 + 글로벌 mcp 이관 + **templates/global/ 폐기 (D16)** |
 | **절대 제약** | **`~/.claude/` 불변** (구조적으로 강제됨 — 글로벌 코드 경로 자체가 없음) |
-| Next | /uzys:plan으로 Phase A-F 분해 후 /uzys:build 진입 |
+| Commits | 8102a24, 58f5e61, ac9107c, 2e0a4f4 |
+| Tests | 35/35 통과 (T1-T7) |
+| Review | CRITICAL 0, HIGH 4 모두 수정 |
+| Next | /uzys:ship 또는 v26.2.x 태그 |
 
 ---
 

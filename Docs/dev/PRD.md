@@ -399,6 +399,7 @@ DO NOT CHANGE:
 | D19 | 2026-04-14 | **`.claude/settings.json`으로 통합** (settings.local.json 폐기) | `$CLAUDE_PROJECT_DIR` 변수 사용으로 절대 경로 제거. committable 파일로 단일화 | settings.local.json 유지 | templates/settings.json + setup-harness.sh |
 | D20 | 2026-04-14 | **`.mcp.json` 프로젝트 스코프** (`claude mcp add` 글로벌 호출 제거) | MCP를 프로젝트별로 관리. 글로벌 ~/.claude/ 미수정 원칙 강화 | 글로벌 mcp add 유지 | templates/mcp.json + setup-harness.sh Track별 동적 조립 |
 | D21 | 2026-04-14 | **8개 파일 제거 + 7개 공통 도구 추가** (Phase 4b 본체) | 필수성 기준 적용 (commit-policy/ecc-testing/projects/CL-v2 agents/test_parse 제거 + deep-research/find-skills/agent-browser/playwright 공통 이동/chrome-devtools/claude-powerline/market-research 추가) | 현행 유지 | templates/, setup-harness.sh, project-claude templates 8종 |
+| D22 | 2026-04-14 | **SPEC drift 자동 검출 (`spec-drift-check.sh`)** | 사용자 지적: "스펙 정의 후 빌드에서 기능 수정 시 SPEC 반영" 미보장. 이전엔 LLM 지시 수준. 이제 SPEC/todo의 unchecked + Status 불일치를 deterministic 검출. ship 모드에서는 exit 2로 차단 | LLM 지시 유지 | templates/hooks/spec-drift-check.sh + ship-checklist.md 통합 |
 
 ### 12.3 Roadmap
 
