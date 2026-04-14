@@ -1,0 +1,114 @@
+{
+  "version": "1.0",
+  "schema": "cherrypicks-manifest-v1",
+  "synced_at": "2026-04-14T01:20:00Z",
+  "sources": {
+    "ecc": {
+      "url": "https://github.com/affaan-m/everything-claude-code",
+      "local_path": ".dev-references/ecc",
+      "commit": "125d5e619905",
+      "note": "원본 ECC. cherry-pick 출처."
+    },
+    "agent-skills": {
+      "url": "https://github.com/addyosmani/agent-skills",
+      "local_path": ".dev-references/agent-skills",
+      "commit": "bf2fa6994407",
+      "note": "플러그인으로 설치, cherry-pick 없음. 참조용."
+    },
+    "vercel-labs-skills": {
+      "url": "https://github.com/vercel-labs/skills",
+      "local_path": null,
+      "commit": null,
+      "note": "find-skills를 npx skills add로 설치. cherry-pick 없음."
+    },
+    "vercel-labs-agent-browser": {
+      "url": "https://github.com/vercel-labs/agent-browser",
+      "local_path": null,
+      "commit": null,
+      "note": "agent-browser를 npm -g로 설치. cherry-pick 없음."
+    }
+  },
+  "cherrypicks": [
+    {
+      "id": "ecc-code-reviewer",
+      "source": "ecc",
+      "src": "agents/code-reviewer.md",
+      "dst": "templates/agents/code-reviewer.md",
+      "type": "file",
+      "modified": false,
+      "modification_note": null
+    },
+    {
+      "id": "ecc-security-reviewer",
+      "source": "ecc",
+      "src": "agents/security-reviewer.md",
+      "dst": "templates/agents/security-reviewer.md",
+      "type": "file",
+      "modified": false,
+      "modification_note": null
+    },
+    {
+      "id": "ecc-cl-v2",
+      "source": "ecc",
+      "src": "skills/continuous-learning-v2/",
+      "dst": "templates/skills/continuous-learning-v2/",
+      "type": "directory",
+      "modified": true,
+      "modification_note": "agents/ 디렉토리 (4개 파일) + scripts/test_parse_instinct.py 제거 (D-C). 핵심 5개 파일만 유지: SKILL.md, config.json, hooks/observe.sh, scripts/detect-project.sh, scripts/instinct-cli.py"
+    },
+    {
+      "id": "ecc-strategic-compact",
+      "source": "ecc",
+      "src": "skills/strategic-compact/",
+      "dst": "templates/skills/strategic-compact/",
+      "type": "directory",
+      "modified": false,
+      "modification_note": null
+    },
+    {
+      "id": "ecc-git-workflow",
+      "source": "ecc",
+      "src": "rules/common/git-workflow.md",
+      "dst": "templates/rules/ecc-git-workflow.md",
+      "type": "file",
+      "modified": true,
+      "modification_note": "글로벌 settings.json 가정 라인 1개 제거 — 범용 배포 호환성"
+    },
+    {
+      "id": "ecc-deep-research",
+      "source": "ecc",
+      "src": ".agents/skills/deep-research/",
+      "dst": "templates/skills/deep-research/",
+      "type": "directory",
+      "modified": false,
+      "modification_note": "Phase 4b A3에서 신규 추가. 모든 dev/tooling Track 공통."
+    },
+    {
+      "id": "ecc-market-research",
+      "source": "ecc",
+      "src": ".agents/skills/market-research/",
+      "dst": "templates/skills/market-research/",
+      "type": "directory",
+      "modified": false,
+      "modification_note": "Phase 4b A4에서 신규 추가. executive Track 한정."
+    }
+  ],
+  "removals": [
+    {
+      "id": "ecc-testing-rule",
+      "src": "rules/common/testing.md",
+      "reason": "test-policy.md가 Track별 차등 커버리지로 더 완전. 중복 제거."
+    },
+    {
+      "id": "ecc-checkpoint-cmd",
+      "src": ".opencode/commands/checkpoint.md",
+      "dst": "templates/commands/ecc/checkpoint.md",
+      "type": "file",
+      "modified": true,
+      "modification_note": "ECC 원본 참조하여 자체 작성. 형식 단순화."
+    }
+  ],
+  "verification": {
+    "rule": "각 cherrypick의 dst 파일이 존재하고, modified=false인 경우 sync-cherrypicks.sh가 ECC 원본과 hash 비교 가능해야 함"
+  }
+}
