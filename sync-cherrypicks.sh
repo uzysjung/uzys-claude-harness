@@ -43,7 +43,7 @@ echo -e "${CYAN}[1/3] Pulling source repos${NC}"
 
 pull_source() {
   local source_id="$1"
-  local local_path
+  local local_path expected_url actual_url
   local_path=$(jq -r ".sources.\"$source_id\".local_path // empty" "$MANIFEST")
   if [ -z "$local_path" ] || [ "$local_path" = "null" ]; then
     return 0
@@ -52,8 +52,27 @@ pull_source() {
     echo -e "  ${YELLOW}!${NC} $source_id: $local_path 미존재 또는 git repo 아님 (skip)"
     return 0
   fi
+
+  # 보안: 매니페스트의 URL과 실제 origin 일치 확인 (.git/config 변조 방어)
+  expected_url=$(jq -r ".sources.\"$source_id\".url // empty" "$MANIFEST")
+  actual_url=$(cd "$SCRIPT_DIR/$local_path" 2>/dev/null && git remote get-url origin 2>/dev/null || echo "")
+  if [ -n "$expected_url" ] && [ -n "$actual_url" ]; then
+    case "$actual_url" in
+      "$expected_url"|"$expected_url".git) ;;
+      *)
+        echo -e "  ${RED}✗${NC} $source_id: origin URL 불일치 (expected=$expected_url, actual=$actual_url) — pull 차단"
+        return 1
+        ;;
+    esac
+  fi
+
+  # 보안: core.sshCommand / core.fsmonitor / core.hooksPath 등을 통한 RCE 방어
   echo -n "  $source_id..."
-  (cd "$SCRIPT_DIR/$local_path" && git pull --quiet 2>/dev/null) && echo -e " ${GREEN}✓${NC}" || echo -e " ${YELLOW}pull 실패${NC}"
+  (cd "$SCRIPT_DIR/$local_path" && git \
+    -c core.sshCommand= \
+    -c core.fsmonitor= \
+    -c core.hooksPath=/dev/null \
+    pull --quiet 2>/dev/null) && echo -e " ${GREEN}✓${NC}" || echo -e " ${YELLOW}pull 실패${NC}"
 }
 
 for source_id in $(jq -r '.sources | keys[]' "$MANIFEST"); do
@@ -79,8 +98,24 @@ while IFS=$'\t' read -r id source src dst type modified; do
     continue
   fi
 
+  # 경로 traversal 방어 (HIGH security finding) — `..` 차단 + 절대경로 차단
+  case "$src" in
+    *..*|/*) echo -e "  ${RED}✗${NC} $id: 비안전 src 경로 ($src)"; continue ;;
+  esac
+  case "$dst" in
+    *..*|/*) echo -e "  ${RED}✗${NC} $id: 비안전 dst 경로 ($dst)"; continue ;;
+  esac
+
   src_full="$SCRIPT_DIR/$local_path/$src"
   dst_full="$SCRIPT_DIR/$dst"
+
+  # realpath 검증 — $SCRIPT_DIR 안에 있어야 함
+  if command -v realpath &> /dev/null; then
+    src_resolved=$(realpath -m "$src_full" 2>/dev/null)
+    dst_resolved=$(realpath -m "$dst_full" 2>/dev/null)
+    case "$src_resolved" in "$SCRIPT_DIR"/*) ;; *) echo -e "  ${RED}✗${NC} $id: src가 SCRIPT_DIR 외부 ($src_resolved)"; continue ;; esac
+    case "$dst_resolved" in "$SCRIPT_DIR"/*) ;; *) echo -e "  ${RED}✗${NC} $id: dst가 SCRIPT_DIR 외부 ($dst_resolved)"; continue ;; esac
+  fi
 
   # 파일/디렉토리 존재 확인
   if [ "$type" = "file" ]; then
@@ -133,7 +168,10 @@ while IFS=$'\t' read -r id source src dst type modified; do
       else
         echo -e "  ${YELLOW}△${NC} $id: 디렉토리 변경 (자동 동기화 가능)"
         if [ "$APPLY" = true ]; then
-          rsync -a --delete "$src_full" "$(dirname "$dst_full")/"
+          # HIGH 수정: trailing slash 정리 후 dst 디렉토리 자체에 sync (sibling 보호)
+          src_clean="${src_full%/}"
+          dst_clean="${dst_full%/}"
+          rsync -a --delete "$src_clean/" "$dst_clean/"
           echo -e "    ${GREEN}→ synced${NC}"
         fi
       fi

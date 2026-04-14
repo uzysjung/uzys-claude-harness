@@ -236,24 +236,33 @@ chmod +x "$PROJ/hooks/"*.sh
 safe_copy "$TEMPLATES/settings.json" "$PROJ/settings.json"
 
 # --- .mcp.json (프로젝트 MCP, Track별 동적 조립) ---
-if command -v jq &> /dev/null; then
+if [ -f .mcp.json ]; then
+  warn ".mcp.json 이미 존재 — 사용자 추가 항목 보존 위해 생성 스킵"
+elif command -v jq &> /dev/null; then
+  # 임시 파일 정리 trap
+  trap 'rm -f .mcp.json.tmp .mcp.json.tmp2' EXIT
+
   # 공통 항목 (chrome-devtools, context7, github)
   cp "$TEMPLATES/mcp.json" .mcp.json.tmp
 
   # Track별 조건부 추가
   case "$TRACK" in
     csr-fastify|csr-fastapi|ssr-htmx|ssr-nextjs|full)
-      jq '.mcpServers["railway-mcp-server"] = {"type":"stdio","command":"npx","args":["-y","@railway/mcp-server"]}' .mcp.json.tmp > .mcp.json.tmp2 && mv .mcp.json.tmp2 .mcp.json.tmp
+      jq '.mcpServers["railway-mcp-server"] = {"type":"stdio","command":"npx","args":["-y","@railway/mcp-server"]}' .mcp.json.tmp > .mcp.json.tmp2 \
+        && mv .mcp.json.tmp2 .mcp.json.tmp || { fail "jq railway 실패"; exit 1; }
       ;;
   esac
   case "$TRACK" in
     csr-supabase|full)
-      jq '.mcpServers["supabase"] = {"type":"stdio","command":"npx","args":["-y","@supabase/mcp-server"]}' .mcp.json.tmp > .mcp.json.tmp2 && mv .mcp.json.tmp2 .mcp.json.tmp
+      jq '.mcpServers["supabase"] = {"type":"stdio","command":"npx","args":["-y","@supabase/mcp-server"]}' .mcp.json.tmp > .mcp.json.tmp2 \
+        && mv .mcp.json.tmp2 .mcp.json.tmp || { fail "jq supabase 실패"; exit 1; }
       ;;
   esac
 
   # _comment 제거하고 최종 .mcp.json 생성
-  jq 'del(._comment)' .mcp.json.tmp > .mcp.json && rm .mcp.json.tmp
+  jq 'del(._comment)' .mcp.json.tmp > .mcp.json || { fail "jq finalize 실패"; exit 1; }
+  rm -f .mcp.json.tmp
+  trap - EXIT
   info "Created: .mcp.json (Track-aware, 글로벌 mcp add 없음)"
 else
   warn ".mcp.json 생성 스킵 — jq 필요 (brew install jq)"
