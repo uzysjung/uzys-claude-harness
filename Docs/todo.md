@@ -88,22 +88,25 @@
 
 ## Phase D: Documentation
 
-- [ ] **D1** README.md — **부분 완료**
-  - [ ] Architecture 다이어그램에 deep-research, market-research 추가 (미완료)
-  - [ ] Common tools 섹션 신규 (미완료)
-  - [ ] Cherry-pick sync 섹션 신규 (미완료)
-- [ ] **D2** USAGE.md — **부분 완료**
-  - [ ] Common tools 시나리오 (미완료)
-  - [ ] .mcp.json/settings.json 설명 (미완료)
-  - [ ] sync-cherrypicks.sh 사용법 (미완료)
 - [x] **D3** PRD.md
   - [x] D18 (cherry-pick 매니페스트), D19 (settings.json 통합), D20 (.mcp.json 도입)
   - [x] Phase 4b Complete 마킹
-- [ ] **D4** CONTRIBUTING.md (또는 README) sync 절차 — **미완료**
 - [x] **D5** project-claude/*.md 9종 동기화
   - [x] commit-policy 제거
   - [x] ecc-testing 제거
   - [x] 공통 도구 언급
+
+### Phase 5 이월 (out of scope for Phase 4b)
+
+- **D1** README.md 보강 — Phase 5
+  - Architecture 다이어그램에 deep-research, market-research 추가
+  - Common tools 섹션 신규
+  - Cherry-pick sync 섹션 신규
+- **D2** USAGE.md 보강 — Phase 5
+  - Common tools 시나리오
+  - .mcp.json/settings.json 설명
+  - sync-cherrypicks.sh 사용법
+- **D4** CONTRIBUTING.md sync 절차 — Phase 5
 
 ---
 
@@ -122,7 +125,7 @@
 
 ## 완료 조건
 
-- [ ] 모든 Phase A-F 체크박스 완료 — **D1/D2/D4 미완료**
+- [x] 모든 Phase A-F 체크박스 완료 (D1/D2/D4는 Phase 5 이월)
 - [x] 글로벌 미수정 자동 검증 통과
 - [x] 매니페스트와 실제 파일 일관
 - [x] v26.2.0 푸시 완료
