@@ -40,7 +40,6 @@ Define(/uzys:spec) -> Plan(/uzys:plan) -> Build(/uzys:build) -> Verify(/uzys:tes
 | git-policy | ALL | 브랜치 전략, PR 필수 |
 | change-management | ALL | 변경 영향 분석, DO NOT CHANGE 보호 |
 | test-policy | DEV | 커버리지 80% 이상 |
-| commit-policy | DEV | Conventional Commits |
 | ship-checklist | DEV | 배포 전 최종 점검 |
 | code-style | DEV | 불변성, 소형 파일 |
 | error-handling | DEV | 명시적 에러 처리 |
@@ -55,7 +54,6 @@ Define(/uzys:spec) -> Plan(/uzys:plan) -> Build(/uzys:build) -> Verify(/uzys:tes
 | pyside6 | DATA | PySide6 위젯/시그널 |
 | data-analysis | DATA | 데이터 품질, 재현성 |
 | ecc-git-workflow | DEV | Conventional Commits, PR (ECC) |
-| ecc-testing | DEV | 80% 커버리지, TDD, AAA (ECC) |
 | cli-development | TOOLING | Bash 표준, cross-platform, hook 컨벤션 |
 
 **참고**: 에이전트가 현재 작업 파일의 컨텍스트에 따라 관련 규칙만 활성화.

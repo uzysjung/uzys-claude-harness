@@ -395,6 +395,10 @@ DO NOT CHANGE:
 | D15 | 2026-04-13 | --project-only 플래그 추가 (D16에서 더 강화) | 글로벌 영향 없이 프로젝트 스코프만 설치 | 기존 --global-only만 유지 | setup-harness.sh |
 | D16 | 2026-04-14 | **글로벌 설치 경로 완전 제거 + templates/global/ 폐기** | "글로벌 절대 불변" 원칙을 구조에 강제. 글로벌 코드 1줄도 없는 setup-harness.sh | --project-only/--global-only 플래그 유지 | templates/, setup-harness.sh, 모든 agent를 .claude/agents/로 |
 | D17 | 2026-04-14 | **CLAUDE.md에 Decision Making Universal Meta-Rule 추가** | "스킬 좋고 나쁨을 임의 결정"하는 패턴 차단. 명시적 기준 강제 | 11개 원칙만 유지 | templates/CLAUDE.md, .claude/CLAUDE.md |
+| D18 | 2026-04-14 | **`.dev-references/cherrypicks.lock` + `sync-cherrypicks.sh` 신규** | ECC/agent-skills/vercel-labs cherry-pick 버전관리. 7개 출처 매니페스트, hash 기반 변경 감지 | 수동 동기화 | .gitignore에서 lock 파일 예외 처리 |
+| D19 | 2026-04-14 | **`.claude/settings.json`으로 통합** (settings.local.json 폐기) | `$CLAUDE_PROJECT_DIR` 변수 사용으로 절대 경로 제거. committable 파일로 단일화 | settings.local.json 유지 | templates/settings.json + setup-harness.sh |
+| D20 | 2026-04-14 | **`.mcp.json` 프로젝트 스코프** (`claude mcp add` 글로벌 호출 제거) | MCP를 프로젝트별로 관리. 글로벌 ~/.claude/ 미수정 원칙 강화 | 글로벌 mcp add 유지 | templates/mcp.json + setup-harness.sh Track별 동적 조립 |
+| D21 | 2026-04-14 | **8개 파일 제거 + 7개 공통 도구 추가** (Phase 4b 본체) | 필수성 기준 적용 (commit-policy/ecc-testing/projects/CL-v2 agents/test_parse 제거 + deep-research/find-skills/agent-browser/playwright 공통 이동/chrome-devtools/claude-powerline/market-research 추가) | 현행 유지 | templates/, setup-harness.sh, project-claude templates 8종 |
 
 ### 12.3 Roadmap
 

@@ -150,7 +150,7 @@ section "4/7" "Track Components ($TRACK)"
 
 # --- Track → Rule Mapping ---
 COMMON_RULES="git-policy change-management"
-DEV_RULES="test-policy commit-policy ship-checklist code-style error-handling ecc-git-workflow ecc-testing"
+DEV_RULES="test-policy ship-checklist code-style error-handling ecc-git-workflow"
 UI_RULES="design-workflow"
 
 # Track-specific rules (case statement for bash 3.2 compatibility on macOS)
@@ -218,6 +218,12 @@ safe_copy "$TEMPLATES/agents/security-reviewer.md" "$PROJ/agents/security-review
 safe_copy_dir "$TEMPLATES/skills/continuous-learning-v2" "$PROJ/skills/continuous-learning-v2"
 safe_copy_dir "$TEMPLATES/skills/strategic-compact" "$PROJ/skills/strategic-compact"
 safe_copy "$TEMPLATES/skills/spec-scaling/SKILL.md" "$PROJ/skills/spec-scaling/SKILL.md"
+# 공통 cherry-pick 스킬 (Phase 4b A3, A4)
+safe_copy_dir "$TEMPLATES/skills/deep-research" "$PROJ/skills/deep-research"
+# market-research는 executive Track 한정
+if [ "$TRACK" = "executive" ] || [ "$TRACK" = "full" ]; then
+  safe_copy_dir "$TEMPLATES/skills/market-research" "$PROJ/skills/market-research"
+fi
 
 # --- Hooks ---
 safe_copy "$TEMPLATES/hooks/session-start.sh" "$PROJ/hooks/session-start.sh"
@@ -226,61 +232,32 @@ safe_copy "$TEMPLATES/hooks/gate-check.sh" "$PROJ/hooks/gate-check.sh"
 safe_copy "$TEMPLATES/hooks/uncommitted-check.sh" "$PROJ/hooks/uncommitted-check.sh"
 chmod +x "$PROJ/hooks/"*.sh
 
-# --- settings.local.json (with absolute paths) ---
-PROJECT_ABS="$(pwd)"
-cat > "$PROJ/settings.local.json" << SETTINGS
-{
-  "hooks": {
-    "SessionStart": [{
-      "hooks": [{
-        "type": "command",
-        "command": "bash \"${PROJECT_ABS}/${PROJ}/hooks/session-start.sh\""
-      }]
-    }],
-    "PreToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [{
-          "type": "command",
-          "command": "bash \"${PROJECT_ABS}/${PROJ}/hooks/protect-files.sh\""
-        }]
-      },
-      {
-        "matcher": "Skill",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${PROJECT_ABS}/${PROJ}/hooks/gate-check.sh\""
-          },
-          {
-            "type": "command",
-            "command": "bash \"${PROJECT_ABS}/${PROJ}/hooks/uncommitted-check.sh\""
-          }
-        ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [{
-          "type": "command",
-          "command": "bash \"${PROJECT_ABS}/${PROJ}/skills/continuous-learning-v2/hooks/observe.sh\" pre",
-          "async": true,
-          "timeout": 10
-        }]
-      }
-    ],
-    "PostToolUse": [{
-      "matcher": "*",
-      "hooks": [{
-        "type": "command",
-        "command": "bash \"${PROJECT_ABS}/${PROJ}/skills/continuous-learning-v2/hooks/observe.sh\" post",
-        "async": true,
-        "timeout": 10
-      }]
-    }]
-  }
-}
-SETTINGS
-info "Created: $PROJ/settings.local.json (hooks with absolute paths)"
+# --- .claude/settings.json (committable, $CLAUDE_PROJECT_DIR 사용) ---
+safe_copy "$TEMPLATES/settings.json" "$PROJ/settings.json"
+
+# --- .mcp.json (프로젝트 MCP, Track별 동적 조립) ---
+if command -v jq &> /dev/null; then
+  # 공통 항목 (chrome-devtools, context7, github)
+  cp "$TEMPLATES/mcp.json" .mcp.json.tmp
+
+  # Track별 조건부 추가
+  case "$TRACK" in
+    csr-fastify|csr-fastapi|ssr-htmx|ssr-nextjs|full)
+      jq '.mcpServers["railway-mcp-server"] = {"type":"stdio","command":"npx","args":["-y","@railway/mcp-server"]}' .mcp.json.tmp > .mcp.json.tmp2 && mv .mcp.json.tmp2 .mcp.json.tmp
+      ;;
+  esac
+  case "$TRACK" in
+    csr-supabase|full)
+      jq '.mcpServers["supabase"] = {"type":"stdio","command":"npx","args":["-y","@supabase/mcp-server"]}' .mcp.json.tmp > .mcp.json.tmp2 && mv .mcp.json.tmp2 .mcp.json.tmp
+      ;;
+  esac
+
+  # _comment 제거하고 최종 .mcp.json 생성
+  jq 'del(._comment)' .mcp.json.tmp > .mcp.json && rm .mcp.json.tmp
+  info "Created: .mcp.json (Track-aware, 글로벌 mcp add 없음)"
+else
+  warn ".mcp.json 생성 스킵 — jq 필요 (brew install jq)"
+fi
 
 # --- Project CLAUDE.md ---
 if [ -f "$TEMPLATES/project-claude/${TRACK}.md" ]; then
@@ -301,14 +278,11 @@ if [ "$TRACK" != "executive" ]; then
   claude plugin install agent-skills@addy-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
 fi
 
-# Railway plugin & MCP (dev tracks)
+# Railway plugin (MCP는 .mcp.json으로 이관됨)
 if [ "$TRACK" != "executive" ]; then
   echo -n "  Railway plugin..."
   claude plugin marketplace add railwayapp/railway-plugin 2>/dev/null || true
   claude plugin install railway-plugin@railway-plugin 2>/dev/null && info "installed" || warn "already installed or manual install needed"
-
-  echo -n "  Railway MCP..."
-  claude mcp add railway-mcp-server -- npx -y @railway/mcp-server 2>/dev/null && info "installed" || warn "already installed"
 fi
 
 # Impeccable (UI tracks)
@@ -316,19 +290,29 @@ case "$TRACK" in
   csr-*|ssr-*|full)
     echo -n "  Impeccable..."
     npx skills add pbakaus/impeccable 2>/dev/null && info "installed" || warn "already installed"
-
-    echo -n "  Playwright skill..."
-    npx skills add testdino-hq/playwright-skill 2>/dev/null && info "installed" || warn "already installed"
     ;;
 esac
 
-# Track-specific
-case "$TRACK" in
-  csr-supabase)
-    echo -n "  Supabase MCP..."
-    claude mcp add supabase -- npx -y @supabase/mcp-server 2>/dev/null && info "installed" || warn "already installed"
-    ;;
-esac
+# Playwright (모든 dev Track 공통, 이전 UI 한정에서 이동)
+if [ "$TRACK" != "executive" ]; then
+  echo -n "  Playwright skill..."
+  npx skills add testdino-hq/playwright-skill 2>/dev/null && info "installed" || warn "already installed"
+fi
+
+# 공통 도구 (Phase 4b 신규)
+if [ "$TRACK" != "executive" ]; then
+  echo -n "  find-skills (vercel-labs)..."
+  npx skills add vercel-labs/skills --skill find-skills 2>/dev/null && info "installed" || warn "already installed"
+
+  echo -n "  agent-browser..."
+  if command -v agent-browser &> /dev/null; then
+    info "already installed"
+  else
+    npm install -g agent-browser 2>/dev/null && info "installed" || install_fail "agent-browser"
+  fi
+fi
+
+# Supabase MCP는 .mcp.json으로 이관됨 (claude mcp add 제거)
 
 case "$TRACK" in
   csr-*|ssr-nextjs|full)

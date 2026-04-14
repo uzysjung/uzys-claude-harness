@@ -26,7 +26,6 @@ Define(/uzys:spec) -> Plan(/uzys:plan) -> Build(/uzys:build) -> Verify(/uzys:tes
 | git-policy | 브랜치 전략, PR 필수, main 직접 커밋 금지 |
 | change-management | 변경 영향 분석, DO NOT CHANGE 영역 보호 |
 | test-policy | 단위/통합/E2E (Vitest + Playwright). 커버리지 80% 이상 |
-| commit-policy | Conventional Commits 형식. 즉시 커밋 |
 | ship-checklist | 배포 전 최종 점검 체크리스트 |
 | code-style | 불변성, 소형 파일(800줄 이하), 함수 50줄 이하 |
 | error-handling | 명시적 에러 처리. error.tsx 바운더리 활용 |
