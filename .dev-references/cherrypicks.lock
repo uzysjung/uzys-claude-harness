@@ -60,7 +60,8 @@
       "dst": "templates/skills/continuous-learning-v2/",
       "type": "directory",
       "modified": true,
-      "modification_note": "agents/ 디렉토리 (4개 파일) + scripts/test_parse_instinct.py 제거 (D-C). 핵심 5개 파일만 유지: SKILL.md, config.json, hooks/observe.sh, scripts/detect-project.sh, scripts/instinct-cli.py"
+      "sync_verified_at": "2026-04-16",
+      "modification_note": "agents/ 디렉토리 (4개 파일) + scripts/test_parse_instinct.py 제거 (D-C). 핵심 5개 파일만 유지: SKILL.md, config.json, hooks/observe.sh, scripts/detect-project.sh, scripts/instinct-cli.py. Sync 2026-04-16 검증: 원본 대비 차이는 의도된 제외 상태 유지 (파일 내용 변경 없음, 단지 제외된 파일이 원본에 존재)"
     },
     {
       "id": "ecc-strategic-compact",
@@ -78,7 +79,8 @@
       "dst": "templates/rules/ecc-git-workflow.md",
       "type": "file",
       "modified": true,
-      "modification_note": "글로벌 settings.json 가정 라인 1개 제거 — 범용 배포 호환성"
+      "sync_verified_at": "2026-04-16",
+      "modification_note": "글로벌 settings.json 가정 라인 1개 제거 — 범용 배포 호환성. Sync 2026-04-16 검증: line 12 단일 수정 유지, 원본 변경 없음 확인 (diff 1줄)"
     },
     {
       "id": "ecc-deep-research",
@@ -177,7 +179,8 @@
       "dst": "templates/rules/ecc-performance-common.md",
       "type": "file",
       "modified": true,
-      "modification_note": "P1-4 from harness-engineering-audit-2026-04 (A12). 글로벌 `~/.claude/settings.json` 언급 1줄을 프로젝트 `.claude/settings.json`으로 교체 (프로젝트 스코프 원칙 준수)"
+      "sync_verified_at": "2026-04-16",
+      "modification_note": "P1-4 from harness-engineering-audit-2026-04 (A12). 글로벌 `~/.claude/settings.json` 언급 1줄을 프로젝트 `.claude/settings.json`으로 교체 (프로젝트 스코프 원칙 준수). Sync 2026-04-16 검증: line 39 단일 수정 유지, 원본 변경 없음 확인"
     },
     {
       "id": "ecc-silent-failure-hunter",
