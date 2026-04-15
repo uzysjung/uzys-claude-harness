@@ -65,7 +65,7 @@ done
 # T2. Bash Syntax
 # ============================================================
 section "T2. Bash Syntax"
-for f in setup-harness.sh sync-cherrypicks.sh test-harness.sh templates/hooks/gate-check.sh templates/hooks/protect-files.sh templates/hooks/session-start.sh templates/hooks/uncommitted-check.sh templates/hooks/spec-drift-check.sh; do
+for f in setup-harness.sh sync-cherrypicks.sh test-harness.sh templates/hooks/gate-check.sh templates/hooks/protect-files.sh templates/hooks/session-start.sh templates/hooks/uncommitted-check.sh templates/hooks/spec-drift-check.sh templates/hooks/checkpoint-snapshot.sh templates/hooks/codebase-map.sh templates/hooks/agentshield-gate.sh; do
   if [ -f "$ROOT/$f" ]; then
     if bash -n "$ROOT/$f" 2>/dev/null; then
       pass "$f"
@@ -151,7 +151,7 @@ for TRACK in tooling csr-supabase csr-fastapi ssr-htmx executive full data; do
   bash "$ROOT/setup-harness.sh" --track "$TRACK" --project-dir . < /dev/null > /tmp/setup-$TRACK.log 2>&1
   AGENTS=$(ls .claude/agents/*.md 2>/dev/null | wc -l | tr -d ' ')
   HOOKS=$(ls .claude/hooks/*.sh 2>/dev/null | wc -l | tr -d ' ')
-  if [ "$AGENTS" = "5" ] && [ "$HOOKS" = "5" ] && [ -f .mcp.json ] && [ -f .claude/settings.json ] && [ -f CLAUDE.md ] \
+  if [ "$AGENTS" = "5" ] && [ "$HOOKS" = "8" ] && [ -f .mcp.json ] && [ -f .claude/settings.json ] && [ -f CLAUDE.md ] \
      && ! grep -q "/Users\|/private" .claude/settings.json 2>/dev/null; then
     pass "$TRACK install"
   else

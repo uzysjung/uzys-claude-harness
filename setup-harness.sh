@@ -19,17 +19,26 @@ TEMPLATES="$SCRIPT_DIR/templates"
 # 이 스크립트는 프로젝트 스코프 전용. 글로벌 ~/.claude/는 절대 건드리지 않음.
 TRACK=""
 GSD=false
+MODEL_ROUTING="off"
 PROJECT_DIR="$(pwd)"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     --track) TRACK="$2"; shift 2 ;;
     --gsd) GSD=true; shift ;;
+    --model-routing) MODEL_ROUTING="$2"; shift 2 ;;
+    --model-routing=*) MODEL_ROUTING="${1#*=}"; shift ;;
     --project-dir) PROJECT_DIR="$2"; shift 2 ;;
-    -h|--help) echo "Usage: $0 [--track <track>] [--gsd] [--project-dir <path>]"; echo ""; echo "프로젝트 스코프 전용. 글로벌 ~/.claude/는 건드리지 않음."; exit 0 ;;
+    -h|--help) echo "Usage: $0 [--track <track>] [--gsd] [--model-routing on|off] [--project-dir <path>]"; echo ""; echo "프로젝트 스코프 전용. 글로벌 ~/.claude/는 건드리지 않음."; echo ""; echo "--model-routing on: 6-gate 단계별 권장 모델 Rule 설치 (기본 off)"; exit 0 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
+
+# 검증
+case "$MODEL_ROUTING" in
+  on|off) ;;
+  *) echo "Invalid --model-routing value: $MODEL_ROUTING (must be 'on' or 'off')"; exit 1 ;;
+esac
 
 # ============================================================
 # Utility Functions
@@ -189,6 +198,12 @@ for rule in $RULES_TO_INSTALL; do
   fi
 done
 
+# Model Routing rule (opt-in, D24)
+if [ "$MODEL_ROUTING" = "on" ]; then
+  safe_copy "$TEMPLATES/rules/model-routing.md" "$PROJ/rules/model-routing.md"
+  info "Model routing enabled (6-gate model mapping guide)"
+fi
+
 # --- Commands ---
 # uzys: commands (dev tracks only)
 if [ "$TRACK" != "executive" ]; then
@@ -244,6 +259,9 @@ safe_copy "$TEMPLATES/hooks/protect-files.sh" "$PROJ/hooks/protect-files.sh"
 safe_copy "$TEMPLATES/hooks/gate-check.sh" "$PROJ/hooks/gate-check.sh"
 safe_copy "$TEMPLATES/hooks/uncommitted-check.sh" "$PROJ/hooks/uncommitted-check.sh"
 safe_copy "$TEMPLATES/hooks/spec-drift-check.sh" "$PROJ/hooks/spec-drift-check.sh"
+safe_copy "$TEMPLATES/hooks/checkpoint-snapshot.sh" "$PROJ/hooks/checkpoint-snapshot.sh"
+safe_copy "$TEMPLATES/hooks/codebase-map.sh" "$PROJ/hooks/codebase-map.sh"
+safe_copy "$TEMPLATES/hooks/agentshield-gate.sh" "$PROJ/hooks/agentshield-gate.sh"
 chmod +x "$PROJ/hooks/"*.sh
 
 # --- .claude/settings.json (committable, $CLAUDE_PROJECT_DIR 사용) ---

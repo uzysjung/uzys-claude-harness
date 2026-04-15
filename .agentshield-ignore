@@ -1,0 +1,7 @@
+# AgentShield false-positive ignore patterns
+# 한 줄에 하나의 정규식. CRITICAL finding의 해당 라인과 매칭되면 무시.
+# '#' 로 시작하는 라인은 주석.
+
+# git-policy.md의 "사용 금지" 명시 문장에서 --no-verify 키워드가 매칭되는 false-positive
+# (rules가 해당 플래그를 명시적으로 금지하는 문장임)
+Dangerous flag: --no-verify.*git-policy\.md

@@ -401,6 +401,10 @@ DO NOT CHANGE:
 | D21 | 2026-04-14 | **8개 파일 제거 + 7개 공통 도구 추가** (Phase 4b 본체) | 필수성 기준 적용 (commit-policy/ecc-testing/projects/CL-v2 agents/test_parse 제거 + deep-research/find-skills/agent-browser/playwright 공통 이동/chrome-devtools/claude-powerline/market-research 추가) | 현행 유지 | templates/, setup-harness.sh, project-claude templates 8종 |
 | D22 | 2026-04-14 | **SPEC drift 자동 검출 (`spec-drift-check.sh`)** | 사용자 지적: "스펙 정의 후 빌드에서 기능 수정 시 SPEC 반영" 미보장. 이전엔 LLM 지시 수준. 이제 SPEC/todo의 unchecked + Status 불일치를 deterministic 검출. ship 모드에서는 exit 2로 차단 | LLM 지시 유지 | templates/hooks/spec-drift-check.sh + ship-checklist.md 통합 |
 | D23 | 2026-04-15 | **Supabase agent-skills 공식 플러그인 통합** (csr-supabase/full Track) | csr-supabase Track 직결. Supabase 전문 지식(RLS, 인덱스, SSR 통합)은 대체 불가. 사용자 명시 지시 + 리서치 감사(`Docs/research/harness-engineering-audit-2026-04.md` P0-1, 커밋 `a494c3c`) 7기준 판정 결과 | 옵션 A (`npx skills add`), 옵션 C (로컬 cherry-pick) | setup-harness.sh csr-supabase case, project-claude/csr-supabase.md, PRD Q6 Resolved |
+| D24 | 2026-04-15 | **Model Routing rule (opt-in, `--model-routing=on`)** | 토큰 비용 40–70% 감소 가능. 사용자 선택권 보장 — 기본 off | 항상 설치 / 강제 라우팅 | templates/rules/model-routing.md 신규, setup-harness.sh 플래그 |
+| D25 | 2026-04-15 | **Checkpoint auto-snapshot (`checkpoint-snapshot.sh`)** | Claude Code hook이 `/compact` 직접 호출 불가. 대신 40회 tool call마다 docs/checkpoints/ 자동 저장 + session-start 경고. 실제 compact는 사용자 수동 | 완전 자동 compact (구조적 불가) | templates/hooks/checkpoint-snapshot.sh, session-start.sh 경고 통합, settings.json PostToolUse |
+| D26 | 2026-04-15 | **Repository Map (`codebase-map.sh`)** | Grep/Glob 남발 방지. bash regex 기반 symbol 추출(Python/TS/JS/Rust/Go/Shell). session-start에서 10분 TTL로 자동 갱신 | Tree-sitter 바인딩 (과잉) | templates/hooks/codebase-map.sh, session-start.sh 통합 |
+| D27 | 2026-04-15 | **AgentShield auto-gate (`agentshield-gate.sh`)** | `/uzys:ship` Skill 호출 전 자동 실행. CRITICAL + `.agentshield-ignore` 비매칭 시 exit 2. false-positive 정책: git-policy.md의 `--no-verify` 금지 명시 문장은 ignore | 수동 scan 유지 | templates/hooks/agentshield-gate.sh, .agentshield-ignore, settings.json Skill matcher |
 
 ### 12.3 Roadmap
 
