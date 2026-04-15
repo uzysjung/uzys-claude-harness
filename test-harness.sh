@@ -185,11 +185,17 @@ for TRACK in tooling csr-supabase csr-fastapi ssr-htmx executive full data; do
   else
     EXPECTED_AGENTS=8
   fi
+  # executive는 .mcp-allowlist도 미생성 가능 (MCP 사용 X), dev는 생성 필수
+  ALLOWLIST_OK=true
+  if [ "$TRACK" != "executive" ] && [ ! -f .mcp-allowlist ]; then
+    ALLOWLIST_OK=false
+  fi
   if [ "$AGENTS" = "$EXPECTED_AGENTS" ] && [ "$HOOKS" = "9" ] && [ -f .mcp.json ] && [ -f .claude/settings.json ] && [ -f CLAUDE.md ] \
+     && [ "$ALLOWLIST_OK" = true ] \
      && ! grep -q "/Users\|/private" .claude/settings.json 2>/dev/null; then
     pass "$TRACK install"
   else
-    fail "$TRACK install (agents=$AGENTS/$EXPECTED_AGENTS hooks=$HOOKS mcp=$([ -f .mcp.json ] && echo Y || echo N))"
+    fail "$TRACK install (agents=$AGENTS/$EXPECTED_AGENTS hooks=$HOOKS mcp=$([ -f .mcp.json ] && echo Y || echo N) allowlist=$ALLOWLIST_OK)"
   fi
   cd "$ROOT"
   rm -rf "$T5_DIR"
