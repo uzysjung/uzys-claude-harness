@@ -405,6 +405,8 @@ DO NOT CHANGE:
 | D25 | 2026-04-15 | **Checkpoint auto-snapshot (`checkpoint-snapshot.sh`)** | Claude Code hook이 `/compact` 직접 호출 불가. 대신 40회 tool call마다 docs/checkpoints/ 자동 저장 + session-start 경고. 실제 compact는 사용자 수동 | 완전 자동 compact (구조적 불가) | templates/hooks/checkpoint-snapshot.sh, session-start.sh 경고 통합, settings.json PostToolUse |
 | D26 | 2026-04-15 | **Repository Map (`codebase-map.sh`)** | Grep/Glob 남발 방지. bash regex 기반 symbol 추출(Python/TS/JS/Rust/Go/Shell). session-start에서 10분 TTL로 자동 갱신 | Tree-sitter 바인딩 (과잉) | templates/hooks/codebase-map.sh, session-start.sh 통합 |
 | D27 | 2026-04-15 | **AgentShield auto-gate (`agentshield-gate.sh`)** | `/uzys:ship` Skill 호출 전 자동 실행. CRITICAL + `.agentshield-ignore` 비매칭 시 exit 2. false-positive 정책: git-policy.md의 `--no-verify` 금지 명시 문장은 ignore | 수동 scan 유지 | templates/hooks/agentshield-gate.sh, .agentshield-ignore, settings.json Skill matcher |
+| D28 | 2026-04-15 | **P1 쉬운 5건 cherry-pick** (harness audit §11.2) | P1-3 ecc/rules/common/security.md + P1-4 ecc/rules/common/performance.md (common DEV_RULES) + P1-5 ecc/agents/silent-failure-hunter.md (dev Track) + P1-6 gsd gates-taxonomy.md (COMMON_RULES) + P1-2 이미 구현됨 (자체 작성). GSD D6 부분 완화 (gates-taxonomy만 cherry-pick) | 전체 유지 | templates/rules/ecc-security-common.md, ecc-performance-common.md, gates-taxonomy.md, templates/agents/silent-failure-hunter.md, cherrypicks.lock (gsd 소스 추가, 4건 cherrypick 항목 추가), setup-harness.sh |
+| D29 | 2026-04-15 | **P1 복잡 3건 Backlog 이월** | P1-1 skill-comply (Python 디렉토리, 유지 비용), P1-7 GSD session-state (이미 session-start.sh가 동등 이상), P1-9 MCP pre-execution blocking (Claude Code MCP hook 구조 조사 필요) | 이번 세션 강행 | R7 Phase 5.2 Backlog로 이월 |
 
 ### 12.3 Roadmap
 

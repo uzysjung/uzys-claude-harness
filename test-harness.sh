@@ -151,11 +151,17 @@ for TRACK in tooling csr-supabase csr-fastapi ssr-htmx executive full data; do
   bash "$ROOT/setup-harness.sh" --track "$TRACK" --project-dir . < /dev/null > /tmp/setup-$TRACK.log 2>&1
   AGENTS=$(ls .claude/agents/*.md 2>/dev/null | wc -l | tr -d ' ')
   HOOKS=$(ls .claude/hooks/*.sh 2>/dev/null | wc -l | tr -d ' ')
-  if [ "$AGENTS" = "5" ] && [ "$HOOKS" = "8" ] && [ -f .mcp.json ] && [ -f .claude/settings.json ] && [ -f CLAUDE.md ] \
+  # executive는 silent-failure-hunter 미설치 (dev Track 한정) → 5, 나머지는 6
+  if [ "$TRACK" = "executive" ]; then
+    EXPECTED_AGENTS=5
+  else
+    EXPECTED_AGENTS=6
+  fi
+  if [ "$AGENTS" = "$EXPECTED_AGENTS" ] && [ "$HOOKS" = "8" ] && [ -f .mcp.json ] && [ -f .claude/settings.json ] && [ -f CLAUDE.md ] \
      && ! grep -q "/Users\|/private" .claude/settings.json 2>/dev/null; then
     pass "$TRACK install"
   else
-    fail "$TRACK install (agents=$AGENTS hooks=$HOOKS mcp=$([ -f .mcp.json ] && echo Y || echo N))"
+    fail "$TRACK install (agents=$AGENTS/$EXPECTED_AGENTS hooks=$HOOKS mcp=$([ -f .mcp.json ] && echo Y || echo N))"
   fi
   cd "$ROOT"
   rm -rf "$T5_DIR"

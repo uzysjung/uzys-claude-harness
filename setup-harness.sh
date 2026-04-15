@@ -158,8 +158,8 @@ mkdir -p docs/decisions
 section "4/7" "Track Components ($TRACK)"
 
 # --- Track → Rule Mapping ---
-COMMON_RULES="git-policy change-management"
-DEV_RULES="test-policy ship-checklist code-style error-handling ecc-git-workflow"
+COMMON_RULES="git-policy change-management gates-taxonomy"
+DEV_RULES="test-policy ship-checklist code-style error-handling ecc-git-workflow ecc-security-common ecc-performance-common"
 UI_RULES="design-workflow"
 
 # Track-specific rules (case statement for bash 3.2 compatibility on macOS)
@@ -228,6 +228,10 @@ safe_copy "$TEMPLATES/agents/data-analyst.md" "$PROJ/agents/data-analyst.md"
 safe_copy "$TEMPLATES/agents/strategist.md" "$PROJ/agents/strategist.md"
 safe_copy "$TEMPLATES/agents/code-reviewer.md" "$PROJ/agents/code-reviewer.md"     # ECC
 safe_copy "$TEMPLATES/agents/security-reviewer.md" "$PROJ/agents/security-reviewer.md" # ECC
+# P1-5: silent-failure-hunter (dev Track 한정)
+if [ "$TRACK" != "executive" ]; then
+  safe_copy "$TEMPLATES/agents/silent-failure-hunter.md" "$PROJ/agents/silent-failure-hunter.md" # ECC
+fi
 
 # --- Skills (ECC + 자체) ---
 safe_copy_dir "$TEMPLATES/skills/continuous-learning-v2" "$PROJ/skills/continuous-learning-v2"

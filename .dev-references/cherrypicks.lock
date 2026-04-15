@@ -26,6 +26,12 @@
       "local_path": null,
       "commit": null,
       "note": "agent-browser를 npm -g로 설치. cherry-pick 없음."
+    },
+    "gsd": {
+      "url": "https://github.com/gsd-build/gsd-2",
+      "local_path": ".dev-references/gsd",
+      "commit": "unknown",
+      "note": "GSD(Get Shit Done). 사상만 흡수(PRD D6)였으나 Phase 5 P1-6에서 gates taxonomy 부분 cherry-pick."
     }
   },
   "cherrypicks": [
@@ -154,6 +160,42 @@
       "type": "file",
       "modified": false,
       "modification_note": "/ecc:harness-audit — 7카테고리 deterministic 점수 (P10 분기 검토용)"
+    },
+    {
+      "id": "ecc-security-common",
+      "source": "ecc",
+      "src": "rules/common/security.md",
+      "dst": "templates/rules/ecc-security-common.md",
+      "type": "file",
+      "modified": false,
+      "modification_note": "P1-3 from harness-engineering-audit-2026-04 (A11). 공통 보안 체크리스트 + 시크릿 관리 프로토콜"
+    },
+    {
+      "id": "ecc-performance-common",
+      "source": "ecc",
+      "src": "rules/common/performance.md",
+      "dst": "templates/rules/ecc-performance-common.md",
+      "type": "file",
+      "modified": true,
+      "modification_note": "P1-4 from harness-engineering-audit-2026-04 (A12). 글로벌 `~/.claude/settings.json` 언급 1줄을 프로젝트 `.claude/settings.json`으로 교체 (프로젝트 스코프 원칙 준수)"
+    },
+    {
+      "id": "ecc-silent-failure-hunter",
+      "source": "ecc",
+      "src": "agents/silent-failure-hunter.md",
+      "dst": "templates/agents/silent-failure-hunter.md",
+      "type": "file",
+      "modified": false,
+      "modification_note": "P1-5 from harness-engineering-audit-2026-04 (A16). zero tolerance for silent failures 에이전트. dev Track 한정 설치"
+    },
+    {
+      "id": "gsd-gates-taxonomy",
+      "source": "gsd",
+      "src": "get-shit-done/references/gates.md",
+      "dst": "templates/rules/gates-taxonomy.md",
+      "type": "file",
+      "modified": false,
+      "modification_note": "P1-6 from harness-engineering-audit-2026-04 (B6). 4 canonical gate types (pre-flight/revision/escalation/abort) + phase matrix. 공통 rule (COMMON_RULES). GSD D6 '사상만 흡수' 부분 완화"
     }
   ],
   "removals": [

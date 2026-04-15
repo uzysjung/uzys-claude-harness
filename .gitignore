@@ -7,3 +7,9 @@ skills-lock.json
 .claude/CLAUDE.md.backup
 .claude/settings.local.json.backup
 .claude/gate-status.json
+
+# Session-specific artifacts (P0-3 checkpoint-snapshot)
+.claude/compact-warning.flag
+Docs/checkpoints/
+docs/checkpoints/
+.claude/codebase-map.json
