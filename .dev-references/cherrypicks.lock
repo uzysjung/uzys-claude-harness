@@ -196,6 +196,24 @@
       "type": "file",
       "modified": false,
       "modification_note": "P1-6 from harness-engineering-audit-2026-04 (B6). 4 canonical gate types (pre-flight/revision/escalation/abort) + phase matrix. 공통 rule (COMMON_RULES). GSD D6 '사상만 흡수' 부분 완화"
+    },
+    {
+      "id": "ecc-build-error-resolver",
+      "source": "ecc",
+      "src": "agents/build-error-resolver.md",
+      "dst": "templates/agents/build-error-resolver.md",
+      "type": "file",
+      "modified": false,
+      "modification_note": "Phase 5.1 A14 from harness-engineering-audit-2026-04 (D30). TypeScript/webpack/build 에러 최소 diff 복구 에이전트. dev Track 한정"
+    },
+    {
+      "id": "gsd-planner-antipatterns",
+      "source": "gsd",
+      "src": "get-shit-done/references/planner-antipatterns.md",
+      "dst": "templates/rules/gsd-planner-antipatterns.md",
+      "type": "file",
+      "modified": false,
+      "modification_note": "Phase 5.1 B9b from harness-engineering-audit-2026-04 (D32). Planning 안티패턴 카탈로그. DEV_RULES 추가. /uzys:plan 게이트에서 reviewer + plan-checker 참조"
     }
   ],
   "removals": [

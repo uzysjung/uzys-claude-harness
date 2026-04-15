@@ -159,7 +159,7 @@ section "4/7" "Track Components ($TRACK)"
 
 # --- Track → Rule Mapping ---
 COMMON_RULES="git-policy change-management gates-taxonomy"
-DEV_RULES="test-policy ship-checklist code-style error-handling ecc-git-workflow ecc-security-common ecc-performance-common"
+DEV_RULES="test-policy ship-checklist code-style error-handling ecc-git-workflow ecc-security-common ecc-performance-common gsd-planner-antipatterns"
 UI_RULES="design-workflow"
 
 # Track-specific rules (case statement for bash 3.2 compatibility on macOS)
@@ -231,6 +231,10 @@ safe_copy "$TEMPLATES/agents/security-reviewer.md" "$PROJ/agents/security-review
 # P1-5: silent-failure-hunter (dev Track 한정)
 if [ "$TRACK" != "executive" ]; then
   safe_copy "$TEMPLATES/agents/silent-failure-hunter.md" "$PROJ/agents/silent-failure-hunter.md" # ECC
+  # Phase 5.1 A14: build-error-resolver (ECC, dev Track 한정)
+  safe_copy "$TEMPLATES/agents/build-error-resolver.md" "$PROJ/agents/build-error-resolver.md"
+  # Phase 5.1 B1: plan-checker (자체 작성, GSD 사상 흡수, dev Track 한정)
+  safe_copy "$TEMPLATES/agents/plan-checker.md" "$PROJ/agents/plan-checker.md"
 fi
 
 # --- Skills (ECC + 자체) ---
