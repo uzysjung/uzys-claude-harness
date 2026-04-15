@@ -412,6 +412,7 @@ DO NOT CHANGE:
 | D32 | 2026-04-15 | **Phase 5.1 B9b planner-antipatterns cherry-pick** (GSD) | B9 SPEC-WRITING.md는 GSD 리포에 존재하지 않음 (리서치 문서 오기재). 대체 후보 중 `planner-antipatterns.md` 선택 — `/uzys:plan` 게이트에서 reviewer + plan-checker가 참조할 구체적 안티패턴 카탈로그 | B9a questioning.md, B9c universal-anti-patterns.md | templates/rules/gsd-planner-antipatterns.md, DEV_RULES |
 | D33 | 2026-04-15 | **E2 Memory Architecture 검증 완료** (조사) | Claude Code Memory v2.1.59+ 공식 feature 확인. `~/.claude/projects/<project>/memory/` 저장은 자동 생성 디렉토리 → "글로벌 절대 불변 원칙"에 포함되지 않음(설정 파일만 보호). CL-v2 instinct와 역할 중복 없음 (free-form 노트 vs 구조화 confidence + Rule 승격 파이프라인). 공존 유지 | CL-v2 제거 | Docs/research/memory-architecture-check.md (신규) |
 | D34 | 2026-04-15 | **P1-9 MCP pre-execution blocking 기술 타당성 확인** (조사) | Claude Code 공식 hook 문서: PreToolUse matcher가 `mcp__<server>__<tool>` regex 매처 지원 + exit 2 공식 blocking contract 확인. 기술적으로 완전히 가능. 구현은 Phase 5.2로 이월 (사용자 명시 "조사만") | P1-9를 영구 Backlog | Docs/research/mcp-pre-exec-feasibility.md (신규) — 구현 경로 + 7기준 재판정 (P1 → P0 승급 자격) 포함 |
+| D35 | 2026-04-15 | **Phase 5.2 P1-9 MCP pre-execution blocking 구현** (P0 승급 후 실행) | D34 조사 근거로 즉시 구현. PreToolUse `mcp__.*` matcher + `.mcp-allowlist` 기반 화이트리스트 + 위험 파라미터 패턴 감지. setup-harness.sh가 설치 시 `.mcp.json`의 서버로 `.mcp-allowlist` 자동 생성(jq). opt-in 구조 — 파일 없으면 gate 비활성 | 수동 scan 유지, 별도 plan 대기 | templates/hooks/mcp-pre-exec.sh, templates/mcp-allowlist.example, templates/settings.json PreToolUse matcher, setup-harness.sh, test-harness.sh T3 unit test 5건 |
 
 ### 12.3 Roadmap
 
