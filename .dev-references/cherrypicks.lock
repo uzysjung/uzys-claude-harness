@@ -28,10 +28,10 @@
       "note": "agent-browser를 npm -g로 설치. cherry-pick 없음."
     },
     "gsd": {
-      "url": "https://github.com/gsd-build/gsd-2",
+      "url": "https://github.com/gsd-build/get-shit-done",
       "local_path": ".dev-references/gsd",
       "commit": "unknown",
-      "note": "GSD(Get Shit Done). 사상만 흡수(PRD D6)였으나 Phase 5 P1-6에서 gates taxonomy 부분 cherry-pick."
+      "note": "GSD(Get Shit Done). 사상만 흡수(PRD D6)였으나 Phase 5 P1-6에서 gates-taxonomy + planner-antipatterns 부분 cherry-pick. 실제 clone origin은 get-shit-done.git (이전 기록의 gsd-2는 오기)."
     }
   },
   "cherrypicks": [

@@ -2,14 +2,16 @@
 
 > **Status**: In Progress
 > **Owner**: Jay (Uzys)
-> **Last Updated**: 2026-04-12
+> **Last Updated**: 2026-04-16
 > **Stakeholders**: Jay (CEO/CTO/CISO/CPO/CSO/Data Scientist)
 
 ---
 
 ## 1. Executive Summary
 
-Claude Code Agent Harness는 Jay의 멀티 역할(CEO/CTO/CISO/CPO/CSO/데이터 사이언티스트)과 멀티 트랙(9개) 기술 스택을 위한 통합 Claude Code 개발 환경이다. agent-skills의 6단계 게이트 워크플로우(Define-Plan-Build-Verify-Review-Ship)를 뼈대로, ECC(Everything Claude Code)에서 cherry-pick한 도구를 레이어로, 11개 행동 원칙(CLAUDE.md)을 기반으로 동작한다.
+Claude Code Agent Harness는 Jay의 멀티 역할(CEO/CTO/CISO/CPO/CSO/데이터 사이언티스트)과 멀티 트랙(9개) 기술 스택을 위한 통합 Claude Code 개발 환경이다. agent-skills의 6단계 게이트 워크플로우(Define-Plan-Build-Verify-Review-Ship)를 뼈대로, ECC(Everything Claude Code) + GSD + supabase-agent-skills에서 **20개 cherry-pick + 1 자체 작성 (plan-checker) = 21 custom assets**한 도구를 레이어로, 11개 행동 원칙(CLAUDE.md) + Decision Making Universal Meta-Rule을 기반으로 동작한다.
+
+현재 **Phase 5.2 완료** (v26.7.0). 5개 신규 hook(mcp-pre-exec, checkpoint-snapshot, codebase-map, agentshield-gate, model-routing)으로 보안/관측/비용 기준 강화.
 
 성공 기준: 프로젝트 유형에 관계없이 `setup-harness.sh` 한 번 실행으로 Track별 환경이 자동 구성되고, 6단계 워크플로우가 Hook으로 강제되며, 경험이 자동 축적되는 시스템.
 
@@ -28,7 +30,7 @@ Claude Code Agent Harness는 Jay의 멀티 역할(CEO/CTO/CISO/CPO/CSO/데이터
 
 ### 2.2 Evidence
 
-- **정량 근거**: ECC 156개 중 cherry-pick 대상 14개 (D22 추가 후). 나머지 142개는 미사용.
+- **정량 근거**: ECC 156개 중 cherry-pick 18개 + GSD 부분 cherry-pick 2개 + 자체 작성 plan-checker 1 + 외부 플러그인 (supabase/agent-skills, agent-skills, impeccable 등). 총 cherrypicks.lock 매니페스트 20건.
 - **정성 근거**: 프로젝트 초기 설정에 매번 30분 이상 소요. Track별 스택 차이(Supabase vs Railway, React vs HTMX)를 매번 수동 판단.
 
 ### 2.3 Impact (풀지 않았을 때의 비용)
@@ -78,8 +80,10 @@ Claude Code Agent Harness는 Jay의 멀티 역할(CEO/CTO/CISO/CPO/CSO/데이터
 |---|---|---|---|
 | 프로젝트 초기화 시간 | 약 30분 (수동) | 5분 이내 (자동) | setup-harness.sh 실행 시간 |
 | 단계 건너뛰기 발생률 | 통제 불가 | 0% (Hook 차단) | gate-check.sh exit code 로그 |
-| ECC 스킬 사용률 | ~13% (20/156) | 100% (8/8 cherry-pick) | 설치된 스킬 대비 활용률 |
-| 보안 스캔 누락률 | 수동 의존 | 0% (Ship 게이트) | ship-checklist.md 체크리스트 |
+| Cherry-pick 사용률 | ~13% (20/156) | **100% (20/20 매니페스트)** (ECC 18 + GSD 2) | cherrypicks.lock + test-harness T4 |
+| 보안 스캔 누락률 | 수동 의존 | 0% (Ship 게이트) | ship-checklist.md + agentshield-gate.sh 자동 차단 |
+| MCP 서버 화이트리스트 | 없음 | opt-in (D35) | .mcp-allowlist + mcp-pre-exec.sh |
+| 토큰 비용 최적화 | 수동 | opt-in (D24) | model-routing.md rule 활성 시 |
 
 ---
 
@@ -90,10 +94,10 @@ Claude Code Agent Harness는 Jay의 멀티 역할(CEO/CTO/CISO/CPO/CSO/데이터
 3개 레이어로 구성한다:
 
 - **뼈대**: agent-skills 6단계 워크플로우 (`uzys:` 네임스페이스). Define-Plan-Build-Verify-Review-Ship.
-- **도구**: ECC cherry-pick 14개 (D21+D22 후. agents:2, skills:9, rules:1, commands:2). 매니페스트는 .dev-references/cherrypicks.lock. 전체 포크가 아닌 필요한 것만 선별.
-- **원칙**: 11개 행동 원칙 (CLAUDE.md, 현재 121줄). Karpathy LLM 관찰 + Anthropic Harness Design + HyperAgents 사상 종합.
+- **도구**: **20개 cherry-pick + 1 자체 작성 (plan-checker) = 21 custom assets** (Phase 5.1 후: ECC 18 + GSD 2 + supabase-agent-skills 1). agents 4(ECC) + skills 9(ECC) + rules 5(ECC 3 + GSD 2) + commands 3(ECC) + 자체 작성 plan-checker 1. 매니페스트는 `.dev-references/cherrypicks.lock`. 전체 포크가 아닌 필요한 것만 선별.
+- **원칙**: 11개 행동 원칙 + Decision Making Universal Meta-Rule (CLAUDE.md, 현재 150줄). Karpathy LLM 관찰 + Anthropic Harness Design + HyperAgents 사상 + harness-engineering-audit-2026-04 리서치 반영.
 
-자동화는 `setup-harness.sh`가 담당하고, 게이트 강제는 Hook 기반(gate-check.sh, exit code 2)으로 구현한다.
+자동화는 `setup-harness.sh`가 담당하고, 게이트 강제는 Hook 기반(gate-check.sh, spec-drift-check.sh, agentshield-gate.sh, mcp-pre-exec.sh, exit code 2)으로 구현한다.
 
 ### 5.2 Key Features / Capabilities
 
@@ -102,13 +106,24 @@ Claude Code Agent Harness는 Jay의 멀티 역할(CEO/CTO/CISO/CPO/CSO/데이터
 | 6단계 게이트 워크플로우 | Must | uzys:spec - uzys:plan - uzys:build - uzys:test - uzys:review - uzys:ship |
 | Hook 기반 게이트 차단 | Must | gate-check.sh로 이전 단계 미완료 시 차단 (exit code 2) |
 | Track별 자동 초기화 (9종) | Must | csr-supabase, csr-fastify, csr-fastapi, ssr-htmx, ssr-nextjs, data, executive, tooling, full |
-| ECC cherry-pick | Must | CL-v2, code-reviewer, security-reviewer, security-scan, checkpoint, strategic-compact |
+| Cherry-pick (21건) | Must | ECC + GSD + supabase-agent-skills. cherrypicks.lock 매니페스트 + sync-cherrypicks.sh |
 | reviewer subagent (SOD) | Must | context: fork로 구현과 검증 분리 |
 | auto memory + CL-v2 instinct | Must | 경험 축적, confidence scoring, Rule 승격 제안 |
 | protect-files.sh | Must | .env, lock 파일 등 보호 영역 Write/Edit 차단 |
+| SPEC drift 자동 검출 | Must | spec-drift-check.sh, ship 모드 exit 2 (D22) |
+| MCP pre-execution blocking | Must | .mcp-allowlist + mcp-pre-exec.sh, CVE 대응 (D35, Phase 5.2) |
+| AgentShield auto-gate | Must | /uzys:ship 전 자동 scan, CRITICAL 차단 (D27) |
+| Supabase agent-skills (csr-supabase/full) | Must | RLS/인덱스/SSR 전문 지식 (D23) |
+| Plan-checker (자체 작성) | Should | Goal-backward verification, Revision Gate 패턴 (D31) |
+| silent-failure-hunter (ECC agent) | Should | 숨은 에러 탐지, dev Track (P1-5) |
+| build-error-resolver (ECC agent) | Should | 빌드 에러 최소 diff 복구 (D30) |
+| Checkpoint auto-snapshot | Should | tool 40회마다 docs/checkpoints/ 스냅샷 (D25) |
+| Repository Map (codebase-map) | Should | session-start bash regex symbol 인덱스 (D26) |
 | uncommitted-check.sh | Should | 커밋되지 않은 변경이 있을 때 경고 |
 | spec-scaling 스킬 | Should | SPEC.md 300줄 초과 시 기능별 분리 + 마스터 라우트 |
 | strategic-compact 스킬 | Could | 컨텍스트 윈도우 효율적 관리 |
+| Model Routing rule (opt-in) | Could | 6-gate × Haiku/Sonnet/Opus 매핑, `--model-routing=on` (D24) |
+| GSD gates-taxonomy | Could | pre-flight/revision/escalation/abort 4유형 (P1-6) |
 
 ### 5.3 User Flow (핵심 시나리오)
 
@@ -185,12 +200,15 @@ DO NOT CHANGE:
 | 의존성 | 유형 | 비고 |
 |---|---|---|
 | addyosmani/agent-skills | 외부 플러그인 | 워크플로우 뼈대. 업데이트 시 호환성 확인 필요 |
-| affaan-m/everything-claude-code | 외부 리포 (cherry-pick) | CL-v2, agents, rules 소스 |
+| affaan-m/everything-claude-code | 외부 리포 (cherry-pick 18건) | agents 4, skills 9, rules 3, commands 3. cherrypicks.lock 매니페스트 |
+| gsd-build/gsd-2 | 외부 리포 (부분 cherry-pick 2건) | gates-taxonomy.md, planner-antipatterns.md. D6 "사상만 흡수" 부분 완화 |
+| supabase/agent-skills | 외부 플러그인 | csr-supabase/full Track 전문 지식 (RLS/인덱스/SSR). D23 |
 | pbakaus/impeccable | 외부 스킬 | 디자인 품질 도구 17개 |
-| anthropics/skills | 외부 플러그인 | document-skills (pptx/docx/xlsx/pdf) |
+| anthropics/skills | 외부 플러그인 | document-skills (pptx/docx/xlsx/pdf), executive/full Track |
 | Railway MCP/Plugin | 외부 서비스 | 배포 인프라 |
 | Supabase MCP | 외부 서비스 | csr-supabase Track 전용 |
-| kcchien/claude-code-statusline | 외부 도구 | 상태표시줄 (jq 의존) |
+| @owloops/claude-powerline | 외부 도구 | 상태표시줄 (D21 교체, 이전 claude-code-statusline) |
+| ecc-agentshield | npx 패키지 | 보안 스캔 (agentshield-gate.sh에서 호출, D27) |
 
 ### 6.6 Risks & Mitigations
 
@@ -246,7 +264,7 @@ DO NOT CHANGE:
   - V17: 코드 변경 후 커밋 없이 다음 작업 진행 시 경고 [uncommitted-check.sh 동작]
   - V18: SPEC.md 300줄 초과 시 분리 제안 [spec-scaling skill 활성]
 
-**Phase 3: Tooling Track + Dogfooding [In Progress]**
+**Phase 3: Tooling Track + Dogfooding [Complete]**
 
 - Scope:
   - 신규 tooling Track 추가 (cli-development.md rule + tooling.md project template)
@@ -257,23 +275,121 @@ DO NOT CHANGE:
 - Depends on: Phase 2
 - Deliverable: 9 Track 지원 setup-harness.sh, 자기 적용 완료, 동기화된 PRD
 - Done Criteria:
-  - tooling Track으로 setup-harness.sh 동작
-  - 이 프로젝트의 .claude/에 하네스 설치 완료
-  - 다음 작업이 /uzys:spec으로 시작 가능
+  - tooling Track으로 setup-harness.sh 동작 [검증 완료]
+  - 이 프로젝트의 .claude/에 하네스 설치 완료 [검증 완료]
+  - 다음 작업이 /uzys:spec으로 시작 가능 [검증 완료]
 
-**Phase 4: 실전 적용 + E2E 검증 [Future]**
+**Phase 4b: 필수성 감사 + 프로젝트 스코프화 [Complete]**
+
+- Tag: v26.2.0 ~ v26.2.1. Decisions: D16 ~ D22.
+- Scope:
+  - 글로벌 설치 경로 완전 제거 (`templates/global/` 폐기, D16)
+  - Decision Making Universal Meta-Rule 추가 (D17)
+  - `.dev-references/cherrypicks.lock` + `sync-cherrypicks.sh` 신규 (D18)
+  - `.claude/settings.json` 통합, `$CLAUDE_PROJECT_DIR` 사용 (D19)
+  - `.mcp.json` 프로젝트 스코프 (D20)
+  - 필수성 7기준 판정 기반 8개 제거 + 7개 추가 (D21, Phase 4b 본체)
+  - SPEC drift 자동 검출 `spec-drift-check.sh` (D22)
+  - test-harness.sh 도입 (T1~T11, 초기 52 PASS)
+- Deliverable: 글로벌 코드 0건, 매니페스트 기반 버전 관리, deterministic ship drift 차단
+- Done Criteria:
+  - `setup-harness.sh`에 글로벌 수정 명령 0건 [T7 검증]
+  - cherrypicks.lock 14개 항목 일관성 [T4 검증]
+  - ship 모드 spec-drift-check BLOCK 동작 [검증 완료]
+
+**Phase 5.1: P1 Cherry-picks [Complete]**
+
+- Tag: v26.5.0 ~ v26.6.0. Decisions: D28 ~ D32.
+- Scope: `harness-engineering-audit-2026-04.md` (`Docs/research/`) §11.2 P1 8건 중 5건 이행
+  - P1-3: `ecc-security-common.md` rule (ECC cherry-pick)
+  - P1-4: `ecc-performance-common.md` rule (ECC, modified — 글로벌 경로 1줄 수정)
+  - P1-5: `silent-failure-hunter.md` agent (ECC, dev Track)
+  - P1-6: `gsd-gates-taxonomy.md` rule (GSD **첫 cherry-pick**, 공통 Rule)
+  - B9b: `gsd-planner-antipatterns.md` rule (GSD, DEV_RULES)
+  - A14 (D30): `build-error-resolver.md` agent (ECC, dev Track)
+  - B1 (D31): `plan-checker.md` agent (**자체 작성 130줄**, GSD 961줄 재사용 불가 후 사상 흡수). Goal-backward verification + Revision Gate
+- Deferred (D29, Backlog): P1-1 skill-comply (Python 의존), P1-7 GSD session-state (중복), P1-9 구현 (D34 조사 후 D35 Phase 5.2로)
+- Deliverable: 21 cherry-pick 매니페스트 (ECC 18 + GSD 2 + supabase 1), 8 dev Track agents
+
+**Phase 5.2: 보안/운영 Hook [Complete]**
+
+- Tag: v26.3.0 ~ v26.7.0. Decisions: D23 ~ D27, D33 ~ D35.
+- Scope: 리서치 문서 §11.1 P0 5건 + 보안 hook 추가
+  - P0-1 (D23, v26.3.0): `supabase-agent-skills` 통합 (csr-supabase/full, `claude plugin install` 공식 경로)
+  - P0-2 (D24, v26.4.0): Model Routing rule (opt-in, `--model-routing=on`)
+  - P0-3 (D25, v26.4.0): Checkpoint auto-snapshot (`checkpoint-snapshot.sh`, tool 40회마다 `docs/checkpoints/`). **자동 /compact는 Claude Code 구조적 불가**로 명시, 대체 접근
+  - P0-4 (D26, v26.4.0): Repository Map (`codebase-map.sh`, Python/TS/JS/Rust/Go/Shell bash regex, 10분 TTL)
+  - P0-5 (D27, v26.4.0): AgentShield auto-gate (`agentshield-gate.sh`, /uzys:ship PreToolUse, CRITICAL + `.agentshield-ignore` 비매칭 시 exit 2)
+  - D33 조사: Memory Architecture 공존 확인 (Claude Code v2.1.59+ Memory는 CL-v2와 역할 분리, `Docs/research/memory-architecture-check.md`)
+  - D34 조사: MCP hook 기술 타당성 확인 (`Docs/research/mcp-pre-exec-feasibility.md`)
+  - D35 (v26.7.0): MCP pre-execution blocking 구현. `mcp-pre-exec.sh` (PreToolUse `mcp__.*` matcher), `.mcp-allowlist` (opt-in 화이트리스트, `.mcp.json`에서 자동 생성), 위험 파라미터 패턴 감지
+- Deliverable: 5 신규 hook + 1 신규 rule, test-harness 67 PASS
+- Done Criteria:
+  - T5 hooks=9 반영, 전 Track 설치 검증
+  - 5 시나리오 mcp-pre-exec unit test 통과 (T3.9-13)
+  - CVE-2025-59536, CVE-2026-21852 대응 (MCP 화이트리스트 기반)
+
+**Phase 5.3: 문서 현행화 + Phase 4 E2E 준비 [In Progress]**
+
+- Tag: v26.7.1 (patch, 문서만).
+- Scope:
+  - PRD 현행화 (본 섹션 포함)
+  - USAGE.md 신규 hook 섹션 + ECC 커맨드 3개 추가
+  - README.md `--model-routing` 플래그 예시
+  - LICENSE 파일 신규 (MIT, README 주장과 파일 부재 불일치 해소)
+  - `sync-cherrypicks.sh` 실행 → drift 확인
+  - Phase 4 Real-World E2E 준비 섹션 신규 (본 섹션 바로 아래)
+- Depends on: Phase 5.2 완료 (v26.7.0)
+- Deliverable: 현행화된 PRD/USAGE/README, LICENSE, v26.7.1 태그
+- Done Criteria:
+  - PRD Status Tracker = "Phase 5.3 (Documentation + E2E Preparation)"
+  - USAGE.md 11 ECC commands (`/ecc:harness-audit`, `/ecc:eval`, `/ecc:e2e` 추가)
+  - LICENSE 파일 존재
+  - sync-cherrypicks.sh 실행 결과 기록
+
+**Sync Status (2026-04-16)**:
+- Total cherrypicks.lock: **20건** (ECC 18 + GSD 2)
+- `=` 동일: 17건
+- `!` 변경 감지 (수동 머지 필요): **3건** (ecc-cl-v2, ecc-git-workflow, ecc-performance-common)
+- `✗` origin URL 불일치: **gsd 이전 기록 오기 (gsd-2 → get-shit-done), 본 Phase에서 수정** (D36)
+- 3 conflict 해소는 **별도 plan**. 각각은 이미 `modified: true` 상태라 로컬 변경 유지가 의도된 경우가 있음 (ecc-cl-v2: agents/ 제거, ecc-git-workflow: 글로벌 경로 제거, ecc-performance-common: 본 Phase 수정)
+
+**Phase 4: Real-World E2E Validation [Future — 대상 프로젝트 선택 대기]**
+
+> 주의: "Phase 4"는 시간 순서가 아닌 **논리 순서**. Phase 4b/5.x가 먼저 완료됐지만, 외부 프로젝트 E2E 실증은 여전히 Phase 4로 구분.
 
 - Scope:
-  - 외부 실제 프로젝트에 하네스 적용
-  - 전체 워크플로우 E2E 검증 (Define~Ship)
-  - CL-v2 instinct 축적 장기 검증
-  - Track 간 전환 테스트
-  - 불필요한 scaffold 식별 및 제거
-- Depends on: Phase 3
-- Deliverable: 검증 완료 보고서, 필요 시 조정된 Rules/Hooks
+  - 이 프로젝트 외부의 실제 프로젝트에 `setup-harness.sh` 적용
+  - 전체 워크플로우 E2E 실증 (Define → Plan → Build → Verify → Review → Ship)
+  - 최소 1주 관찰 + CL-v2 instinct 축적 실증
+  - Track 전환 (예: csr-supabase → data) 동작 확인
+  - 신규 hook 실전 동작 확인 (mcp-pre-exec, agentshield-gate, checkpoint-snapshot)
+- 대상 프로젝트 요구사항:
+  - 이 프로젝트(tooling Track) 외의 **dev Track** (csr-*, ssr-*, data)
+  - Git 저장소 존재
+  - 사용자가 실제 개발 중인 프로젝트 (더미 X)
+  - 최소 1주 이상 세션 가능
+- Depends on: Phase 5.3 완료
+- Deliverable:
+  - 대상 프로젝트 선택
+  - 설치 로그 + 첫 세션 log
+  - V3, V13 실증 결과 보고
+  - 발견된 Rules/Hooks 이슈 목록
 - Done Criteria:
-  - V3: 6단계 워크플로우 전체 동작
+  - V3: 6단계 워크플로우 전체 동작 (외부 프로젝트)
   - V13: /build 시 UI 파일이면 frontend-ui-engineering + Impeccable 자동 활성화
+  - Blocking 이슈 0건 (Minor 이슈는 허용)
+- **Note**: 대상 프로젝트 선택은 사용자 결정. 선택 후 별도 plan으로 시작
+
+**Phase 6: 장기 운영 [Future — 후보 재검토 필요]**
+
+- Scope 후보 (각각 별도 plan + 재평가 필요):
+  - **R3 Rule 효과 측정 자동화** — 리서치 문서 §R3. 단, skill-comply (Python 디렉토리)는 프로젝트 원칙 위반 가능성 → Skip 권장 상태
+  - **P10 분기 정리 (Harness Maintenance)** — Rule/Skill/Agent 비활성화 후 영향 측정. 다음 분기 초 (~2026-07) 착수
+  - **R2 Cross-project learning 전이** — instinct-export/import 이미 구현 (A3/A4). 실전 필요 시 수동 실행
+  - **신규 Track**: ML/research, 모바일, 게임 (사용자 수요 발생 시)
+- Dependencies: Phase 4 E2E 완료 후 실측 데이터 필요
+- Note: 이 Phase는 "실행 대기" 가 아닌 "재평가 필요". 리서치 문서의 Backlog 6건은 Skip 판정 유지
 
 ### 7.3 Rollback Criteria
 
@@ -336,16 +452,19 @@ DO NOT CHANGE:
 | 소스 | URL | 용도 |
 |------|-----|------|
 | agent-skills | github.com/addyosmani/agent-skills | 워크플로우 뼈대 (6-gate) |
-| ECC | github.com/affaan-m/everything-claude-code | cherry-pick 소스 (14개) |
-| Anthropic skills | github.com/anthropics/skills | pptx/docx/xlsx/pdf 공식 |
+| ECC | github.com/affaan-m/everything-claude-code | cherry-pick 소스 (18건) |
+| GSD | github.com/gsd-build/gsd-2 | 부분 cherry-pick (2건): gates-taxonomy, planner-antipatterns |
+| supabase/agent-skills | github.com/supabase/agent-skills | csr-supabase Track 전문 지식 (D23) |
+| Anthropic skills | github.com/anthropics/skills | pptx/docx/xlsx/pdf 공식 (executive/full) |
 | Railway | docs.railway.com | 배포/로그 |
 | Impeccable | github.com/pbakaus/impeccable | 디자인 품질 |
-| GSD | github.com/gsd-build/get-shit-done | 선택적 오케스트레이터 |
 | Karpathy LLM observations | — | 행동 원칙 1-4 출처 |
-| Anthropic Harness Design (2026.03) | — | 행동 원칙 5-6, 8, 10 출처 |
+| Anthropic Harness Design | code.claude.com/docs/en/hooks, code.claude.com/docs/en/memory | 행동 원칙 5-6, 8, 10 + D33/D34 조사 근거 |
 | HyperAgents (arxiv.org/abs/2603.19461) | — | 자기 개선 아키텍처 |
 | gitagent | github.com/open-gitagent/gitagent | SOD, SOUL.md, Git-native agents |
-| claude-code-statusline | github.com/kcchien/claude-code-statusline | 상태표시줄 |
+| @owloops/claude-powerline | github.com/owloops/claude-powerline | 상태표시줄 (D21 교체) |
+| HumanLayer — Harness Engineering | humanlayer.dev/blog/skill-issue-harness-engineering-for-coding-agents | "Coding Agent = AI Model(s) + Harness" 정의 |
+| `Docs/research/` | 본 레포 | harness-engineering-audit-2026-04, memory-architecture-check, mcp-pre-exec-feasibility |
 | Jay의 기존 리포 | uzysjung/std-dev-boilerplate, uzysjung/dyld-vantage | Rules 기반, Track별 참조 |
 
 ---
@@ -355,10 +474,12 @@ DO NOT CHANGE:
 | 항목 | 내용 |
 |------|------|
 | **Status** | In Progress |
-| **Current Phase** | Phase 3 (Tooling Track + Dogfooding) |
-| **Last Updated** | 2026-04-15 |
-| **Next Milestone** | Phase 3 완료 -- 자기 적용, 1차 검증, PRD 동기화 |
-| **Blockers** | 없음 (Phase 2 V4/V10/V14 검증 완료) |
+| **Current Phase** | Phase 5.3 (Documentation + E2E Preparation) |
+| **Last Updated** | 2026-04-16 |
+| **Latest Tag** | v26.7.0 (Phase 5.2 완료) → v26.7.1 (본 Phase 5.3, 진행 중) |
+| **Next Milestone** | Phase 4 Real-World E2E 실행 (외부 프로젝트 선택 대기) |
+| **Blockers** | Phase 4 E2E 대상 프로젝트 미선택 (구현상 blocker 아님, 실증 공백) |
+| **Known Skip** | Phase 6 skill-comply/stocktake (Python 도입 원칙 위반), CHANGELOG/CONTRIBUTING (개인 프로젝트) |
 
 ---
 
@@ -371,6 +492,9 @@ DO NOT CHANGE:
 | CR# | 날짜 | 유형 | 섹션 | 변경 내용 | 승인자 |
 |-----|------|------|------|-----------|--------|
 | -- | 2026-04-12 | -- | 전체 | 초기 버전. Phase 1 완료 상태에서 현황 반영 | Jay |
+| -- | 2026-04-14 | Major | §7.2, §12.2 | Phase 4b 본체 (D16~D22). 글로벌 경로 제거, cherrypicks.lock, spec-drift-check. v26.2.0 ~ v26.2.1 | Jay |
+| -- | 2026-04-15 | Major | §5.2, §7.2, §12.2 | Phase 5.1 (P1 cherry-picks) + Phase 5.2 (5 신규 hook + supabase-agent-skills). v26.3.0 ~ v26.7.0 | Jay |
+| -- | 2026-04-16 | Minor | §1, §4.3, §5.1-5.2, §6.5, §7.2, §11 | Phase 5.3 (문서 현행화). Phase 4 Real-World E2E 준비 섹션 신규. v26.7.1 | Jay |
 
 ### 12.2 Decision Log
 
@@ -413,6 +537,7 @@ DO NOT CHANGE:
 | D33 | 2026-04-15 | **E2 Memory Architecture 검증 완료** (조사) | Claude Code Memory v2.1.59+ 공식 feature 확인. `~/.claude/projects/<project>/memory/` 저장은 자동 생성 디렉토리 → "글로벌 절대 불변 원칙"에 포함되지 않음(설정 파일만 보호). CL-v2 instinct와 역할 중복 없음 (free-form 노트 vs 구조화 confidence + Rule 승격 파이프라인). 공존 유지 | CL-v2 제거 | Docs/research/memory-architecture-check.md (신규) |
 | D34 | 2026-04-15 | **P1-9 MCP pre-execution blocking 기술 타당성 확인** (조사) | Claude Code 공식 hook 문서: PreToolUse matcher가 `mcp__<server>__<tool>` regex 매처 지원 + exit 2 공식 blocking contract 확인. 기술적으로 완전히 가능. 구현은 Phase 5.2로 이월 (사용자 명시 "조사만") | P1-9를 영구 Backlog | Docs/research/mcp-pre-exec-feasibility.md (신규) — 구현 경로 + 7기준 재판정 (P1 → P0 승급 자격) 포함 |
 | D35 | 2026-04-15 | **Phase 5.2 P1-9 MCP pre-execution blocking 구현** (P0 승급 후 실행) | D34 조사 근거로 즉시 구현. PreToolUse `mcp__.*` matcher + `.mcp-allowlist` 기반 화이트리스트 + 위험 파라미터 패턴 감지. setup-harness.sh가 설치 시 `.mcp.json`의 서버로 `.mcp-allowlist` 자동 생성(jq). opt-in 구조 — 파일 없으면 gate 비활성 | 수동 scan 유지, 별도 plan 대기 | templates/hooks/mcp-pre-exec.sh, templates/mcp-allowlist.example, templates/settings.json PreToolUse matcher, setup-harness.sh, test-harness.sh T3 unit test 5건 |
+| D36 | 2026-04-16 | **cherrypicks.lock gsd URL 수정** (`gsd-2` → `get-shit-done`) | sync-cherrypicks.sh 실행 시 origin URL 불일치 감지. 실제 clone origin 확인 결과 `github.com/gsd-build/get-shit-done.git`. 이전 Explore 에이전트 보고 기반 `gsd-2` 오기재 정정 (P7 Fact vs Opinion 준수) | 기록 유지 | .dev-references/cherrypicks.lock |
 
 ### 12.3 Roadmap
 

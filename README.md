@@ -114,9 +114,13 @@ bash setup-harness.sh --track ssr-nextjs --gsd
 
 # Tooling track for meta-projects (bash, markdown, CLI)
 bash setup-harness.sh --track tooling
+
+# Enable model routing guide (6-gate × Haiku/Sonnet/Opus mapping, opt-in, default off)
+bash setup-harness.sh --track csr-fastapi --model-routing on
 ```
 
 > **Note**: setup-harness.sh는 항상 프로젝트 스코프. 글로벌 `~/.claude/`는 절대 수정하지 않음.
+> `--model-routing=on` 활성 시 `.claude/rules/model-routing.md` 가 설치되고, 각 `/uzys:*` 단계별 권장 모델 가이드가 참조 가능. 실제 `/model` 전환은 사용자 수동 (Claude Code 구조적 제약).
 
 ## References
 

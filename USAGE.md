@@ -88,6 +88,52 @@ TDD로 점진적 구현. 파일 유형에 따라 스킬 자동 선택.
 | `/ecc:promote` | 프로젝트 instinct → 글로벌 승격 |
 | `/ecc:projects` | 추적 중인 프로젝트 목록 |
 | `/ecc:checkpoint` | 진행 상태 스냅샷 (테스트/빌드/커버리지) |
+| `/ecc:harness-audit` | 7카테고리 deterministic 점수 (P10 분기 검토용) |
+| `/ecc:eval` | Acceptance criteria 기반 평가 실행 |
+| `/ecc:e2e` | Playwright E2E 테스트 생성/실행 |
+
+## Security & Quality Hooks (Phase 5.1/5.2)
+
+v26.4.0+부터 추가된 5개 hook은 `.claude/settings.json`을 통해 자동 등록됩니다. 각 hook의 역할과 토글 방법:
+
+### `mcp-pre-exec.sh` (D35, v26.7.0)
+
+- **역할**: `PreToolUse` matcher `mcp__.*` — MCP tool 호출을 **화이트리스트 + 위험 파라미터 패턴**으로 차단
+- **활성화**: `.mcp-allowlist` 파일 존재 시 (opt-in). `setup-harness.sh`가 설치 시 `.mcp.json` 서버 목록에서 자동 생성
+- **차단 방식**: 비매칭 서버 또는 `rm -rf` / `curl | sh` / `eval $...` 등 위험 패턴 감지 시 `exit 2`
+- **비활성**: `rm .mcp-allowlist` (파일 삭제) → 모든 MCP 호출 통과
+- **근거**: CVE-2025-59536, CVE-2026-21852 (hooks/MCP RCE) 대응
+
+### `checkpoint-snapshot.sh` (D25, v26.4.0)
+
+- **역할**: `PostToolUse` async — tool 호출 40회마다 `docs/checkpoints/YYYYMMDD-HHMMSS.md` 스냅샷 저장
+- **저장 내용**: git branch/HEAD, 변경 파일 목록, gate-status.json 현황
+- **경고 재표시**: 다음 `SessionStart` 에서 `.claude/compact-warning.flag` 감지 후 `/compact` 수동 호출 권장 메시지
+- **제약**: 자동 `/compact`는 **Claude Code 구조적 불가** (공식 hook 시스템에서 슬래시 커맨드 호출 불가). 대체 접근
+- **조정**: `CHECKPOINT_THRESHOLD=60 claude` 환경 변수로 threshold 조절
+
+### `codebase-map.sh` (D26, v26.4.0)
+
+- **역할**: `SessionStart` — 프로젝트 top-level symbol 인덱스를 `.claude/codebase-map.json`에 저장
+- **대상 언어**: Python (`def`/`class`), TypeScript/JavaScript (`function`/`class`/`export`), Rust (`fn`/`struct`/`impl`), Go (`func`/`type`), Shell (`function`)
+- **방식**: bash regex 기반 (Tree-sitter 불필요). 최대 500 파일
+- **TTL**: 10분 (stale 체크 후 자동 갱신)
+- **강제 갱신**: `bash .claude/hooks/codebase-map.sh --force`
+
+### `agentshield-gate.sh` (D27, v26.4.0)
+
+- **역할**: `PreToolUse` matcher `Skill` — `/uzys:ship` Skill 호출 전 `npx ecc-agentshield scan` 자동 실행
+- **차단**: CRITICAL finding + `.agentshield-ignore` 정규식 비매칭 시 `exit 2`
+- **False-positive 예외**: `.agentshield-ignore` 파일에 정규식 추가 (예: `git-policy.md`의 `--no-verify` 금지 명시 문장)
+- **비활성**: 파일 자체가 미존재이므로 unregister는 `.claude/settings.json`의 Skill matcher에서 해당 hook 제거
+
+### `model-routing.md` rule (D24, v26.4.0) — opt-in
+
+- **역할**: 6-gate × Haiku/Sonnet/Opus 매핑 가이드 Rule
+- **활성화**: `bash setup-harness.sh --track <track> --model-routing on` (기본 `off`)
+- **효과**: `.claude/rules/model-routing.md` 생성. 각 `/uzys:*` 단계에서 권장 모델 참조 가이드
+- **제약**: `/model` 자동 전환 **불가** (Claude Code 구조적). 사용자 수동 전환
+- **비활성**: `rm .claude/rules/model-routing.md` (파일 삭제) 또는 설치 시 플래그 미지정
 
 ## Impeccable (직접 호출)
 
