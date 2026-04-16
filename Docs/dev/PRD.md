@@ -354,32 +354,46 @@ DO NOT CHANGE:
 - `✗` origin URL 불일치: **gsd 이전 기록 오기 (gsd-2 → get-shit-done), 본 Phase에서 수정** (D36)
 - 3 conflict 해소는 **별도 plan**. 각각은 이미 `modified: true` 상태라 로컬 변경 유지가 의도된 경우가 있음 (ecc-cl-v2: agents/ 제거, ecc-git-workflow: 글로벌 경로 제거, ecc-performance-common: 본 Phase 수정)
 
-**Phase 4: Real-World E2E Validation [Future — 대상 프로젝트 선택 대기]**
+**Phase 4: Real-World E2E Validation [Partial — 단발 A/B 완료, 대화형 재실험 필요]**
 
 > 주의: "Phase 4"는 시간 순서가 아닌 **논리 순서**. Phase 4b/5.x가 먼저 완료됐지만, 외부 프로젝트 E2E 실증은 여전히 Phase 4로 구분.
 
-- Scope:
-  - 이 프로젝트 외부의 실제 프로젝트에 `setup-harness.sh` 적용
-  - 전체 워크플로우 E2E 실증 (Define → Plan → Build → Verify → Review → Ship)
-  - 최소 1주 관찰 + CL-v2 instinct 축적 실증
-  - Track 전환 (예: csr-supabase → data) 동작 확인
-  - 신규 hook 실전 동작 확인 (mcp-pre-exec, agentshield-gate, checkpoint-snapshot)
-- 대상 프로젝트 요구사항:
-  - 이 프로젝트(tooling Track) 외의 **dev Track** (csr-*, ssr-*, data)
-  - Git 저장소 존재
-  - 사용자가 실제 개발 중인 프로젝트 (더미 X)
-  - 최소 1주 이상 세션 가능
-- Depends on: Phase 5.3 완료
+**Phase 4a — A/B Controlled Experiment (단발 `claude -p`, v26.7.4 완료)**
+
+- 실험: `~/Development/phase4-experiment/{baseline,harness}` 동시 병렬 실행
+- 과제: Local Markdown Notebook (React + Tauri + SQLite), 원본 프롬프트
+- 결과 보고: `Docs/research/phase-4-ab-log.md`
+- **정량 결과**:
+  - B(harness) 비용 65% 감소 ($0.57 vs A $1.63)
+  - B 시간 84% 감소 (109s vs 677s)
+  - B output tokens 86% 감소 (5.2k vs 38.4k)
+  - B 자연 완료, A 예산 초과 오류 종료
+- **정성 결과**:
+  - B는 287줄 구조화된 SPEC 생성 (20 체크리스트 100% 커버)
+  - A는 Rust backend 615줄 + 빌드 설정 생성, React frontend 미완성 (예산 초과)
+  - B는 **단발 모드의 구조적 제약**으로 Build 단계 진입 불가 (6-gate 정책 의도)
+- **입증**: 비용/시간/예측 가능성/설계 품질 ✅ / 완성된 코드/전체 6-gate 동작 ❌
+- **판정**: **Partial** — 비용-효율 + 설계 품질 입증, 전체 워크플로우 실증은 대화형 필요
+
+**Phase 4b — 대화형 재실험 [Future]**
+
+- Scope: 대화형 세션에서 `/uzys:spec` → `/uzys:plan` → `/uzys:build` → `/uzys:test` → `/uzys:review` → `/uzys:ship` 순차 실행. A는 동일 대화형이지만 하네스 없음.
+- Depends on: Phase 4a 완료 (v26.7.4)
 - Deliverable:
-  - 대상 프로젝트 선택
-  - 설치 로그 + 첫 세션 log
-  - V3, V13 실증 결과 보고
-  - 발견된 Rules/Hooks 이슈 목록
+  - 대화형 A/B 로그
+  - Phase 5 신규 hook 실전 동작 확인 (mcp-pre-exec, agentshield-gate, checkpoint-snapshot, codebase-map)
+  - V3 (6단계 전체) + V13 (UI 자동 활성화) 실증
 - Done Criteria:
-  - V3: 6단계 워크플로우 전체 동작 (외부 프로젝트)
-  - V13: /build 시 UI 파일이면 frontend-ui-engineering + Impeccable 자동 활성화
-  - Blocking 이슈 0건 (Minor 이슈는 허용)
-- **Note**: 대상 프로젝트 선택은 사용자 결정. 선택 후 별도 plan으로 시작
+  - 6-gate 전체 동작 확인
+  - Blocking 이슈 0건
+  - 대화형 A/B 비교 (같은 과제, 수정 요청 허용)
+- **Note**: 사용자가 claude 세션 직접 실행 필요 (대화형은 내가 자동 실행 불가)
+
+**Phase 4c — `-p` 체이닝 자동화 [Future, 선택]**
+
+- Scope: 6개 단계를 순차 `claude -p` 호출로 자동화 — `spec.sh`, `plan.sh`, `build.sh` 등
+- 목적: 단발 모드에서도 6-gate 전체 실행 가능하게 해 N=2+ 반복 실험 가능하게 함
+- Deliverable: `scripts/phase4-chained-run.sh` + 사용 가이드
 
 **Phase 6: 장기 운영 [Future — 후보 재검토 필요]**
 
@@ -474,11 +488,12 @@ DO NOT CHANGE:
 | 항목 | 내용 |
 |------|------|
 | **Status** | In Progress |
-| **Current Phase** | Phase 5.3 (Documentation + E2E Preparation) |
+| **Current Phase** | Phase 4a 완료 (단발 A/B) / Phase 4b 대화형 재실험 대기 |
 | **Last Updated** | 2026-04-16 |
-| **Latest Tag** | v26.7.0 (Phase 5.2 완료) → v26.7.1 (본 Phase 5.3, 진행 중) |
-| **Next Milestone** | Phase 4 Real-World E2E 실행 (외부 프로젝트 선택 대기) |
-| **Blockers** | Phase 4 E2E 대상 프로젝트 미선택 (구현상 blocker 아님, 실증 공백) |
+| **Latest Tag** | v26.7.3 → v26.7.4 (Phase 4a 실험 로그 + 분석) |
+| **Next Milestone** | Phase 4b 대화형 재실험 (사용자 실행 필요) OR Phase 4c `-p` 체이닝 자동화 |
+| **Blockers** | 대화형 세션은 내가 자동 실행 불가 — 사용자 수동 필요 |
+| **Phase 4a 결과** | Partial 입증 — 비용 -65%, 시간 -84%, output token -86%, B 자연 완료 vs A 예산 초과 오류. 단발 모드 구조적 제약으로 Build 미진입 |
 | **Known Skip** | Phase 6 skill-comply/stocktake (Python 도입 원칙 위반), CHANGELOG/CONTRIBUTING (개인 프로젝트) |
 
 ---
@@ -538,6 +553,8 @@ DO NOT CHANGE:
 | D34 | 2026-04-15 | **P1-9 MCP pre-execution blocking 기술 타당성 확인** (조사) | Claude Code 공식 hook 문서: PreToolUse matcher가 `mcp__<server>__<tool>` regex 매처 지원 + exit 2 공식 blocking contract 확인. 기술적으로 완전히 가능. 구현은 Phase 5.2로 이월 (사용자 명시 "조사만") | P1-9를 영구 Backlog | Docs/research/mcp-pre-exec-feasibility.md (신규) — 구현 경로 + 7기준 재판정 (P1 → P0 승급 자격) 포함 |
 | D35 | 2026-04-15 | **Phase 5.2 P1-9 MCP pre-execution blocking 구현** (P0 승급 후 실행) | D34 조사 근거로 즉시 구현. PreToolUse `mcp__.*` matcher + `.mcp-allowlist` 기반 화이트리스트 + 위험 파라미터 패턴 감지. setup-harness.sh가 설치 시 `.mcp.json`의 서버로 `.mcp-allowlist` 자동 생성(jq). opt-in 구조 — 파일 없으면 gate 비활성 | 수동 scan 유지, 별도 plan 대기 | templates/hooks/mcp-pre-exec.sh, templates/mcp-allowlist.example, templates/settings.json PreToolUse matcher, setup-harness.sh, test-harness.sh T3 unit test 5건 |
 | D36 | 2026-04-16 | **cherrypicks.lock gsd URL 수정** (`gsd-2` → `get-shit-done`) | sync-cherrypicks.sh 실행 시 origin URL 불일치 감지. 실제 clone origin 확인 결과 `github.com/gsd-build/get-shit-done.git`. 이전 Explore 에이전트 보고 기반 `gsd-2` 오기재 정정 (P7 Fact vs Opinion 준수) | 기록 유지 | .dev-references/cherrypicks.lock |
+| D37 | 2026-04-16 | **`.mcp-allowlist` 자동 생성 순서 버그 fix** | Phase 4 A/B 실험 준비 중 발견. `.mcp-allowlist` 생성 로직이 `.mcp.json` 생성보다 앞에 있어서 **첫 설치 시 미생성**. 두 번째 실행부터 생성되는 bug. 이전 dogfooding sync는 재실행이라 우연히 성공했음. 수정: 생성 블록을 `.mcp.json` 생성 뒤로 이동 + test-harness T5에 ALLOWLIST_OK 체크 추가 | — | setup-harness.sh line 276→287, test-harness.sh T5, v26.7.3 |
+| D38 | 2026-04-16 | **Phase 4a 단발 A/B 실험 — Partial 입증** | A/B controlled experiment 실행. B(harness) 결과: 비용 -65%, 시간 -84%, output tokens -86%, 자연 완료 / A: 예산 초과 오류 종료. 정성적: B 287줄 고품질 SPEC (20/20), A Rust backend 615줄+빌드 설정 (frontend 미완성, 7/20). **단발 모드 구조적 한계로 하네스는 Define 이후 진입 불가** (설계 의도). 판정: Partial — 비용/시간/품질 입증, 전체 워크플로우는 대화형 필요. Phase 4b(대화형) 후속 plan 필요 | 단발만으로 Pass 판정 | Docs/research/phase-4-ab-log.md (신규), PRD §7.2 Phase 4a/4b/4c 재구조 |
 
 ### 12.3 Roadmap
 
