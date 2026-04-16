@@ -303,6 +303,56 @@ cd "$ROOT"
 rm -rf "$T11_DIR"
 
 # ============================================================
+# T12. 설치 명령 정합성 검증 (카탈로그 vs setup-harness.sh)
+# ============================================================
+section "T12. Install Catalog Consistency"
+
+# 카탈로그 필수 플러그인 (setup-harness.sh에 grep 존재해야 함)
+for ITEM in "addy-agent-skills" "railway-plugin" "supabase-agent-skills" "anthropic-agent-skills" "c-level-skills" "finance-skills"; do
+  if grep -q "$ITEM" setup-harness.sh 2>/dev/null; then
+    pass "plugin: $ITEM"
+  else
+    fail "plugin: $ITEM 누락"
+  fi
+done
+
+# 카탈로그 필수 스킬 (npx skills add)
+for ITEM in "impeccable" "playwright-skill" "find-skills" "react-best-practices" "shadcn/ui" "web-design-guidelines" "orchestkit" "next-skills"; do
+  if grep -q "$ITEM" setup-harness.sh 2>/dev/null; then
+    pass "skill: $ITEM"
+  else
+    fail "skill: $ITEM 누락"
+  fi
+done
+
+# 카탈로그 필수 MCP (templates/mcp.json)
+for ITEM in "context7" "github" "chrome-devtools"; do
+  if grep -q "$ITEM" templates/mcp.json 2>/dev/null; then
+    pass "mcp: $ITEM"
+  else
+    fail "mcp: $ITEM 누락"
+  fi
+done
+
+# Track별 조건부 MCP (setup-harness.sh에서 jq 추가)
+for ITEM in "railway" "supabase"; do
+  if grep -q "$ITEM" setup-harness.sh 2>/dev/null; then
+    pass "mcp-conditional: $ITEM"
+  else
+    fail "mcp-conditional: $ITEM 누락"
+  fi
+done
+
+# /uzys:auto 커맨드 존재
+[ -f templates/commands/uzys/auto.md ] && pass "command: uzys:auto" || fail "command: uzys:auto 누락"
+
+# install.sh 존재
+[ -f install.sh ] && pass "install.sh" || fail "install.sh 누락"
+
+# gate-check.sh에 auto 예외 존재
+grep -q "uzys:auto" templates/hooks/gate-check.sh 2>/dev/null && pass "gate-check: auto 예외" || fail "gate-check: auto 미지원"
+
+# ============================================================
 # Summary
 # ============================================================
 echo ""

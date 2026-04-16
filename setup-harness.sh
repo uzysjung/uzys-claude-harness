@@ -207,7 +207,7 @@ fi
 # --- Commands ---
 # uzys: commands (dev tracks only)
 if [ "$TRACK" != "executive" ]; then
-  for cmd in spec plan build test review ship; do
+  for cmd in spec plan build test review ship auto; do
     safe_copy "$TEMPLATES/commands/uzys/${cmd}.md" "$PROJ/commands/uzys/${cmd}.md"
   done
 fi
@@ -373,6 +373,9 @@ if [ "$TRACK" != "executive" ]; then
   else
     npm install -g agent-browser 2>/dev/null && info "installed" || install_fail "agent-browser"
   fi
+
+  echo -n "  architecture-decision-record..."
+  npx skills add yonatangross/orchestkit 2>/dev/null && info "installed" || warn "already installed"
 fi
 
 # Supabase MCP는 .mcp.json으로 이관됨 (claude mcp add 제거)
@@ -396,6 +399,9 @@ case "$TRACK" in
 
     echo -n "  shadcn-ui..."
     npx skills add shadcn/ui 2>/dev/null && info "installed" || warn "already installed"
+
+    echo -n "  web-design-guidelines..."
+    npx skills add vercel-labs/agent-skills --skill web-design-guidelines 2>/dev/null && info "installed" || warn "already installed"
     ;;
 esac
 
@@ -406,12 +412,20 @@ case "$TRACK" in
     ;;
 esac
 
-# Anthropic document-skills (executive)
+# Anthropic document-skills + executive plugins
 case "$TRACK" in
   executive|full)
     echo -n "  Anthropic document-skills..."
     claude plugin marketplace add anthropics/skills 2>/dev/null || true
     claude plugin install document-skills@anthropic-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+
+    echo -n "  c-level-skills..."
+    claude plugin marketplace add alirezarezvani/c-level-skills 2>/dev/null || true
+    claude plugin install c-level-skills@c-level-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+
+    echo -n "  finance-skills..."
+    claude plugin marketplace add alirezarezvani/finance-skills 2>/dev/null || true
+    claude plugin install finance-skills@finance-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
     ;;
 esac
 
@@ -519,21 +533,103 @@ else
   echo -e "${YELLOW}========================================${NC}"
 fi
 
+# === 설치 결과 검증 테이블 ===
 echo ""
-echo -e "Installed:"
-echo -e "  Track: ${BOLD}$TRACK${NC}"
-echo -e "  Rules: $(ls "$PROJ/rules/"*.md 2>/dev/null | wc -l | tr -d ' ') files"
-echo -e "  Commands: uzys($(ls "$PROJ/commands/uzys/"*.md 2>/dev/null | wc -l | tr -d ' ')) ecc($(ls "$PROJ/commands/ecc/"*.md 2>/dev/null | wc -l | tr -d ' '))"
-echo -e "  Skills: $(find "$PROJ/skills" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' ') skills"
-echo -e "  Agents: $(ls "$PROJ/agents/"*.md 2>/dev/null | wc -l | tr -d ' ') project (전부 .claude/agents/, 글로벌 없음)"
-echo -e "  GSD: $([ "$GSD" = true ] && echo "yes" || echo "no")"
+echo -e "${BOLD}┌─────────────────────────────────────────────────┐${NC}"
+echo -e "${BOLD}│  Installation Report — $TRACK${NC}"
+echo -e "${BOLD}├─────────────────┬──────────┬──────────┬─────────┤${NC}"
+printf  "${BOLD}│ %-15s │ %-8s │ %-8s │ %-7s │${NC}\n" "Category" "Found" "Expected" "Status"
+echo -e "${BOLD}├─────────────────┼──────────┼──────────┼─────────┤${NC}"
+
+# Rules
+RULES_FOUND=$(ls "$PROJ/rules/"*.md 2>/dev/null | wc -l | tr -d ' ')
+if [ "$TRACK" = "executive" ]; then RULES_EXPECTED=3; elif [ "$TRACK" = "tooling" ]; then RULES_EXPECTED=12; elif [ "$TRACK" = "full" ]; then RULES_EXPECTED=22; elif [ "$TRACK" = "data" ]; then RULES_EXPECTED=13; else RULES_EXPECTED=16; fi
+RULES_STATUS=$([ "$RULES_FOUND" -ge "$RULES_EXPECTED" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
+printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Rules" "$RULES_FOUND" "$RULES_EXPECTED" "$RULES_STATUS"
+
+# Commands
+UZYS_FOUND=$(ls "$PROJ/commands/uzys/"*.md 2>/dev/null | wc -l | tr -d ' ')
+ECC_FOUND=$(ls "$PROJ/commands/ecc/"*.md 2>/dev/null | wc -l | tr -d ' ')
+if [ "$TRACK" = "executive" ]; then UZYS_EXP=0; else UZYS_EXP=7; fi  # 6 + auto
+ECC_EXP=10
+UZYS_STATUS=$([ "$UZYS_FOUND" -ge "$UZYS_EXP" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
+ECC_STATUS=$([ "$ECC_FOUND" -ge "$ECC_EXP" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
+printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Commands uzys:" "$UZYS_FOUND" "$UZYS_EXP" "$UZYS_STATUS"
+printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Commands ecc:" "$ECC_FOUND" "$ECC_EXP" "$ECC_STATUS"
+
+# Agents
+AGENTS_FOUND=$(ls "$PROJ/agents/"*.md 2>/dev/null | wc -l | tr -d ' ')
+if [ "$TRACK" = "executive" ]; then AGENTS_EXP=5; else AGENTS_EXP=8; fi
+AGENTS_STATUS=$([ "$AGENTS_FOUND" -ge "$AGENTS_EXP" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
+printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Agents" "$AGENTS_FOUND" "$AGENTS_EXP" "$AGENTS_STATUS"
+
+# Hooks
+HOOKS_FOUND=$(ls "$PROJ/hooks/"*.sh 2>/dev/null | wc -l | tr -d ' ')
+HOOKS_EXP=9
+HOOKS_STATUS=$([ "$HOOKS_FOUND" -ge "$HOOKS_EXP" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
+printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Hooks" "$HOOKS_FOUND" "$HOOKS_EXP" "$HOOKS_STATUS"
+
+# Skills
+SKILLS_FOUND=$(find "$PROJ/skills" -maxdepth 2 -name "SKILL.md" -o -name "config.json" 2>/dev/null | xargs -I{} dirname {} | sort -u | wc -l | tr -d ' ')
+if [ "$TRACK" = "executive" ]; then SKILLS_EXP=5; else SKILLS_EXP=7; fi
+SKILLS_STATUS=$([ "$SKILLS_FOUND" -ge "$SKILLS_EXP" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
+printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Skills" "$SKILLS_FOUND" "$SKILLS_EXP" "$SKILLS_STATUS"
+
+# MCP servers
+if [ -f ".mcp.json" ] && command -v jq &>/dev/null; then
+  MCP_FOUND=$(jq '.mcpServers | keys | length' .mcp.json 2>/dev/null || echo "?")
+else
+  MCP_FOUND="?"
+fi
+case "$TRACK" in
+  csr-supabase) MCP_EXP=5 ;;
+  csr-fast*|ssr-*) MCP_EXP=4 ;;
+  full) MCP_EXP=5 ;;
+  *) MCP_EXP=3 ;;
+esac
+MCP_STATUS=$([ "$MCP_FOUND" != "?" ] && [ "$MCP_FOUND" -ge "$MCP_EXP" ] && echo "${GREEN}✅${NC}" || echo "${YELLOW}⚠️${NC}")
+printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "MCP servers" "$MCP_FOUND" "$MCP_EXP" "$MCP_STATUS"
+
+# .mcp-allowlist
+if [ -f ".mcp-allowlist" ]; then
+  ALLOW_STATUS="${GREEN}✅${NC}"
+  ALLOW_FOUND="yes"
+else
+  ALLOW_STATUS="${YELLOW}⚠️${NC}"
+  ALLOW_FOUND="no"
+fi
+printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" ".mcp-allowlist" "$ALLOW_FOUND" "yes" "$ALLOW_STATUS"
+
+# settings.json
+if [ -f "$PROJ/settings.json" ]; then
+  SETTINGS_STATUS="${GREEN}✅${NC}"
+else
+  SETTINGS_STATUS="${RED}❌${NC}"
+fi
+printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "settings.json" "$([ -f "$PROJ/settings.json" ] && echo yes || echo no)" "yes" "$SETTINGS_STATUS"
+
+# Plugins (network-dependent, count install attempts)
+PLUGIN_STATUS="${YELLOW}⚠️${NC}"
+if [ "$INSTALL_FAILURES" -eq 0 ]; then
+  PLUGIN_STATUS="${GREEN}✅${NC}"
+fi
+printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Plugins" "tried" "network" "$PLUGIN_STATUS"
+
+echo -e "${BOLD}└─────────────────┴──────────┴──────────┴─────────┘${NC}"
+
 if [ "$INSTALL_FAILURES" -gt 0 ]; then
   echo ""
   echo -e "  ${RED}Install failures ($INSTALL_FAILURES):${NC}"
   echo -e "$FAILED_ITEMS"
 fi
+
+echo ""
+echo -e "  Track: ${BOLD}$TRACK${NC}"
+echo -e "  GSD: $([ "$GSD" = true ] && echo "yes" || echo "no")"
+echo -e "  Model Routing: $([ "$MODEL_ROUTING" = "on" ] && echo "on" || echo "off (default)")"
 echo ""
 echo -e "${BOLD}Next steps:${NC}"
 echo -e "  1. Start Claude Code: ${CYAN}claude${NC}"
 echo -e "  2. Begin workflow:    ${CYAN}/uzys:spec${NC}"
+echo -e "  3. Auto workflow:     ${CYAN}/uzys:auto${NC} (spec 완료 후)"
 echo ""

@@ -19,8 +19,10 @@ else
 fi
 
 # uzys: 커맨드가 아니면 통과
+# uzys:auto는 게이트 체크 제외 (auto 커맨드가 내부에서 gate-status 직접 관리)
 case "$SKILL_NAME" in
   uzys:spec|uzys:plan|uzys:build|uzys:test|uzys:review|uzys:ship) ;;
+  uzys:auto) exit 0 ;;
   *) exit 0 ;;
 esac
 
