@@ -3,11 +3,147 @@
 > **과제**: Local Markdown Notebook (React + Tauri + SQLite + shadcn/ui)
 > **과제 정의**: `~/Development/phase4-experiment/PROMPT.txt`
 > **Run-book**: `Docs/research/phase-4-e2e-runbook.md`
-> **실험일**: 2026-04-16
+> **Run 1**: 2026-04-16 오전 (예산 1.5 USD) — A1/B1
+> **Run 2**: 2026-04-16 오후 (예산 30 USD) — A2/B2
 > **실행 방식**: `claude -p` 비대화형 단발, `run_in_background` 병렬
 > **실행자**: Claude Code (자동)
 > **하네스 버전**: v26.7.3 (B만)
 > **제약**: 단발 비대화형 모드 — 대화형 세션의 수정 요청/round trip 측정 불가
+
+---
+
+## Run 2 요약 (예산 30 USD 재실험, 2026-04-16 오후)
+
+사용자 지시: Run 1의 A1이 예산 초과로 중단됐으므로 예산을 $30으로 늘려 완주 가능한지 재실험.
+
+**핵심 발견**: A1의 $1.63 중단은 **"자연 완료 직전 $0.04 부족"** — A2는 예산 30에서 **$1.66로 자연 완료**. 즉 Run 1의 A1 중단은 "완료 직전 예산 차단"이었고, 실제 과제 비용은 **약 $1.66**. 예산 설정이 결과를 결정하는 임계 구간에 있었음.
+
+### Run 2 측정
+
+| 지표 | A2 (baseline) | B2 (harness) |
+|------|---|---|
+| **비용** | **$1.662** (예산 30의 5.5%) | $0.735 (예산 30의 2.4%) |
+| **Wall clock** | 775초 (12분 55초) | 192초 (3분 12초) |
+| **num_turns** | **50** | 13 |
+| **output tokens** | 25,970 | 8,014 |
+| **cache_read** | **1,371,622 (1.37M)** | — |
+| **stop_reason** | **`end_turn` (자연 완료)** | `end_turn` |
+| **is_error** | false | false |
+| **소스 라인** | **1,785** (Rust 782 + React 1003) | 0 |
+| **SPEC 라인** | 0 | 328 |
+| **TypeScript check** | **PASS** (tsc --noEmit exit 0) | N/A |
+| **코드 완성도** | **19-20 / 20** | 0 / 20 |
+| **SPEC 완성도** | 0 / 20 | **20 / 20** |
+
+### A1 vs A2 비교 (baseline 예산 효과)
+
+| 지표 | A1 (예산 1.5) | A2 (예산 30) | 차이 |
+|------|---|---|---|
+| 비용 | $1.626 | $1.662 | **+$0.036 (+2.2%)** |
+| Wall | 677s | 775s | +14% |
+| num_turns | 31 | **50** | +61% |
+| output tokens | 38,424 | **25,970** | **−32%** |
+| cache_read | 233,024 | **1,371,622** | **×5.9** |
+| stop_reason | **`tool_use` (중단)** | `end_turn` (완료) | — |
+| is_error | **true (예산 초과)** | false | — |
+| 소스 라인 | 615 | **1,785** | +190% |
+
+**주목**:
+- A2는 **turns 61% 증가**에도 비용 **2.2%만** 증가. `cache_read` 5.9배 폭증이 비용을 억제.
+- A2가 output tokens는 오히려 **-32%** (assistant 응답 텍스트 감소, tool use 증가). 즉 "말보다 실행"이 많은 세션.
+- A1 → A2 차이는 **0.04 달러** (= 사과 1/4 개 값). 예산 설정이 성공/실패의 절대 임계.
+
+### B1 vs B2 비교 (harness 예산 효과)
+
+| 지표 | B1 (예산 1.5) | B2 (예산 30) | 차이 |
+|------|---|---|---|
+| 비용 | $0.574 | $0.735 | +28% |
+| Wall | 109s | 192s | +76% |
+| num_turns | 9 | 13 | +44% |
+| output tokens | 5,220 | 8,014 | +54% |
+| SPEC 라인 | 287 | 328 | +14% |
+| SPEC 섹션 | 8 | **11** | +3 섹션 |
+
+**주목**:
+- B2는 예산이 넉넉해져 **SPEC을 더 상세하게** 작성 (11 섹션: Data Model 세분화 + Key Behaviors + Project-specific Code Style + Phases 예정). 품질 심화.
+- 예산 무관 **Define 단계에서 자연 종료** — 일관된 행동. 즉 하네스는 단발 모드에서 Build 진입을 의도적으로 차단.
+
+### A2 vs B2 (Run 2 최종 비교)
+
+| 지표 | A2 | B2 | A2 우위 | B2 우위 |
+|------|---|---|---|---|
+| 비용 | $1.662 | $0.735 | — | **2.26×** |
+| Wall | 775s | 192s | — | **4.03×** |
+| output tokens | 25,970 | 8,014 | — | **3.24×** |
+| 소스 라인 | 1,785 | 0 | **∞** | — |
+| SPEC 라인 | 0 | 328 | — | **∞** |
+| 코드 완성도 | 19-20/20 | 0/20 | **∞** | — |
+| SPEC 완성도 | 0/20 | 20/20 | — | **∞** |
+| TypeScript PASS | ✅ | N/A | — | — |
+
+### Run 2 해석
+
+**1. A2는 단발 모드로 중급 프로젝트 완주 가능 입증**
+
+A2는 **1,785줄 소스 + TypeScript PASS + 20/20 기능**을 $1.66 / 13분에 완성. React+Tauri 중급 프로젝트가 단발 Opus 4.6 단일 호출로 충분히 가능함을 실증. 이는 "baseline Claude의 단발 성능이 생각보다 강력"하다는 발견.
+
+**2. 하네스의 단발 부적합성 재확인**
+
+B2도 예산이 20배 늘었지만 여전히 SPEC만 328줄 작성 후 자연 종료. 예산과 무관하게 **6-gate 정책이 Build 단계 진입을 차단**. 이는 설계 의도 (Define 없이 Build 금지). 단발 모드는 **하네스의 사용 시나리오 아님**.
+
+**3. 임계 예산의 위험**
+
+A1의 $1.63 중단은 **자연 완료 직전 $0.04 부족**. `max-budget-usd` 를 과제 실비의 1.01배 이하로 잡으면 거의 완료됐는데 실패하는 "근접 실패" 리스크. 실전에서는 예산을 **예상치의 2배 이상** 잡아야 안전.
+
+**4. Cache read 효율**
+
+A2의 cache_read 1.37M 토큰은 prompt caching이 장기 세션에서 극도로 효과적임을 보여줌. turns +61%에 비용 +2.2%만 증가. **Opus 4.6[1m]의 caching 인프라가 장기 에이전트 워크플로우를 경제적으로 가능하게 함**.
+
+**5. A2는 이 실험의 진짜 결과**
+
+A1은 "임계 예산 실패", A2는 "실비 완료". 두 수치를 모두 봐야 실전 맥락 이해 가능. Run 2가 **실제 baseline 성능의 정확한 측정**.
+
+### 하네스 효용 재판정 (Run 2 반영)
+
+| 측면 | Run 1 판정 | Run 2 재판정 | 근거 |
+|------|---|---|---|
+| 비용 효율 | ✅ B 35% | ✅ B 44% (0.735/1.662) | 단발에서 하네스가 SPEC만 하니 비용 자연 낮음 |
+| 시간 효율 | ✅ B 16% | ✅ B 25% | 동일 이유 |
+| 예측 가능성 | ✅ B 자연 완료, A 오류 | ⚠ **둘 다 자연 완료** | A는 충분 예산 시 정상 |
+| 완성된 코드 | ❌ A도 미완성 | ❌ **A 압도적** (A 완성, B 코드 0) | 하네스는 단발로 Build 못 감 |
+| 설계 품질 | ✅ B SPEC | ✅ B SPEC | 변화 없음 |
+| 6-gate 전체 동작 | ❌ | ❌ | 단발 모드 구조 제약 |
+
+**Run 2 최종 판정**: **하네스는 단발 모드에 부적합**. 비용/시간은 낮지만 그건 "덜 했기 때문". 같은 단발 조건에서 baseline이 "더 적은 비용 대비 더 많은 완성". 하네스의 가치 검증은 **대화형 필수**.
+
+### 재현 (Run 2)
+
+```bash
+EXP=~/Development/phase4-experiment
+cd $EXP/baseline2 && claude -p "$(cat $EXP/PROMPT.txt)" --output-format json --max-budget-usd 30 --permission-mode bypassPermissions > /tmp/phase4-a2-result.json &
+cd $EXP/harness2 && claude -p "$(cat $EXP/PROMPT.txt)" --output-format json --max-budget-usd 30 --permission-mode bypassPermissions > /tmp/phase4-b2-result.json &
+wait
+
+# 분석
+jq '.total_cost_usd, .num_turns, .stop_reason, .is_error' /tmp/phase4-a2-result.json
+jq '.total_cost_usd, .num_turns, .stop_reason, .is_error' /tmp/phase4-b2-result.json
+```
+
+### Run 2 결론 요약
+
+- **A2 단발 완주 성공**: $1.66, 775s, 1785줄 소스, TypeScript PASS, 20/20 기능
+- **B2 Define 단계 자연 완료**: $0.74, 192s, SPEC 328줄, 20/20 명세
+- **하네스는 단발 모드에서 "더 싸고 덜 완성"**. 대화형 아니면 가치 측정 불가
+- **A1 중단은 "$0.04 부족"이 원인**. 예산 설정이 결정적
+- **Phase 4a 최종 판정 업데이트**: "부분 입증"은 여전하지만, **단발 모드에서는 baseline 우위**. 하네스의 진짜 가치는 대화형 세션에서만 측정 가능 → **Phase 4b 대화형 재실험이 필수**
+
+---
+
+## Run 1 (예산 1.5 USD, 오전)
+
+> 이하는 Run 1 오전 결과. Run 2와 비교 참조용.
+
+---
 
 ---
 

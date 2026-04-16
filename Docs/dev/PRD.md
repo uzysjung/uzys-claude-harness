@@ -358,22 +358,28 @@ DO NOT CHANGE:
 
 > 주의: "Phase 4"는 시간 순서가 아닌 **논리 순서**. Phase 4b/5.x가 먼저 완료됐지만, 외부 프로젝트 E2E 실증은 여전히 Phase 4로 구분.
 
-**Phase 4a — A/B Controlled Experiment (단발 `claude -p`, v26.7.4 완료)**
+**Phase 4a — A/B Controlled Experiment (단발 `claude -p`, v26.7.4 ~ v26.7.5 완료)**
 
-- 실험: `~/Development/phase4-experiment/{baseline,harness}` 동시 병렬 실행
+- 실험: `~/Development/phase4-experiment/{baseline,harness,baseline2,harness2}` 병렬 실행
 - 과제: Local Markdown Notebook (React + Tauri + SQLite), 원본 프롬프트
 - 결과 보고: `Docs/research/phase-4-ab-log.md`
-- **정량 결과**:
-  - B(harness) 비용 65% 감소 ($0.57 vs A $1.63)
-  - B 시간 84% 감소 (109s vs 677s)
-  - B output tokens 86% 감소 (5.2k vs 38.4k)
-  - B 자연 완료, A 예산 초과 오류 종료
-- **정성 결과**:
-  - B는 287줄 구조화된 SPEC 생성 (20 체크리스트 100% 커버)
-  - A는 Rust backend 615줄 + 빌드 설정 생성, React frontend 미완성 (예산 초과)
-  - B는 **단발 모드의 구조적 제약**으로 Build 단계 진입 불가 (6-gate 정책 의도)
-- **입증**: 비용/시간/예측 가능성/설계 품질 ✅ / 완성된 코드/전체 6-gate 동작 ❌
-- **판정**: **Partial** — 비용-효율 + 설계 품질 입증, 전체 워크플로우 실증은 대화형 필요
+
+**Run 1 (예산 $1.5, v26.7.4)**:
+- A1: $1.626, 31 turns, 677s, 615줄 Rust backend, **예산 초과 오류 종료**, 완성도 7/20
+- B1: $0.574, 9 turns, 109s, SPEC 287줄, 자연 완료, SPEC 20/20
+
+**Run 2 (예산 $30, v26.7.5, 2026-04-16 오후)**:
+- A2: **$1.662, 50 turns, 775s, 1785줄 소스 (Rust 782 + React 1003), TypeScript PASS, 자연 완료, 완성도 19-20/20**
+- B2: $0.735, 13 turns, 192s, SPEC 328줄 (8→11 섹션), 자연 완료, SPEC 20/20
+
+**핵심 발견**:
+1. A1의 $1.63 중단은 **완료 직전 $0.04 부족** (A2 $1.66에 자연 완료). 예산 설정이 성공/실패 임계
+2. cache_read **A1→A2 5.9× 증가** (233k→1.37M), turns +61%에 비용 +2.2%만. Prompt caching의 장기 에이전트 경제성 입증
+3. B는 예산 20배 늘려도 여전히 Define 단계 자연 종료 (설계 의도)
+4. **단발 모드에서는 baseline이 우위**: A2가 2.26× 비쌈에도 실제 코드 1785줄 생성. B는 0줄
+5. 하네스는 **단발 모드 부적합** 확정 — 대화형 전제 설계
+
+**Run 2 판정**: 단발 조건에서 baseline 우위. 하네스의 진짜 가치는 **대화형에서만 측정 가능**. Phase 4b 대화형 재실험이 **필수**.
 
 **Phase 4b — 대화형 재실험 [Future]**
 
@@ -488,12 +494,13 @@ DO NOT CHANGE:
 | 항목 | 내용 |
 |------|------|
 | **Status** | In Progress |
-| **Current Phase** | Phase 4a 완료 (단발 A/B) / Phase 4b 대화형 재실험 대기 |
+| **Current Phase** | Phase 4a 완료 Run 1+2 (단발 A/B) / Phase 4b 대화형 재실험 대기 |
 | **Last Updated** | 2026-04-16 |
-| **Latest Tag** | v26.7.3 → v26.7.4 (Phase 4a 실험 로그 + 분석) |
-| **Next Milestone** | Phase 4b 대화형 재실험 (사용자 실행 필요) OR Phase 4c `-p` 체이닝 자동화 |
-| **Blockers** | 대화형 세션은 내가 자동 실행 불가 — 사용자 수동 필요 |
-| **Phase 4a 결과** | Partial 입증 — 비용 -65%, 시간 -84%, output token -86%, B 자연 완료 vs A 예산 초과 오류. 단발 모드 구조적 제약으로 Build 미진입 |
+| **Latest Tag** | v26.7.5 (Phase 4a Run 2, 예산 $30 재실험) |
+| **Next Milestone** | Phase 4b 대화형 재실험 (사용자 실행 필요) |
+| **Blockers** | 대화형 세션 자동 실행 불가 — 사용자 수동 필요 |
+| **Phase 4a Run 1 결과** | B 비용 -65% / 시간 -84% / A 예산 초과 오류. 단발 구조 제약 부분 입증 |
+| **Phase 4a Run 2 결과** | A2 $1.66 자연 완료 (1785줄 소스, TS PASS, 20/20 기능) / B2 $0.74 SPEC만 328줄. **단발 모드에서 baseline 우위, 하네스는 단발 부적합 확정**. 대화형 재실험 필수 |
 | **Known Skip** | Phase 6 skill-comply/stocktake (Python 도입 원칙 위반), CHANGELOG/CONTRIBUTING (개인 프로젝트) |
 
 ---
@@ -554,7 +561,8 @@ DO NOT CHANGE:
 | D35 | 2026-04-15 | **Phase 5.2 P1-9 MCP pre-execution blocking 구현** (P0 승급 후 실행) | D34 조사 근거로 즉시 구현. PreToolUse `mcp__.*` matcher + `.mcp-allowlist` 기반 화이트리스트 + 위험 파라미터 패턴 감지. setup-harness.sh가 설치 시 `.mcp.json`의 서버로 `.mcp-allowlist` 자동 생성(jq). opt-in 구조 — 파일 없으면 gate 비활성 | 수동 scan 유지, 별도 plan 대기 | templates/hooks/mcp-pre-exec.sh, templates/mcp-allowlist.example, templates/settings.json PreToolUse matcher, setup-harness.sh, test-harness.sh T3 unit test 5건 |
 | D36 | 2026-04-16 | **cherrypicks.lock gsd URL 수정** (`gsd-2` → `get-shit-done`) | sync-cherrypicks.sh 실행 시 origin URL 불일치 감지. 실제 clone origin 확인 결과 `github.com/gsd-build/get-shit-done.git`. 이전 Explore 에이전트 보고 기반 `gsd-2` 오기재 정정 (P7 Fact vs Opinion 준수) | 기록 유지 | .dev-references/cherrypicks.lock |
 | D37 | 2026-04-16 | **`.mcp-allowlist` 자동 생성 순서 버그 fix** | Phase 4 A/B 실험 준비 중 발견. `.mcp-allowlist` 생성 로직이 `.mcp.json` 생성보다 앞에 있어서 **첫 설치 시 미생성**. 두 번째 실행부터 생성되는 bug. 이전 dogfooding sync는 재실행이라 우연히 성공했음. 수정: 생성 블록을 `.mcp.json` 생성 뒤로 이동 + test-harness T5에 ALLOWLIST_OK 체크 추가 | — | setup-harness.sh line 276→287, test-harness.sh T5, v26.7.3 |
-| D38 | 2026-04-16 | **Phase 4a 단발 A/B 실험 — Partial 입증** | A/B controlled experiment 실행. B(harness) 결과: 비용 -65%, 시간 -84%, output tokens -86%, 자연 완료 / A: 예산 초과 오류 종료. 정성적: B 287줄 고품질 SPEC (20/20), A Rust backend 615줄+빌드 설정 (frontend 미완성, 7/20). **단발 모드 구조적 한계로 하네스는 Define 이후 진입 불가** (설계 의도). 판정: Partial — 비용/시간/품질 입증, 전체 워크플로우는 대화형 필요. Phase 4b(대화형) 후속 plan 필요 | 단발만으로 Pass 판정 | Docs/research/phase-4-ab-log.md (신규), PRD §7.2 Phase 4a/4b/4c 재구조 |
+| D38 | 2026-04-16 | **Phase 4a Run 1 단발 A/B 실험 — Partial 입증** | 예산 1.5 USD. B(harness) 결과: 비용 -65%, 시간 -84%, output tokens -86%, 자연 완료 / A: 예산 초과 오류 종료. B 287줄 고품질 SPEC (20/20), A Rust backend 615줄+빌드 설정 (frontend 미완성, 7/20). 단발 모드 구조적 한계로 하네스는 Define 이후 진입 불가. 판정: Partial. | 단발만으로 Pass 판정 | Docs/research/phase-4-ab-log.md, PRD §7.2 Phase 4a/4b/4c 재구조 |
+| D39 | 2026-04-16 | **Phase 4a Run 2 예산 30 재실험 — 단발 baseline 우위 확정** | 사용자 지시. 예산 30 USD. **A2 $1.66에 자연 완료** (A1 $1.63 중단은 "완료 직전 $0.04 부족" 판명), 1785줄 소스(Rust 782 + React 1003), TypeScript PASS, 20/20 기능. B2 $0.735, SPEC 328줄(8→11 섹션 심화), Define 단계 자연 완료. **예산 무관 하네스는 단발 모드에서 Build 진입 불가 — 설계 의도**. 단발 조건에서 baseline이 "더 적은 비용 대비 더 많은 완성" → 하네스는 단발 부적합 확정. 대화형 재실험 필수. A1→A2 cache_read 5.9× 증가로 비용은 2.2%만 증가 (prompt caching 효과 입증) | Run 1 결과만으로 결론 | Docs/research/phase-4-ab-log.md Run 2 섹션, v26.7.5 태그 |
 
 ### 12.3 Roadmap
 
