@@ -4,6 +4,9 @@
     "type": "command",
     "command": "npx -y @owloops/claude-powerline@latest --style=tui"
   },
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  },
   "hooks": {
     "SessionStart": [
       {
