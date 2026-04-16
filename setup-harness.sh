@@ -341,6 +341,13 @@ if [ "$TRACK" != "executive" ]; then
   claude plugin install agent-skills@addy-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
 fi
 
+# ECC plugin — 순정 설치 (agents + skills + commands 자동. rules는 플러그인 미지원이라 safe_copy 유지)
+if [ "$TRACK" != "executive" ]; then
+  echo -n "  ECC (everything-claude-code) plugin..."
+  claude plugin marketplace add affaan-m/everything-claude-code 2>/dev/null || true
+  claude plugin install everything-claude-code@everything-claude-code 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+fi
+
 # Railway plugin (MCP는 .mcp.json으로 이관됨)
 if [ "$TRACK" != "executive" ]; then
   echo -n "  Railway plugin..."
