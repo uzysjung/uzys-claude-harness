@@ -76,6 +76,41 @@ TDD로 점진적 구현. 파일 유형에 따라 스킬 자동 선택.
 
 **Hotfix 단축**: Build → Verify → Ship (긴급 수정 시)
 
+### `/uzys:auto` — 전체 자동 워크플로우 (v26.8.0+)
+
+SPEC 확정 후 나머지 5단계를 자동으로 순차 진행. **Ralph loop**로 SPEC 정합성 검증.
+
+```bash
+/uzys:auto                  # Plan부터 Ship까지 전체 자동
+/uzys:auto from=build       # Build부터 재개
+/uzys:auto from=verify      # SPEC compliance check만 실행
+```
+
+**동작 흐름**:
+```
+/uzys:spec (사용자)
+    ↓
+/uzys:auto (자동 시작)
+    ↓
+  Plan → Build → Test → Review
+    ↓
+  SPEC Compliance Check  ← Ralph Loop
+    ↓         ↑
+  MISSING?  → Build 재진입 → 수정 → 재검증
+    ↓ (100% PASS)
+  Ship
+```
+
+**SPEC Compliance Check** (Ralph Loop):
+- Ship 전 SPEC.md의 모든 Feature가 실제 구현됐는지 자동 검증
+- 각 항목: 파일 존재 + 코드 매칭 + 테스트 존재 + 빌드 통과
+- PASS / PARTIAL / MISSING 분류
+- MISSING 잔존 시 Build로 돌아가 구현 → 재검증 (최대 5회)
+- 100% PASS 시에만 Ship 진입
+
+**자동 재시도**: 각 단계 실패 시 최대 3회 재시도 → 3회 초과 시 사용자 escalation
+**Circuit Breaker**: SPEC compliance 5회 반복 후에도 MISSING 잔존 → 사용자 escalation (P9)
+
 ## ECC Commands (ecc:)
 
 | Command | Description |

@@ -117,11 +117,30 @@ Define(/uzys:spec) → Plan(/uzys:plan) → Build(/uzys:build) → Verify(/uzys:
 - high-confidence instinct → Rule 승격 제안 가능 (인간 승인 후).
 - 분기 1회: 각 Rule을 비활성화하고 영향 확인. 불필요한 scaffold 제거.
 
+### CLAUDE.md 지속 개선 프로세스
+
+이 CLAUDE.md 자체도 정기적으로 검토/개선되어야 한다:
+
+1. **Ship 후 리뷰**: `/uzys:auto` Ship 완료 시 CLAUDE.md를 자동 검토:
+   - 세션 중 발견된 패턴이 CLAUDE.md에 반영됐는가?
+   - 불필요하거나 모순되는 지시가 있는가?
+   - 신규 Rule 승격 후보가 있는가? (`/ecc:instinct-status` 확인)
+
+2. **개선 트리거**:
+   - CL-v2 instinct confidence ≥ 0.8 → CLAUDE.md에 반영 검토 대상
+   - 동일 실수 2회 반복 → 해당 패턴을 CLAUDE.md에 추가
+   - 사용자 교정 ("이건 안 해", "이렇게 해") → auto memory에 저장 + CLAUDE.md 후보
+
+3. **개선 방법**: ECC `rules-distill` 스킬 활용 가능 — 스킬에서 cross-cutting 원칙 추출 → Rules 또는 CLAUDE.md에 반영.
+
+4. **제약**: CLAUDE.md 수정은 반드시 **인간 승인 후**. 에이전트가 직접 수정 금지. 제안만.
+
 ## Experience Accumulation
 
-- Claude Code auto memory: 세션 중 자동 교정 축적.
-- ECC continuous-learning-v2: instinct 추출, confidence scoring.
+- Claude Code auto memory (`~/.claude/projects/<project>/memory/`): 세션 중 자동 교정 축적. 200줄/25KB 제한.
+- ECC continuous-learning-v2: instinct 추출, confidence scoring. observer hook으로 자동 관찰.
 - 검증된 learning만 Rules 승격. 마크다운으로 이관 가능.
+- auto memory와 CL-v2는 **역할 분리** — auto memory는 경량 메모, CL-v2는 구조화 파이프라인.
 
 ## Context Management
 

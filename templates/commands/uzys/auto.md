@@ -114,6 +114,28 @@ Next: {Y+Z}건 수정 후 재검증
 - 전부 통과 시: gate-status ship.completed = true
 - 최종 커밋 + 태그 제안
 
+### 7. Post-Ship: CLAUDE.md 리뷰 (자동)
+Ship 완료 후 CLAUDE.md를 자동 검토한다:
+
+1. **instinct 확인**: `/ecc:instinct-status` 실행 → confidence ≥ 0.8인 instinct를 CLAUDE.md 또는 `.claude/rules/` 반영 후보로 제안
+2. **패턴 체크**: 이번 세션에서 반복된 교정/실수 패턴이 있으면 CLAUDE.md에 추가 제안
+3. **모순 검출**: 기존 CLAUDE.md 지시와 이번 세션 행동이 충돌한 부분 보고
+4. **rules-distill**: ECC `rules-distill` 스킬로 현재 스킬에서 cross-cutting 원칙 추출 가능성 확인
+
+**제약**: 제안만. 직접 수정 금지 (인간 승인 필수). 변경 제안을 사용자에게 목록으로 출력.
+
+**예시 출력**:
+```
+## CLAUDE.md 개선 제안 (Post-Ship Review)
+
+1. [instinct] "Rust 에러는 Result<T, E> 반환 강제" (confidence 0.85) → error-handling rule 보강 후보
+2. [반복 교정] 사용자가 3회 "커밋 먼저 해" 교정 → commit-policy 강조 필요
+3. [모순 없음]
+4. [rules-distill] 해당 없음
+
+승인 시 적용할 항목 번호를 알려주세요 (또는 "skip"):
+```
+
 ## 자동 재시도 (Revision Gate 패턴)
 
 각 단계에서 실패 시:

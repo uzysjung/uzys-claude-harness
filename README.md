@@ -85,42 +85,62 @@
 - Claude Code CLI
 - jq (recommended)
 
-### Quick Start
+### Quick Start — One-liner 설치
+
+```bash
+# 프로젝트 디렉토리에서 바로 설치 (리포 클론 불필요)
+curl -fsSL https://raw.githubusercontent.com/uzysjung/uzysClaudeUniversalEnv/main/install.sh | bash -s -- --track csr-fastapi
+```
+
+### 또는 소스에서 설치
 
 ```bash
 # 1. Clone this repo
 git clone https://github.com/uzysjung/uzysClaudeUniversalEnv.git
-cd uzysClaudeUniversalEnv
 
-# 2. Bootstrap dev environment (one-time)
-bash bootstrap-dev.sh
-
-# 3. Set up a project
+# 2. Set up a project
 cd /path/to/your/project
-bash /path/to/uzysClaudeUniversalEnv/setup-harness.sh
+bash /path/to/uzysClaudeUniversalEnv/setup-harness.sh --track csr-fastapi
 ```
 
 ### setup-harness.sh Options
 
 ```bash
-# Interactive mode
-bash setup-harness.sh
+bash setup-harness.sh                                    # Interactive mode (Track 선택 프롬프트)
+bash setup-harness.sh --track csr-fastapi                # Track 직접 지정
+bash setup-harness.sh --track ssr-nextjs --gsd            # GSD 오케스트레이터 포함
+bash setup-harness.sh --track tooling                     # 메타 프로젝트 (bash, markdown, CLI)
+bash setup-harness.sh --track csr-fastapi --model-routing on  # 모델 라우팅 가이드 활성 (opt-in)
+```
 
-# Specify track directly
-bash setup-harness.sh --track csr-fastapi
+### 설치 후 자동 검증 테이블
 
-# Include GSD
-bash setup-harness.sh --track ssr-nextjs --gsd
+설치 완료 시 10개 카테고리 검증 결과가 자동 출력됩니다:
 
-# Tooling track for meta-projects (bash, markdown, CLI)
-bash setup-harness.sh --track tooling
+```
+┌─────────────────┬──────────┬──────────┬─────────┐
+│ Category        │ Found    │ Expected │ Status  │
+├─────────────────┼──────────┼──────────┼─────────┤
+│ Rules           │ 16       │ 16       │ ✅      │
+│ Commands uzys:  │ 7        │ 7        │ ✅      │
+│ Agents          │ 8        │ 8        │ ✅      │
+│ Hooks           │ 9        │ 9        │ ✅      │
+│ ...             │          │          │         │
+└─────────────────┴──────────┴──────────┴─────────┘
+```
 
-# Enable model routing guide (6-gate × Haiku/Sonnet/Opus mapping, opt-in, default off)
-bash setup-harness.sh --track csr-fastapi --model-routing on
+### Workflow
+
+```bash
+claude                  # Claude Code 시작 (session-start hook 자동)
+/uzys:spec              # 1. SPEC 작성 (Define)
+/uzys:auto              # 2. 나머지 자동 진행 (Plan → Build → Test → Review → Ship)
+                        #    SPEC 정합성 Ralph loop — 될 때까지 반복
 ```
 
 > **Note**: setup-harness.sh는 항상 프로젝트 스코프. 글로벌 `~/.claude/`는 절대 수정하지 않음.
-> `--model-routing=on` 활성 시 `.claude/rules/model-routing.md` 가 설치되고, 각 `/uzys:*` 단계별 권장 모델 가이드가 참조 가능. 실제 `/model` 전환은 사용자 수동 (Claude Code 구조적 제약).
+> ECC 플러그인 (`everything-claude-code`) 순정 설치 + cherry-pick 폴백 병행. Rules는 Claude Code 플러그인 제약으로 safe_copy.
+> `--model-routing=on` 활성 시 6-gate별 Haiku/Sonnet/Opus 모델 가이드가 참조 가능.
 
 ## References
 
