@@ -191,7 +191,7 @@ if [ "$UPDATE_MODE" = true ]; then
   fi
   info "Backup created: $BACKUP_DIR"
 
-  # 기존 파일만 덮어쓰기: 타깃 디렉토리의 파일 목록 기준 → templates에서 매칭되는 것만 복사
+  # 1) 기존 파일만 덮어쓰기
   update_dir() {
     local target="$1" source="$2" pattern="${3:-*}"
     [ ! -d "$target" ] && return 0
@@ -207,14 +207,76 @@ if [ "$UPDATE_MODE" = true ]; then
     info "$target: $count files updated"
   }
 
+  # 2) Orphan prune (v26.14.0): templates에 없는데 target에 있는 파일 제거
+  prune_orphans() {
+    local target="$1" source="$2" pattern="${3:-*}"
+    [ ! -d "$target" ] && return 0
+    [ ! -d "$source" ] && return 0
+    local count=0 f base removed=""
+    for f in "$target"/$pattern; do
+      [ -f "$f" ] || continue
+      base=$(basename "$f")
+      if [ ! -f "$source/$base" ]; then
+        rm "$f" && count=$((count+1)) && removed="$removed $base"
+      fi
+    done
+    if [ "$count" -gt 0 ]; then
+      info "$target: $count orphan(s) pruned —$removed"
+    fi
+  }
+
   update_dir ".claude/rules" "$TEMPLATES/rules" "*.md"
   update_dir ".claude/agents" "$TEMPLATES/agents" "*.md"
   update_dir ".claude/commands/uzys" "$TEMPLATES/commands/uzys" "*.md"
   update_dir ".claude/hooks" "$TEMPLATES/hooks" "*.sh"
 
+  prune_orphans ".claude/rules" "$TEMPLATES/rules" "*.md"
+  prune_orphans ".claude/agents" "$TEMPLATES/agents" "*.md"
+  prune_orphans ".claude/commands/uzys" "$TEMPLATES/commands/uzys" "*.md"
+  prune_orphans ".claude/hooks" "$TEMPLATES/hooks" "*.sh"
+
   if [ -f ".claude/CLAUDE.md" ] && [ -f "$TEMPLATES/CLAUDE.md" ]; then
     cp "$TEMPLATES/CLAUDE.md" ".claude/CLAUDE.md" && info ".claude/CLAUDE.md 갱신"
   fi
+
+  # 3) settings.json stale hook 참조 제거 (v26.14.0)
+  # .claude/hooks/*.sh 를 참조하는 hook 등록 중 실존 파일 없는 것 제거
+  clean_stale_hook_refs() {
+    local settings=".claude/settings.json"
+    [ ! -f "$settings" ] && return 0
+    if ! command -v jq &> /dev/null; then
+      warn "jq 미설치 — settings.json stale hook cleanup 스킵"
+      return 0
+    fi
+    local refs tmp removed=0 ref
+    tmp=$(mktemp)
+    cp "$settings" "$tmp"
+    # .claude/hooks/ 경로를 포함한 command만 추출해서 파일명만 뽑기
+    refs=$(jq -r '
+      [.. | objects | select(has("command")) | .command] | .[] |
+      select(contains("/.claude/hooks/")) |
+      capture("/\\.claude/hooks/(?<n>[^\"/ ]+\\.sh)").n
+    ' "$settings" 2>/dev/null | sort -u)
+    for ref in $refs; do
+      if [ ! -f ".claude/hooks/$ref" ]; then
+        jq --arg name "$ref" '
+          .hooks |= with_entries(
+            .value |= map(
+              .hooks |= map(select(.command | contains($name) | not))
+            )
+          )
+        ' "$tmp" > "${tmp}.new" && mv "${tmp}.new" "$tmp"
+        removed=$((removed+1))
+        info "settings.json: stale hook ref 제거 — $ref"
+      fi
+    done
+    if [ "$removed" -gt 0 ]; then
+      mv "$tmp" "$settings"
+    else
+      rm -f "$tmp"
+    fi
+  }
+  clean_stale_hook_refs
 
   echo ""
   info "Update complete."

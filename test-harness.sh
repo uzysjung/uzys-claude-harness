@@ -437,6 +437,37 @@ BACKUP_DIRS=$(ls -d .claude.backup-* 2>/dev/null | wc -l | tr -d ' ')
 [ "$TAMPERED_AFTER" -eq 0 ] && pass "update: 오염된 rule 원본 복원" || fail "update: 오염 잔존 ($TAMPERED_AFTER)"
 [ "$BACKUP_DIRS" -ge 1 ] && pass "update: 백업 디렉토리 생성 ($BACKUP_DIRS)" || fail "update: 백업 누락"
 
+# T14.3 Orphan prune + stale hook ref cleanup (v26.14.0)
+T14C_DIR=$(mktemp -d)
+cd "$T14C_DIR" && git init -q && echo "# T" > README.md && git add . && git -c user.email=t@t -c user.name=t commit -m init -q 2>/dev/null
+bash "$ROOT/setup-harness.sh" --track tooling --project-dir . < /dev/null > /tmp/u4.log 2>&1
+
+# orphan 주입: templates에 없는 rule + hook
+echo "# fake rule" > .claude/rules/fake-stale-rule.md
+echo "#!/bin/bash" > .claude/hooks/fake-stale-hook.sh
+chmod +x .claude/hooks/fake-stale-hook.sh
+
+# settings.json에 stale hook 참조 주입 (파일은 실존하지만 prune될 예정)
+jq '.hooks.PreToolUse += [{"matcher":"Skill","hooks":[{"type":"command","command":"bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/fake-stale-hook.sh\""}]}]' .claude/settings.json > /tmp/st.json && mv /tmp/st.json .claude/settings.json
+
+# 완전 ghost 참조도 추가 (파일 자체가 없음)
+jq '.hooks.PreToolUse += [{"matcher":"Skill","hooks":[{"type":"command","command":"bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/ghost-hook.sh\""}]}]' .claude/settings.json > /tmp/st.json && mv /tmp/st.json .claude/settings.json
+
+GHOST_BEFORE=$(jq '[.hooks.PreToolUse[].hooks[].command | select(contains("ghost-hook") or contains("fake-stale-hook"))] | length' .claude/settings.json)
+
+bash "$ROOT/setup-harness.sh" --update --project-dir . < /dev/null > /tmp/u5.log 2>&1
+
+ORPHAN_RULE_GONE=true; [ -f .claude/rules/fake-stale-rule.md ] && ORPHAN_RULE_GONE=false
+ORPHAN_HOOK_GONE=true; [ -f .claude/hooks/fake-stale-hook.sh ] && ORPHAN_HOOK_GONE=false
+GHOST_AFTER=$(jq '[.hooks.PreToolUse[].hooks[].command | select(contains("ghost-hook") or contains("fake-stale-hook"))] | length' .claude/settings.json)
+
+[ "$GHOST_BEFORE" -ge 2 ] && pass "update: stale hook 사전 주입 ($GHOST_BEFORE)" || fail "update: stale 주입 실패 ($GHOST_BEFORE)"
+[ "$ORPHAN_RULE_GONE" = true ] && pass "update: orphan rule 제거" || fail "update: orphan rule 잔존"
+[ "$ORPHAN_HOOK_GONE" = true ] && pass "update: orphan hook 제거" || fail "update: orphan hook 잔존"
+[ "$GHOST_AFTER" = "0" ] && pass "update: settings.json stale hook 참조 제거 ($GHOST_BEFORE → 0)" || fail "update: settings.json stale 참조 잔존 ($GHOST_AFTER)"
+
+cd "$ROOT"
+
 # T14.2 .claude/ 없이 --update 실행 시 명확 에러
 T14B_DIR=$(mktemp -d)
 cd "$T14B_DIR" && git init -q && echo "# T" > README.md && git add . && git -c user.email=t@t -c user.name=t commit -m init -q 2>/dev/null
