@@ -69,6 +69,15 @@ if [ "${#SELECTED_TRACKS[@]}" -gt 0 ]; then
   TRACK="${SELECTED_TRACKS[0]}"
 fi
 
+# v26.11.2 — Track 이름 검증: 알 수 없는 Track 거부 (silent partial install 차단)
+VALID_TRACKS="csr-supabase csr-fastify csr-fastapi ssr-htmx ssr-nextjs data executive tooling full"
+for t in "${SELECTED_TRACKS[@]}"; do
+  if ! echo " $VALID_TRACKS " | grep -qF " $t "; then
+    echo "ERROR: Unknown track '$t'. Valid: $VALID_TRACKS" >&2
+    exit 1
+  fi
+done
+
 # 검증
 case "$MODEL_ROUTING" in
   on|off) ;;
@@ -85,6 +94,17 @@ info()  { echo -e "  ${GREEN}✓${NC} $1"; }
 warn()  { echo -e "  ${YELLOW}!${NC} $1"; }
 fail()  { echo -e "  ${RED}✗${NC} $1"; }
 install_fail() { INSTALL_FAILURES=$((INSTALL_FAILURES+1)); FAILED_ITEMS="$FAILED_ITEMS\n  - $1"; warn "$1 (INSTALL FAILED)"; }
+
+# v26.11.2 — install 명령 1회 재시도 래퍼 (네트워크 일시 장애 완화)
+# 사용: retry_install <label> <command...>
+retry_install() {
+  local label="$1"; shift
+  if "$@" 2>/dev/null; then info "installed: $label"; return 0; fi
+  sleep 2
+  if "$@" 2>/dev/null; then info "installed (retry): $label"; return 0; fi
+  install_fail "$label"
+  return 1
+}
 section() { echo -e "\n${CYAN}[$1]${NC} $2"; }
 
 check_cmd() {
@@ -384,10 +404,17 @@ if [ -f .mcp.json ] && [ "$ADD_MODE" = false ]; then
 elif command -v jq &> /dev/null; then
   trap 'rm -f .mcp.json.tmp .mcp.json.tmp2' EXIT
 
-  # base: ADD_MODE 시 기존 .mcp.json 보존, 아니면 템플릿
+  # v26.11.2 — ADD_MODE 시 기존 .mcp.json invalid면 백업 후 템플릿으로 복구
   if [ "$ADD_MODE" = true ] && [ -f .mcp.json ]; then
-    cp .mcp.json .mcp.json.tmp
-    info "ADD_MODE: 기존 .mcp.json 보존하면서 새 Track의 MCP union"
+    if jq empty .mcp.json 2>/dev/null; then
+      cp .mcp.json .mcp.json.tmp
+      info "ADD_MODE: 기존 .mcp.json 보존하면서 새 Track의 MCP union"
+    else
+      BACKUP=".mcp.json.invalid.$(date +%s).bak"
+      mv .mcp.json "$BACKUP"
+      cp "$TEMPLATES/mcp.json" .mcp.json.tmp
+      warn "ADD_MODE: 기존 .mcp.json invalid → $BACKUP 으로 백업 후 템플릿 재생성"
+    fi
   else
     cp "$TEMPLATES/mcp.json" .mcp.json.tmp
   fi
