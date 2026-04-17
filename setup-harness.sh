@@ -419,15 +419,23 @@ elif command -v jq &> /dev/null; then
     cp "$TEMPLATES/mcp.json" .mcp.json.tmp
   fi
 
-  # Track별 조건부 추가 (다중 Track union)
-  # v26.11.1 — ADD_MODE에서 사용자 커스터마이즈 보존: 키가 없을 때만 추가 (덮어쓰기 안 함)
-  if any_track 'csr-supabase|csr-fastify|csr-fastapi|ssr-htmx|ssr-nextjs|full'; then
-    jq 'if .mcpServers["railway-mcp-server"] == null then .mcpServers["railway-mcp-server"] = {"type":"stdio","command":"npx","args":["-y","@railway/mcp-server"]} else . end' .mcp.json.tmp > .mcp.json.tmp2 \
-      && mv .mcp.json.tmp2 .mcp.json.tmp || { fail "jq railway 실패"; exit 1; }
-  fi
-  if any_track 'csr-supabase|full'; then
-    jq 'if .mcpServers["supabase"] == null then .mcpServers["supabase"] = {"type":"stdio","command":"npx","args":["-y","@supabase/mcp-server"]} else . end' .mcp.json.tmp > .mcp.json.tmp2 \
-      && mv .mcp.json.tmp2 .mcp.json.tmp || { fail "jq supabase 실패"; exit 1; }
+  # v26.12.0 — Track별 MCP 매핑을 templates/track-mcp-map.tsv에서 데이터 주도 로드.
+  # 신규 MCP 추가 시 tsv 한 줄만 수정하면 됨 (setup-harness.sh 수정 불필요).
+  MCP_MAP="$TEMPLATES/track-mcp-map.tsv"
+  if [ -f "$MCP_MAP" ]; then
+    while IFS=$'\t' read -r mcp_name track_pattern mcp_cmd mcp_args; do
+      # 주석/빈 라인 skip
+      case "$mcp_name" in '#'*|'') continue ;; esac
+      [ -z "$track_pattern" ] && continue
+      if any_track "$track_pattern"; then
+        jq --arg name "$mcp_name" --arg cmd "$mcp_cmd" --argjson args "$mcp_args" \
+          'if .mcpServers[$name] == null then .mcpServers[$name] = {"type":"stdio","command":$cmd,"args":$args} else . end' \
+          .mcp.json.tmp > .mcp.json.tmp2 \
+          && mv .mcp.json.tmp2 .mcp.json.tmp || { fail "jq $mcp_name 실패"; exit 1; }
+      fi
+    done < "$MCP_MAP"
+  else
+    warn "track-mcp-map.tsv 없음 — Track별 MCP 추가 스킵"
   fi
 
   # _comment 제거하고 최종 .mcp.json 생성

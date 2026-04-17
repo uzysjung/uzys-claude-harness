@@ -1,0 +1,15 @@
+# track-mcp-map.tsv — Track별 MCP 서버 매핑 데이터
+# v26.12.0 — setup-harness.sh의 .mcp.json 조립 case문 외재화 (deep-research 권장)
+#
+# 형식 (탭 구분):
+#   <mcp_name>	<track_pattern>	<command>	<args_json>
+#
+# - mcp_name: .mcp.json의 mcpServers[키]
+# - track_pattern: any_track 패턴 (csr-*|full 같은 bash glob)
+# - command: 실행 명령 (npx 등)
+# - args_json: jq 인자 배열 (JSON 형식)
+#
+# 신규 MCP 추가 시: 이 파일에 1줄 추가만 하면 setup-harness.sh 수정 불필요.
+# 주석 (#) 라인은 무시.
+railway-mcp-server	csr-supabase|csr-fastify|csr-fastapi|ssr-htmx|ssr-nextjs|full	npx	["-y", "@railway/mcp-server"]
+supabase	csr-supabase|full	npx	["-y", "@supabase/mcp-server"]
