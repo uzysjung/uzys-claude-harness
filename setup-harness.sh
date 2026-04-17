@@ -382,7 +382,7 @@ if [ "$TRACK" != "executive" ]; then
   fi
 
   echo -n "  architecture-decision-record..."
-  npx skills add yonatangross/orchestkit --yes 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add yonatangross/orchestkit --skill architecture-decision-record --yes 2>/dev/null && info "installed" || warn "already installed"
 fi
 
 # Supabase MCP는 .mcp.json으로 이관됨 (claude mcp add 제거)
