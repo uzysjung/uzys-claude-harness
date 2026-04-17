@@ -139,7 +139,7 @@ claude                  # Claude Code 시작 (session-start hook 자동)
 ```
 
 > **Note**: setup-harness.sh는 항상 프로젝트 스코프. 글로벌 `~/.claude/`는 절대 수정하지 않음.
-> ECC 플러그인 (`everything-claude-code`) 순정 설치 + cherry-pick 폴백 병행. Rules는 Claude Code 플러그인 제약으로 safe_copy.
+> v26.10.0부터 ECC plugin 통째 설치 대신 **Track별 cherry-pick** (4기준 ALL True 항목만). 이전에 설치한 ECC plugin은 사용자가 직접 `claude plugin uninstall everything-claude-code@everything-claude-code`로 정리.
 > `--model-routing=on` 활성 시 6-gate별 Haiku/Sonnet/Opus 모델 가이드가 참조 가능.
 
 ## References

@@ -261,6 +261,25 @@ case "$TRACK" in
     ;;
 esac
 
+# v26.10.0 — Track별 ECC cherry-pick skills (ECC plugin 통째 설치 대체)
+case "$TRACK" in
+  data|csr-fastapi|full)
+    safe_copy_dir "$TEMPLATES/skills/python-patterns" "$PROJ/skills/python-patterns"
+    safe_copy_dir "$TEMPLATES/skills/python-testing" "$PROJ/skills/python-testing"
+    ;;
+esac
+case "$TRACK" in
+  ssr-nextjs|full)
+    safe_copy_dir "$TEMPLATES/skills/nextjs-turbopack" "$PROJ/skills/nextjs-turbopack"
+    ;;
+esac
+case "$TRACK" in
+  executive|full)
+    safe_copy_dir "$TEMPLATES/skills/investor-materials" "$PROJ/skills/investor-materials"
+    safe_copy_dir "$TEMPLATES/skills/investor-outreach" "$PROJ/skills/investor-outreach"
+    ;;
+esac
+
 # --- Hooks ---
 safe_copy "$TEMPLATES/hooks/session-start.sh" "$PROJ/hooks/session-start.sh"
 safe_copy "$TEMPLATES/hooks/protect-files.sh" "$PROJ/hooks/protect-files.sh"
@@ -341,12 +360,8 @@ if [ "$TRACK" != "executive" ]; then
   claude plugin install agent-skills@addy-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
 fi
 
-# ECC plugin — 순정 설치 (agents + skills + commands 자동. rules는 플러그인 미지원이라 safe_copy 유지)
-if [ "$TRACK" != "executive" ]; then
-  echo -n "  ECC (everything-claude-code) plugin..."
-  claude plugin marketplace add affaan-m/everything-claude-code 2>/dev/null || true
-  claude plugin install everything-claude-code@everything-claude-code 2>/dev/null && info "installed" || warn "already installed or manual install needed"
-fi
+# ECC: plugin 통째 설치 대신 Track별 cherry-pick으로 전환 (v26.10.0).
+#       기존에 글로벌 ECC plugin 설치된 경우 안내: claude plugin uninstall everything-claude-code@everything-claude-code
 
 # Railway plugin (MCP는 .mcp.json으로 이관됨)
 if [ "$TRACK" != "executive" ]; then
@@ -446,13 +461,6 @@ fi
 if [ "$TRACK" != "executive" ] && [ -t 0 ]; then
   echo ""
   echo -e "  ${BOLD}Optional Plugins:${NC}"
-  read -rp "  Install cc-devops-skills (CI/CD, Docker, GitHub Actions)? [y/N]: " DEVOPS_ANSWER
-  if [[ "$DEVOPS_ANSWER" =~ ^[Yy]$ ]]; then
-    echo -n "  cc-devops-skills..."
-    claude plugin marketplace add akin-ozer/cc-devops-skills 2>/dev/null || true
-    claude plugin install cc-devops-skills@cc-devops-skills 2>/dev/null && info "installed" || install_fail "cc-devops-skills"
-  fi
-
   read -rp "  Install Trail of Bits security (CodeQL, Semgrep)? [y/N]: " TOB_ANSWER
   if [[ "$TOB_ANSWER" =~ ^[Yy]$ ]]; then
     echo -n "  Trail of Bits security..."
