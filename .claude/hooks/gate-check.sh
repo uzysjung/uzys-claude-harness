@@ -42,21 +42,32 @@ if [ ! -f "$GATE_FILE" ]; then
 INIT
 fi
 
-# 게이트 상태 읽기 (jq 우선, grep 폴백)
+# v26.11.2 — 게이트 상태 읽기. jq 실패/손상된 JSON 시 안전한 default "false"로 fail-secure.
+# (이전: jq 실패 시 빈 출력 가능 → 호출자에서 일관성 없는 처리. C2 수정)
 is_completed() {
+  local result=""
   if command -v jq &> /dev/null; then
-    jq -r ".$1.completed // false" "$GATE_FILE" 2>/dev/null
+    result=$(jq -r ".$1.completed // false" "$GATE_FILE" 2>/dev/null) || result="false"
   else
-    grep -A1 "\"$1\"" "$GATE_FILE" 2>/dev/null | grep -o '"completed"[[:space:]]*:[[:space:]]*true' | head -1 | grep -q 'true' && echo "true" || echo "false"
+    grep -A1 "\"$1\"" "$GATE_FILE" 2>/dev/null | grep -o '"completed"[[:space:]]*:[[:space:]]*true' | head -1 | grep -q 'true' && result="true" || result="false"
   fi
+  case "$result" in
+    true|false) echo "$result" ;;
+    *) echo "false" ;;
+  esac
 }
 
 is_hotfix() {
+  local result=""
   if command -v jq &> /dev/null; then
-    jq -r ".hotfix // false" "$GATE_FILE" 2>/dev/null
+    result=$(jq -r ".hotfix // false" "$GATE_FILE" 2>/dev/null) || result="false"
   else
-    grep -o '"hotfix"[[:space:]]*:[[:space:]]*true' "$GATE_FILE" 2>/dev/null | head -1 | grep -q 'true' && echo "true" || echo "false"
+    grep -o '"hotfix"[[:space:]]*:[[:space:]]*true' "$GATE_FILE" 2>/dev/null | head -1 | grep -q 'true' && result="true" || result="false"
   fi
+  case "$result" in
+    true|false) echo "$result" ;;
+    *) echo "false" ;;
+  esac
 }
 
 HOTFIX=$(is_hotfix)

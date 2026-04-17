@@ -12,7 +12,7 @@ Build phase — TDD로 점진적 구현한다.
    - GREEN: 테스트를 통과하는 최소 구현
    - REFACTOR: 코드 개선 (테스트 유지)
 3. 완료된 task를 todo.md에서 체크한다.
-4. **commit-policy.md 적용: 즉시 커밋**.
+4. **git-policy.md 적용: 즉시 commit → push**.
 
 ## Context-Aware Skill Selection
 

@@ -8,7 +8,7 @@
 - [ ] **커버리지 기준 충족**: test-policy.md의 Track별 threshold 확인
 - [ ] **Security Scan 통과**: `npx ecc-agentshield scan` 결과 CRITICAL/HIGH 없음
 - [ ] **의존성 감사 통과**: `npm audit` (Node.js) 또는 `pip audit` (Python) 실행. critical/high 취약점 없음
-- [ ] **SPEC/PRD 정합성**: 배포 항목이 SPEC.md/PRD.md와 일치하는지 확인
+- [ ] **SPEC/PRD 정합성**: `bash .claude/hooks/spec-drift-check.sh ship` (exit 2 시 차단)
 - [ ] **Review 게이트 통과**: `/uzys:review`에서 CRITICAL 이슈 없음 확인
 
 ## Post-Ship Actions

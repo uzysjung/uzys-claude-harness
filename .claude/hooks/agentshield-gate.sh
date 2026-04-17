@@ -71,7 +71,8 @@ while IFS= read -r line; do
       case "$pattern" in
         ""|"#"*) continue ;;
       esac
-      if echo "$line" | grep -qE "$pattern"; then
+      # v26.11.2 — grep -F (fixed string) — `.*` 같은 regex로 모든 finding bypass 차단 (M4)
+      if echo "$line" | grep -qF "$pattern"; then
         MATCHED=true
         break
       fi

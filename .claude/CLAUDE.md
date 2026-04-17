@@ -140,7 +140,7 @@ Define(/uzys:spec) → Plan(/uzys:plan) → Build(/uzys:build) → Verify(/uzys:
 - Claude Code auto memory (`~/.claude/projects/<project>/memory/`): 세션 중 자동 교정 축적. 200줄/25KB 제한.
 - ECC continuous-learning-v2: instinct 추출, confidence scoring. observer hook으로 자동 관찰.
 - 검증된 learning만 Rules 승격. 마크다운으로 이관 가능.
-- auto memory와 CL-v2는 **역할 분리** — auto memory는 경량 메모, CL-v2는 구조화 파이프라인.
+- auto memory와 CL-v2는 **역할 분리** — auto memory는 경량 메모, CL-v2는 구조화 파이프라인 (D33 검증 완료).
 
 ## Context Management
 
