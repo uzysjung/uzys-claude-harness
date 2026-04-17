@@ -357,6 +357,12 @@ grep -q "uzys:auto" templates/hooks/gate-check.sh 2>/dev/null && pass "gate-chec
 KEEP_LINES=$(awk '/^KEEP_ITEMS=/,/^"/' prune-ecc.sh 2>/dev/null | wc -w | tr -d ' ')
 [ "$KEEP_LINES" -gt 80 ] && pass "prune-ecc.sh KEEP 정의 (${KEEP_LINES} tokens)" || fail "prune-ecc.sh KEEP 누락"
 
+# Dev-Prod parity + Live E2E gates (v26.12.1)
+grep -q "Prod-DB parity" templates/rules/ship-checklist.md && pass "ship-checklist: Prod-DB parity gate" || fail "ship-checklist: Prod-DB parity 누락"
+grep -q "인증 플로우 Live E2E" templates/rules/ship-checklist.md && pass "ship-checklist: Live E2E auth gate" || fail "ship-checklist: Live E2E 누락"
+grep -q "Dev-Prod Parity" templates/rules/test-policy.md && pass "test-policy: Dev-Prod Parity 원칙" || fail "test-policy: Dev-Prod Parity 누락"
+grep -q "Live E2E for Critical Paths" templates/rules/test-policy.md && pass "test-policy: Live E2E 원칙" || fail "test-policy: Live E2E 누락"
+
 # ============================================================
 # T13. Multi-Track Installation (v26.11.0)
 # ============================================================

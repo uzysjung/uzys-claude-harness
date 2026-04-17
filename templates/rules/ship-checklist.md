@@ -4,6 +4,8 @@
 
 ## Pre-Ship Gates
 
+- [ ] **Prod-DB parity 테스트 통과**: Postgres testcontainer/docker-compose에서 integration 테스트 PASS (SQLite 대체 금지 — test-policy.md Dev-Prod Parity)
+- [ ] **인증 플로우 Live E2E**: staging 서비스에 대해 login → magic-link → callback → /me 200 통과 (Mock 금지 — test-policy.md Live E2E)
 - [ ] **E2E 테스트 통과**: 핵심 사용자 흐름 E2E 테스트 전부 PASS
 - [ ] **커버리지 기준 충족**: test-policy.md의 Track별 threshold 확인
 - [ ] **Security Scan 통과**: `npx ecc-agentshield scan` 결과 CRITICAL/HIGH 없음
