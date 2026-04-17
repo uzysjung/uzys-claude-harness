@@ -10,6 +10,17 @@ Define phase — 구조화된 스펙을 코드 작성 전에 작성한다.
 5. DO NOT CHANGE 영역을 식별하고 SPEC에 기록한다.
 6. SPEC.md를 `docs/SPEC.md`에 저장한다.
 
+## Test Environment Parity (필수 질의)
+
+SPEC 작성 시 다음 4개 항목을 **명시적으로 질문하고 기록**한다. 미기재 시 SPEC 미완료 — Build 단계에서 dev-prod drift 버그로 이어짐.
+
+1. **Prod DB 엔진** — Postgres/MySQL/SQLite/Redis 등 + 버전
+2. **테스트 DB 전략** — testcontainer / docker-compose / staging DB / none. SQLite 대체는 Prod가 SQLite인 경우에만 허용 (test-policy.md Dev-Prod Parity)
+3. **외부 의존성** — Stripe, Supabase, Railway, SES 등. 각각 Mock / Live staging 중 어떤 전략인지
+4. **핵심 E2E 플로우** — 인증(login/callback/me), 결제(checkout/webhook), 파일업로드 등 Mock 금지 대상 목록
+
+이 4개는 SPEC.md의 "Testing Strategy" 섹션에 표로 정리한다.
+
 ## Gate
 
 이 단계가 완료되어야 `/uzys:plan`으로 진행 가능.

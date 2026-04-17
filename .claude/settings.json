@@ -43,14 +43,6 @@
           },
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/uncommitted-check.sh\""
-          },
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/spec-drift-check.sh\""
-          },
-          {
-            "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/agentshield-gate.sh\""
           }
         ]
@@ -85,12 +77,6 @@
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/skills/continuous-learning-v2/hooks/observe.sh\" post",
             "async": true,
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/checkpoint-snapshot.sh\"",
-            "async": true,
-            "timeout": 5
           }
         ]
       }

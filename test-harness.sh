@@ -65,7 +65,7 @@ done
 # T2. Bash Syntax
 # ============================================================
 section "T2. Bash Syntax"
-for f in setup-harness.sh sync-cherrypicks.sh test-harness.sh templates/hooks/gate-check.sh templates/hooks/protect-files.sh templates/hooks/session-start.sh templates/hooks/uncommitted-check.sh templates/hooks/spec-drift-check.sh templates/hooks/checkpoint-snapshot.sh templates/hooks/codebase-map.sh templates/hooks/agentshield-gate.sh templates/hooks/mcp-pre-exec.sh; do
+for f in setup-harness.sh sync-cherrypicks.sh test-harness.sh templates/hooks/gate-check.sh templates/hooks/protect-files.sh templates/hooks/session-start.sh templates/hooks/spec-drift-check.sh templates/hooks/checkpoint-snapshot.sh templates/hooks/codebase-map.sh templates/hooks/agentshield-gate.sh templates/hooks/mcp-pre-exec.sh; do
   if [ -f "$ROOT/$f" ]; then
     if bash -n "$ROOT/$f" 2>/dev/null; then
       pass "$f"
@@ -145,11 +145,7 @@ unset CLAUDE_PROJECT_DIR
 cd "$ROOT"
 rm -rf "$T3_DIR"
 
-[ "$QUICK" = true ] && {
-  section "Summary (quick)"
-  echo "  Pass: $PASS / Fail: $FAIL / Skip: $SKIP"
-  exit $([ "$FAIL" -gt 0 ] && echo 1 || echo 0)
-}
+# (--quick 모드는 개별 install 테스트(T5/T11/T13/T14)에서 skip. T1-T4 + T6-T10 + T12는 모두 실행)
 
 # ============================================================
 # T4. Cherry-pick Manifest 일관성
@@ -168,38 +164,53 @@ else
 fi
 
 # ============================================================
-# T5. Track Installation Integration
+# T5. Track Installation Integration (병렬)
 # ============================================================
-section "T5. Track Installation (6 tracks)"
-for TRACK in tooling csr-supabase csr-fastapi ssr-htmx executive full data; do
-  T5_DIR=$(mktemp -d)
-  cd "$T5_DIR" && git init -q && echo "# Test" > README.md && git add . && git commit -m init -q 2>/dev/null
-  bash "$ROOT/setup-harness.sh" --track "$TRACK" --project-dir . < /dev/null > /tmp/setup-$TRACK.log 2>&1
-  AGENTS=$(ls .claude/agents/*.md 2>/dev/null | wc -l | tr -d ' ')
-  HOOKS=$(ls .claude/hooks/*.sh 2>/dev/null | wc -l | tr -d ' ')
-  # executive는 dev-only 에이전트 미설치 → 5, 나머지는 8
-  # (dev Track: reviewer, data-analyst, strategist, code-reviewer, security-reviewer,
-  #  silent-failure-hunter, build-error-resolver, plan-checker)
-  if [ "$TRACK" = "executive" ]; then
-    EXPECTED_AGENTS=5
-  else
-    EXPECTED_AGENTS=8
-  fi
-  # executive는 .mcp-allowlist도 미생성 가능 (MCP 사용 X), dev는 생성 필수
-  ALLOWLIST_OK=true
-  if [ "$TRACK" != "executive" ] && [ ! -f .mcp-allowlist ]; then
-    ALLOWLIST_OK=false
-  fi
-  if [ "$AGENTS" = "$EXPECTED_AGENTS" ] && [ "$HOOKS" = "9" ] && [ -f .mcp.json ] && [ -f .claude/settings.json ] && [ -f CLAUDE.md ] \
-     && [ "$ALLOWLIST_OK" = true ] \
-     && ! grep -q "/Users\|/private" .claude/settings.json 2>/dev/null; then
-    pass "$TRACK install"
-  else
-    fail "$TRACK install (agents=$AGENTS/$EXPECTED_AGENTS hooks=$HOOKS mcp=$([ -f .mcp.json ] && echo Y || echo N) allowlist=$ALLOWLIST_OK)"
-  fi
+section "T5. Track Installation (6 tracks, parallel)"
+if [ "$QUICK" = true ]; then
+  skip "T5 (quick mode — install 테스트 스킵)"
+else
+  T5_TRACKS=(tooling csr-supabase csr-fastapi ssr-htmx executive full data)
+  declare -a T5_PIDS=()
+  declare -a T5_DIRS=()
+  declare -a T5_RESULTS=()
+
+  for TRACK in "${T5_TRACKS[@]}"; do
+    DIR=$(mktemp -d)
+    RESULT=$(mktemp)
+    T5_DIRS+=("$DIR")
+    T5_RESULTS+=("$RESULT")
+    (
+      cd "$DIR" && git init -q && echo "# Test" > README.md && git add . && git commit -m init -q 2>/dev/null
+      bash "$ROOT/setup-harness.sh" --track "$TRACK" --project-dir . < /dev/null > "/tmp/setup-$TRACK.log" 2>&1
+      AGENTS=$(ls .claude/agents/*.md 2>/dev/null | wc -l | tr -d ' ')
+      HOOKS=$(ls .claude/hooks/*.sh 2>/dev/null | wc -l | tr -d ' ')
+      if [ "$TRACK" = "executive" ]; then EXPECTED_AGENTS=5; else EXPECTED_AGENTS=8; fi
+      ALLOWLIST_OK=true
+      if [ "$TRACK" != "executive" ] && [ ! -f .mcp-allowlist ]; then ALLOWLIST_OK=false; fi
+      if [ "$AGENTS" = "$EXPECTED_AGENTS" ] && [ "$HOOKS" = "8" ] && [ -f .mcp.json ] && [ -f .claude/settings.json ] && [ -f CLAUDE.md ] \
+         && [ "$ALLOWLIST_OK" = true ] \
+         && ! grep -q "/Users\|/private" .claude/settings.json 2>/dev/null; then
+        echo "PASS|$TRACK install" > "$RESULT"
+      else
+        echo "FAIL|$TRACK install (agents=$AGENTS/$EXPECTED_AGENTS hooks=$HOOKS mcp=$([ -f .mcp.json ] && echo Y || echo N) allowlist=$ALLOWLIST_OK)" > "$RESULT"
+      fi
+    ) &
+    T5_PIDS+=($!)
+  done
+  # Wait for all parallel jobs
+  for pid in "${T5_PIDS[@]}"; do wait "$pid"; done
+  # Collect + report in original order
+  for rfile in "${T5_RESULTS[@]}"; do
+    line=$(cat "$rfile")
+    status="${line%%|*}"
+    msg="${line#*|}"
+    if [ "$status" = "PASS" ]; then pass "$msg"; else fail "$msg"; fi
+    rm -f "$rfile"
+  done
+  for dir in "${T5_DIRS[@]}"; do rm -rf "$dir"; done
   cd "$ROOT"
-  rm -rf "$T5_DIR"
-done
+fi
 
 # ============================================================
 # T6. Global Immutability
@@ -281,26 +292,30 @@ TEMPLATE_COUNT=$(ls templates/project-claude/*.md 2>/dev/null | wc -l | tr -d ' 
 # T11. Workflow E2E Smoke Test
 # ============================================================
 section "T11. Workflow E2E Smoke Test"
-T11_DIR=$(mktemp -d)
-cd "$T11_DIR" && git init -q && echo "# E2E Test" > README.md && git add . && git commit -m init -q 2>/dev/null
-bash "$ROOT/setup-harness.sh" --track tooling --project-dir . < /dev/null > /tmp/e2e-setup.log 2>&1
+if [ "$QUICK" = true ]; then
+  skip "T11 (quick mode)"
+else
+  T11_DIR=$(mktemp -d)
+  cd "$T11_DIR" && git init -q && echo "# E2E Test" > README.md && git add . && git commit -m init -q 2>/dev/null
+  bash "$ROOT/setup-harness.sh" --track tooling --project-dir . < /dev/null > /tmp/e2e-setup.log 2>&1
 
-# Step 1: gate-check spec → 통과
-echo '{"tool_input":{"skill":"uzys:spec"}}' | bash .claude/hooks/gate-check.sh > /dev/null 2>&1 \
-  && pass "E2E: /uzys:spec 게이트 통과" || fail "E2E spec gate"
+  # Step 1: gate-check spec → 통과
+  echo '{"tool_input":{"skill":"uzys:spec"}}' | bash .claude/hooks/gate-check.sh > /dev/null 2>&1 \
+    && pass "E2E: /uzys:spec 게이트 통과" || fail "E2E spec gate"
 
-# Step 2: define complete → plan 통과
-jq '.define.completed = true' .claude/gate-status.json > /tmp/gt.json && mv /tmp/gt.json .claude/gate-status.json
-echo '{"tool_input":{"skill":"uzys:plan"}}' | bash .claude/hooks/gate-check.sh > /dev/null 2>&1 \
-  && pass "E2E: /uzys:plan after define" || fail "E2E plan after define"
+  # Step 2: define complete → plan 통과
+  jq '.define.completed = true' .claude/gate-status.json > /tmp/gt.json && mv /tmp/gt.json .claude/gate-status.json
+  echo '{"tool_input":{"skill":"uzys:plan"}}' | bash .claude/hooks/gate-check.sh > /dev/null 2>&1 \
+    && pass "E2E: /uzys:plan after define" || fail "E2E plan after define"
 
-# Step 3: 게이트 순서 강제 — verify before build → 차단
-jq '.plan.completed = false' .claude/gate-status.json > /tmp/gt.json && mv /tmp/gt.json .claude/gate-status.json
-RESULT=$(echo '{"tool_input":{"skill":"uzys:build"}}' | bash .claude/hooks/gate-check.sh 2>&1; echo "EXIT=$?")
-echo "$RESULT" | grep -q "EXIT=2" && pass "E2E: build blocked without plan" || fail "E2E build no-plan"
+  # Step 3: 게이트 순서 강제 — verify before build → 차단
+  jq '.plan.completed = false' .claude/gate-status.json > /tmp/gt.json && mv /tmp/gt.json .claude/gate-status.json
+  RESULT=$(echo '{"tool_input":{"skill":"uzys:build"}}' | bash .claude/hooks/gate-check.sh 2>&1; echo "EXIT=$?")
+  echo "$RESULT" | grep -q "EXIT=2" && pass "E2E: build blocked without plan" || fail "E2E build no-plan"
 
-cd "$ROOT"
-rm -rf "$T11_DIR"
+  cd "$ROOT"
+  rm -rf "$T11_DIR"
+fi
 
 # ============================================================
 # T12. 설치 명령 정합성 검증 (카탈로그 vs setup-harness.sh)
@@ -365,6 +380,9 @@ grep -q "핵심 사용자 기능 플로우 E2E" templates/commands/uzys/test.md 
 # T13. Multi-Track Installation (v26.11.0)
 # ============================================================
 section "T13. Multi-Track Installation"
+if [ "$QUICK" = true ]; then
+  skip "T13 (quick mode)"
+else
 
 # T13.1 동시 다중 Track: --track tooling --track csr-fastapi
 T13_DIR=$(mktemp -d)
@@ -387,11 +405,15 @@ MCP_AFTER=$(jq -r '.mcpServers | keys | join(",")' .mcp.json 2>/dev/null || echo
 [ "$RULES_AFTER" -gt "$RULES_BEFORE" ] && pass "add-track Rules: $RULES_BEFORE → $RULES_AFTER" || fail "add-track Rules unchanged"
 echo "$MCP_AFTER" | grep -q "railway-mcp-server" && pass "add-track MCP merge: railway 추가" || fail "add-track MCP merge 실패"
 cd "$ROOT"
+fi  # end T13 quick skip
 
 # ============================================================
 # T14. Update Mode (v26.13.0)
 # ============================================================
 section "T14. Update Mode"
+if [ "$QUICK" = true ]; then
+  skip "T14 (quick mode)"
+else
 
 # T14.1 초기 설치 후 rules 파일 변조 → --update 시 templates 원본으로 복원
 T14_DIR=$(mktemp -d)
@@ -423,6 +445,7 @@ NO_INSTALL_EXIT=$?
 [ "$NO_INSTALL_EXIT" -ne 0 ] && pass "update: 미설치 상태 거부 (exit $NO_INSTALL_EXIT)" || fail "update: 미설치 허용 (exit 0)"
 
 cd "$ROOT"
+fi  # end T14 quick skip
 
 # ============================================================
 # Summary

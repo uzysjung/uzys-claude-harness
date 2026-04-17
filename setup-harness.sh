@@ -427,15 +427,16 @@ if any_track 'executive|full'; then
 fi
 
 # --- Hooks ---
+# 자동 등록 hook (settings.json에서 참조):
 safe_copy "$TEMPLATES/hooks/session-start.sh" "$PROJ/hooks/session-start.sh"
 safe_copy "$TEMPLATES/hooks/protect-files.sh" "$PROJ/hooks/protect-files.sh"
 safe_copy "$TEMPLATES/hooks/gate-check.sh" "$PROJ/hooks/gate-check.sh"
-safe_copy "$TEMPLATES/hooks/uncommitted-check.sh" "$PROJ/hooks/uncommitted-check.sh"
-safe_copy "$TEMPLATES/hooks/spec-drift-check.sh" "$PROJ/hooks/spec-drift-check.sh"
-safe_copy "$TEMPLATES/hooks/checkpoint-snapshot.sh" "$PROJ/hooks/checkpoint-snapshot.sh"
-safe_copy "$TEMPLATES/hooks/codebase-map.sh" "$PROJ/hooks/codebase-map.sh"
 safe_copy "$TEMPLATES/hooks/agentshield-gate.sh" "$PROJ/hooks/agentshield-gate.sh"
 safe_copy "$TEMPLATES/hooks/mcp-pre-exec.sh" "$PROJ/hooks/mcp-pre-exec.sh"
+# 수동/on-demand 호출 유틸리티 (자동 트리거 없음):
+safe_copy "$TEMPLATES/hooks/spec-drift-check.sh" "$PROJ/hooks/spec-drift-check.sh"  # /uzys:ship에서 명시 호출
+safe_copy "$TEMPLATES/hooks/checkpoint-snapshot.sh" "$PROJ/hooks/checkpoint-snapshot.sh"  # /ecc:checkpoint에서 호출
+safe_copy "$TEMPLATES/hooks/codebase-map.sh" "$PROJ/hooks/codebase-map.sh"  # 수동 실행 도구
 chmod +x "$PROJ/hooks/"*.sh
 
 # --- .claude/settings.json (committable, $CLAUDE_PROJECT_DIR 사용) ---
