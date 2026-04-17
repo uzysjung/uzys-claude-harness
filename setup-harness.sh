@@ -312,7 +312,7 @@ section "4/7" "Track Components ($TRACK)"
 
 # --- Track → Rule Mapping ---
 COMMON_RULES="git-policy change-management gates-taxonomy"
-DEV_RULES="test-policy ship-checklist code-style error-handling ecc-performance-common"
+DEV_RULES="test-policy ship-checklist code-style error-handling"
 UI_RULES="design-workflow"
 
 # Track-specific rules (case statement for bash 3.2 compatibility on macOS)
@@ -356,7 +356,7 @@ for rule in $RULES_TO_INSTALL; do
   fi
 done
 
-# (model-routing rule 제거됨 — 강제 rule 아님. ecc-performance-common.md의 Model Selection 참조)
+# (model-routing + ecc-performance-common rule 제거됨 — CLAUDE.md Agents 표 + Context Management 참조)
 
 # --- Commands ---
 # uzys: commands (dev tracks only)
@@ -742,14 +742,14 @@ multi_status() {
 RULES_FOUND=$(ls "$PROJ/rules/"*.md 2>/dev/null | wc -l | tr -d ' ')
 case "$TRACK" in
   executive) RULES_EXPECTED=3 ;;
-  tooling) RULES_EXPECTED=9 ;;
-  data) RULES_EXPECTED=10 ;;
-  ssr-htmx) RULES_EXPECTED=10 ;;
-  ssr-nextjs) RULES_EXPECTED=11 ;;
-  csr-supabase) RULES_EXPECTED=12 ;;
-  csr-fastify|csr-fastapi) RULES_EXPECTED=13 ;;
-  full) RULES_EXPECTED=18 ;;
-  *) RULES_EXPECTED=13 ;;
+  tooling) RULES_EXPECTED=8 ;;
+  data) RULES_EXPECTED=9 ;;
+  ssr-htmx) RULES_EXPECTED=9 ;;
+  ssr-nextjs) RULES_EXPECTED=10 ;;
+  csr-supabase) RULES_EXPECTED=11 ;;
+  csr-fastify|csr-fastapi) RULES_EXPECTED=12 ;;
+  full) RULES_EXPECTED=17 ;;
+  *) RULES_EXPECTED=12 ;;
 esac
 [ "$MULTI" = true ] && RULES_EXP_DISP="multi" || RULES_EXP_DISP="$RULES_EXPECTED"
 RULES_STATUS=$(multi_status "$RULES_FOUND" "$RULES_EXPECTED")

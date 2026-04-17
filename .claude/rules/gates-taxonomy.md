@@ -1,70 +1,21 @@
 # Gates Taxonomy
 
-Canonical gate types used across GSD workflows. Every validation checkpoint maps to one of these four types.
+워크플로우 검증 체크포인트가 매핑되는 4가지 게이트 유형. CLAUDE.md P9(Circuit Breakers)와 함께 적용.
 
----
+## 유형
 
-## Gate Types
+| 유형 | 언제 | 동작 | 복구 |
+|------|------|------|------|
+| **Pre-flight** | 작업 시작 전 | 전제조건 미충족 시 차단. 부분 작업 없음 | 전제조건 수정 후 재시도 |
+| **Revision** | 산출물 품질 불만족 | 수정 루프. 반복 상한 필수 (비용 비례) | 피드백 반영 → 재평가. 이슈 감소 없으면 조기 escalation |
+| **Escalation** | 자동 해결 불가 | 옵션 제시 + 사용자 입력 대기 | 사용자 선택 후 선택된 경로로 재개 |
+| **Abort** | 지속 시 손상/낭비 | 즉시 중단, 상태 보존, 사유 보고 | 근본 원인 수정 후 체크포인트에서 재시작 |
 
-### Pre-flight Gate
-**Purpose:** Validates preconditions before starting an operation.
-**Behavior:** Blocks entry if conditions unmet. No partial work created.
-**Recovery:** Fix the missing precondition, then retry.
-**Examples:**
-- Plan-phase checks for REQUIREMENTS.md before planning
-- Execute-phase validates PLAN.md exists before execution
-- Discuss-phase confirms phase exists in ROADMAP.md
+## 선택 휴리스틱
 
-### Revision Gate
-**Purpose:** Evaluates output quality and routes to revision if insufficient.
-**Behavior:** Loops back to producer with specific feedback. Bounded by iteration cap.
-**Recovery:** Producer addresses feedback; checker re-evaluates. The loop also escalates early if issue count does not decrease between consecutive iterations (stall detection). After max iterations, escalates unconditionally.
-**Examples:**
-- Plan-checker reviewing PLAN.md (max 3 iterations)
-- Verifier checking phase deliverables against success criteria
+1. **Pre-flight 먼저** — 파일 존재/설정 읽기로 확인 가능한 값싼 검증
+2. 산출물 **생산 후** 품질 체크 → Revision (상한 필수)
+3. Revision 루프 해결 불가 → Escalation
+4. 계속 진행이 **위험하면** → Abort
 
-### Escalation Gate
-**Purpose:** Surfaces unresolvable issues to the developer for a decision.
-**Behavior:** Pauses workflow, presents options, waits for human input.
-**Recovery:** Developer chooses action; workflow resumes on selected path.
-**Examples:**
-- Revision loop exhausted after 3 iterations
-- Merge conflict during worktree cleanup
-- Ambiguous requirement needing clarification
-
-### Abort Gate
-**Purpose:** Terminates the operation to prevent damage or waste.
-**Behavior:** Stops immediately, preserves state, reports reason.
-**Recovery:** Developer investigates root cause, fixes, restarts from checkpoint.
-**Examples:**
-- Context window critically low during execution
-- STATE.md in error state blocking /gsd-next
-- Verification finds critical missing deliverables
-
----
-
-## Gate Matrix
-
-| Workflow | Phase | Gate Type | Artifacts Checked | Failure Behavior |
-|----------|-------|-----------|-------------------|------------------|
-| plan-phase | Entry | Pre-flight | REQUIREMENTS.md, ROADMAP.md | Block with missing-file message |
-| plan-phase | Step 12 | Revision | PLAN.md quality | Loop to planner (max 3) |
-| plan-phase | Post-revision | Escalation | Unresolved issues | Surface to developer |
-| execute-phase | Entry | Pre-flight | PLAN.md | Block with missing-plan message |
-| execute-phase | Completion | Revision | SUMMARY.md completeness | Re-run incomplete tasks |
-| verify-work | Entry | Pre-flight | SUMMARY.md | Block with missing-summary |
-| verify-work | Evaluation | Escalation | Failed criteria | Surface gaps to developer |
-| next | Entry | Abort | Error state, checkpoints | Stop with diagnostic |
-
----
-
-## Implementing Gates
-
-Use this taxonomy when designing or auditing workflow validation points:
-
-- **Pre-flight** gates belong at workflow entry points. They are cheap, deterministic checks that prevent wasted work. If you can verify a precondition with a file-existence check or a config read, use a pre-flight gate.
-- **Revision** gates belong after a producer step where quality varies. Always pair them with an iteration cap to prevent infinite loops. The cap should reflect the cost of each iteration -- expensive operations get fewer retries.
-- **Escalation** gates belong wherever automated resolution is impossible or ambiguous. They are the safety valve between revision loops and abort. Present the developer with clear options and enough context to decide.
-- **Abort** gates belong at points where continuing would cause damage, waste significant resources, or produce meaningless output. They should preserve state so work can resume after the root cause is fixed.
-
-**Selection heuristic:** Start with pre-flight. If the check happens after work is produced, it is a revision gate. If the revision loop cannot resolve the issue, escalate. If continuing is dangerous, abort.
+값싼 pre-flight로 최대한 걸러내고, 비싼 혹은 사용자 의사결정이 필요한 경우에만 상위 유형으로 넘긴다.

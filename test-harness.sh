@@ -390,7 +390,7 @@ cd "$T13_DIR" && git init -q && echo "# T" > README.md && git add . && git -c us
 bash "$ROOT/setup-harness.sh" --track tooling --track csr-fastapi --project-dir . < /dev/null > /tmp/multi.log 2>&1
 RULES_M=$(ls .claude/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
 MCP_M=$(jq -r '.mcpServers | keys | join(",")' .mcp.json 2>/dev/null || echo "")
-[ "$RULES_M" -ge 14 ] && pass "multi-track Rules: $RULES_M (≥14)" || fail "multi-track Rules: $RULES_M (<14)"
+[ "$RULES_M" -ge 13 ] && pass "multi-track Rules: $RULES_M (≥13)" || fail "multi-track Rules: $RULES_M (<13)"
 echo "$MCP_M" | grep -q "railway-mcp-server" && pass "multi-track MCP: railway 포함" || fail "multi-track MCP: railway 누락 ($MCP_M)"
 cd "$ROOT"
 

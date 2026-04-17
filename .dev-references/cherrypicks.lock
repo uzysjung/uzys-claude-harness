@@ -154,16 +154,6 @@
       "modification_note": "/ecc:harness-audit — 7카테고리 deterministic 점수 (P10 분기 검토용)"
     },
     {
-      "id": "ecc-performance-common",
-      "source": "ecc",
-      "src": "rules/common/performance.md",
-      "dst": "templates/rules/ecc-performance-common.md",
-      "type": "file",
-      "modified": true,
-      "sync_verified_at": "2026-04-16",
-      "modification_note": "P1-4 from harness-engineering-audit-2026-04 (A12). 글로벌 `~/.claude/settings.json` 언급 1줄을 프로젝트 `.claude/settings.json`으로 교체 (프로젝트 스코프 원칙 준수). Sync 2026-04-16 검증: line 39 단일 수정 유지, 원본 변경 없음 확인"
-    },
-    {
       "id": "ecc-silent-failure-hunter",
       "source": "ecc",
       "src": "agents/silent-failure-hunter.md",
