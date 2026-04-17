@@ -36,11 +36,40 @@ while [ $# -gt 0 ]; do
     --apply) APPLY=true; shift ;;
     --force) FORCE=true; shift ;;
     --keep-existing) KEEP_EXISTING=true; shift ;;
-    --dest) DEST="$2"; shift 2 ;;
+    --dest)
+      [ -z "${2:-}" ] || [[ "$2" == --* ]] && { echo "ERROR: --dest requires a value" >&2; exit 1; }
+      DEST="$2"; shift 2 ;;
     -h|--help) sed -n '2,24p' "$0"; exit 0 ;;
     *) echo "Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
+
+# v26.11.1 — DEST 경계 검증: 글로벌 ~/.claude/ 또는 시스템 경로 차단 (path traversal 방어)
+DEST_PARENT="$(cd "$(dirname "$DEST")" 2>/dev/null && pwd)" || DEST_PARENT=""
+if [ -n "$DEST_PARENT" ]; then
+  DEST_ABS="$DEST_PARENT/$(basename "$DEST")"
+else
+  DEST_ABS="$DEST"
+fi
+case "$DEST_ABS" in
+  "$HOME/.claude"|"$HOME/.claude/"*)
+    echo "ERROR: --dest는 글로벌 ~/.claude/ 영역 불가 (D16)" >&2
+    echo "       입력: $DEST (절대: $DEST_ABS)" >&2
+    exit 1 ;;
+  "/"|"/etc"|"/etc/"*|"/usr/bin"|"/usr/sbin"|"/usr/local/bin"|"/bin"|"/sbin"|"/System"|"/System/"*)
+    echo "ERROR: --dest는 시스템 디렉토리 불가" >&2
+    echo "       입력: $DEST (절대: $DEST_ABS)" >&2
+    exit 1 ;;
+esac
+# 추가 안전: 현재 pwd 하위만 허용 (project-local 보장)
+case "$DEST_ABS" in
+  "$(pwd)"|"$(pwd)/"*) ;;
+  *)
+    echo "ERROR: --dest는 현재 프로젝트 디렉토리 하위만 허용" >&2
+    echo "       입력: $DEST (절대: $DEST_ABS)" >&2
+    echo "       현재 pwd: $(pwd)" >&2
+    exit 1 ;;
+esac
 
 info() { echo -e "  ${GREEN}✓${NC} $1"; }
 warn() { echo -e "  ${YELLOW}!${NC} $1"; }
@@ -68,7 +97,8 @@ test-coverage update-codemaps update-docs verification-loop verify x-api
 "
 
 is_keep() {
-  echo " $KEEP_ITEMS " | tr -s ' \n' ' ' | grep -q " $1 "
+  # v26.11.1 — grep -F (fixed string)로 정규식 메타문자 안전. 공백으로 단어 경계 강제.
+  echo " $KEEP_ITEMS " | tr -s ' \n' ' ' | grep -qF " $1 "
 }
 
 # --- Step 1: 글로벌 ECC cache 발견 ---
@@ -122,7 +152,7 @@ analyze_dir() {
   if [ "$kind" = "directory" ]; then
     for d in "$dir"/*/; do
       [ -d "$d" ] || continue
-      local name=$(basename "$d")
+      local name; name=$(basename "$d")
       if is_keep "$name"; then
         kept=$((kept+1))
       else
@@ -133,7 +163,7 @@ analyze_dir() {
   else
     for f in "$dir"/*.md; do
       [ -f "$f" ] || continue
-      local name=$(basename "$f" .md)
+      local name; name=$(basename "$f" .md)
       if is_keep "$name"; then
         kept=$((kept+1))
       else

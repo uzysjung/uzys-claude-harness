@@ -26,8 +26,12 @@ PROJECT_DIR="$(pwd)"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --track) SELECTED_TRACKS+=("$2"); shift 2 ;;
-    --add-track) SELECTED_TRACKS+=("$2"); ADD_MODE=true; shift 2 ;;
+    --track)
+      [ -z "${2:-}" ] || [[ "$2" == --* ]] && { echo "ERROR: --track requires a value" >&2; exit 1; }
+      SELECTED_TRACKS+=("$2"); shift 2 ;;
+    --add-track)
+      [ -z "${2:-}" ] || [[ "$2" == --* ]] && { echo "ERROR: --add-track requires a value" >&2; exit 1; }
+      SELECTED_TRACKS+=("$2"); ADD_MODE=true; shift 2 ;;
     --gsd) GSD=true; shift ;;
     --model-routing) MODEL_ROUTING="$2"; shift 2 ;;
     --model-routing=*) MODEL_ROUTING="${1#*=}"; shift ;;
@@ -36,6 +40,29 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
+
+# v26.11.1 — D16 보호: --project-dir이 글로벌 ~/.claude/* 또는 시스템 경로 차단
+# (mtime guard는 사후 검증이라 실제 write를 막지 못함 — 사전 차단 필요)
+if [ -n "$PROJECT_DIR" ]; then
+  # 절대 경로로 정규화 (cd로 검증)
+  if [ -d "$PROJECT_DIR" ]; then
+    PROJECT_DIR_ABS="$(cd "$PROJECT_DIR" && pwd)"
+  else
+    PROJECT_DIR_ABS="$PROJECT_DIR"
+  fi
+  case "$PROJECT_DIR_ABS" in
+    "$HOME/.claude"|"$HOME/.claude/"*)
+      echo "ERROR: --project-dir은 글로벌 ~/.claude/ 영역으로 설정할 수 없음 (D16)" >&2
+      echo "       입력: $PROJECT_DIR (절대: $PROJECT_DIR_ABS)" >&2
+      exit 1 ;;
+    "/"|"/etc"|"/etc/"*|"/usr/bin"|"/usr/sbin"|"/usr/local/bin"|"/bin"|"/sbin"|"/System"|"/System/"*)
+      # /var는 macOS TMPDIR(/var/folders/...) 포함이라 일괄 차단 안 함. /etc/ + 시스템 binary만.
+      echo "ERROR: --project-dir은 시스템 디렉토리로 설정할 수 없음" >&2
+      echo "       입력: $PROJECT_DIR (절대: $PROJECT_DIR_ABS)" >&2
+      exit 1 ;;
+  esac
+  PROJECT_DIR="$PROJECT_DIR_ABS"
+fi
 
 # 후방호환: TRACK은 첫 번째 Track (기존 변수 사용처 유지)
 if [ "${#SELECTED_TRACKS[@]}" -gt 0 ]; then
@@ -102,6 +129,7 @@ any_track() {
   local t p
   for t in "${SELECTED_TRACKS[@]}"; do
     for p in "${patterns[@]}"; do
+      # shellcheck disable=SC2254  # intentional bash glob pattern (csr-* 등) for case match
       case "$t" in
         $p) return 0 ;;
       esac
@@ -159,6 +187,12 @@ section "2/7" "Track Selection"
 TRACKS=("csr-supabase" "csr-fastify" "csr-fastapi" "ssr-htmx" "ssr-nextjs" "data" "executive" "tooling" "full")
 
 if [ "${#SELECTED_TRACKS[@]}" -eq 0 ]; then
+  # v26.11.1 — 비대화형(자동화/CI/pipe) 환경에서 명확 에러 (read EOF로 silent fail 방지)
+  if [ ! -t 0 ]; then
+    fail "비대화형 환경에서 --track 필수 (예: --track tooling)"
+    echo "  Available: ${TRACKS[*]}" >&2
+    exit 1
+  fi
   echo ""
   echo -e "  ${BOLD}Available Tracks:${NC}"
   echo ""
@@ -358,13 +392,14 @@ elif command -v jq &> /dev/null; then
     cp "$TEMPLATES/mcp.json" .mcp.json.tmp
   fi
 
-  # Track별 조건부 추가 (다중 Track union, 이미 있으면 jq가 덮어쓰기 — idempotent)
+  # Track별 조건부 추가 (다중 Track union)
+  # v26.11.1 — ADD_MODE에서 사용자 커스터마이즈 보존: 키가 없을 때만 추가 (덮어쓰기 안 함)
   if any_track 'csr-supabase|csr-fastify|csr-fastapi|ssr-htmx|ssr-nextjs|full'; then
-    jq '.mcpServers["railway-mcp-server"] = {"type":"stdio","command":"npx","args":["-y","@railway/mcp-server"]}' .mcp.json.tmp > .mcp.json.tmp2 \
+    jq 'if .mcpServers["railway-mcp-server"] == null then .mcpServers["railway-mcp-server"] = {"type":"stdio","command":"npx","args":["-y","@railway/mcp-server"]} else . end' .mcp.json.tmp > .mcp.json.tmp2 \
       && mv .mcp.json.tmp2 .mcp.json.tmp || { fail "jq railway 실패"; exit 1; }
   fi
   if any_track 'csr-supabase|full'; then
-    jq '.mcpServers["supabase"] = {"type":"stdio","command":"npx","args":["-y","@supabase/mcp-server"]}' .mcp.json.tmp > .mcp.json.tmp2 \
+    jq 'if .mcpServers["supabase"] == null then .mcpServers["supabase"] = {"type":"stdio","command":"npx","args":["-y","@supabase/mcp-server"]} else . end' .mcp.json.tmp > .mcp.json.tmp2 \
       && mv .mcp.json.tmp2 .mcp.json.tmp || { fail "jq supabase 실패"; exit 1; }
   fi
 
