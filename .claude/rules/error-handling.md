@@ -1,30 +1,23 @@
 # Error Handling
 
-## FastAPI (Python Backend)
+"에러 무시 금지", "빈 catch 금지"는 linter가 처리. 여기는 프로젝트 특화 규약만.
 
-- 전역 exception handler 등록. 스택트레이스 노출 금지.
-- 구조화된 에러 응답: `{ "success": false, "error": { "code": "...", "message": "..." } }`
-- 외부 API 호출: timeout + retry (exponential backoff).
-- 비즈니스 로직 예외: 커스텀 exception 클래스 정의.
-- 모든 에러는 context와 함께 로깅 (request_id, user_id, endpoint).
+## 에러 응답 포맷 (FastAPI 백엔드)
 
-```python
-@app.exception_handler(AppError)
-async def handle_app_error(request: Request, exc: AppError):
-    logger.error(f"AppError: {exc.code}", extra={"detail": exc.detail})
-    return JSONResponse(status_code=exc.status, content={"success": False, "error": {"code": exc.code, "message": exc.user_message}})
+구조화된 JSON. 스택트레이스/내부 경로/DB 쿼리 등 민감 정보 노출 금지.
+
+```json
+{ "success": false, "error": { "code": "...", "message": "..." } }
 ```
 
-## React (Frontend)
+커스텀 예외 클래스 + 전역 exception handler로 일관성 유지. 에러 로깅 시 context 필수(request_id, user_id, endpoint).
 
-- Route 레벨에 `ErrorBoundary` 배치.
-- API 에러: 사용자 친화적 메시지 표시. 기술적 세부사항은 콘솔만.
-- Form 검증: zod schema + react-hook-form.
-- 비동기 에러: try/catch + 사용자 알림 (toast/alert).
+## 외부 API 호출
 
-## Universal Rules
+timeout + 1회 재시도(exponential backoff). 무한 재시도 금지.
 
-- 빈 catch 블록 금지. 최소한 로그 남기기.
-- 에러 무시(swallow) 금지. 처리하거나 상위로 전파.
-- 사용자 입력은 시스템 경계에서 검증. 내부 코드는 신뢰.
-- 에러 메시지에 민감 정보(DB 쿼리, 내부 경로, 스택트레이스) 포함 금지.
+## 프론트엔드
+
+- Route 레벨 `ErrorBoundary` 배치.
+- 사용자 메시지는 친화적으로, 기술 세부사항은 콘솔만.
+- Form 검증은 schema 기반(zod 등).

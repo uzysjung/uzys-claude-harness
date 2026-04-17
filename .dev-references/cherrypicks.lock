@@ -154,15 +154,6 @@
       "modification_note": "/ecc:harness-audit — 7카테고리 deterministic 점수 (P10 분기 검토용)"
     },
     {
-      "id": "ecc-security-common",
-      "source": "ecc",
-      "src": "rules/common/security.md",
-      "dst": "templates/rules/ecc-security-common.md",
-      "type": "file",
-      "modified": false,
-      "modification_note": "P1-3 from harness-engineering-audit-2026-04 (A11). 공통 보안 체크리스트 + 시크릿 관리 프로토콜"
-    },
-    {
       "id": "ecc-performance-common",
       "source": "ecc",
       "src": "rules/common/performance.md",

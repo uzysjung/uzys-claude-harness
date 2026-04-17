@@ -22,7 +22,6 @@ SELECTED_TRACKS=()  # v26.11.0 — 다중 Track 지원
 ADD_MODE=false      # v26.11.0 — 기존 설치 위에 추가 모드
 UPDATE_MODE=false   # v26.13.0 — 기존 설치에 정책 파일만 덮어쓰기
 GSD=false
-MODEL_ROUTING="off"
 PROJECT_DIR="$(pwd)"
 
 while [[ $# -gt 0 ]]; do
@@ -35,10 +34,8 @@ while [[ $# -gt 0 ]]; do
       SELECTED_TRACKS+=("$2"); ADD_MODE=true; shift 2 ;;
     --update) UPDATE_MODE=true; shift ;;
     --gsd) GSD=true; shift ;;
-    --model-routing) MODEL_ROUTING="$2"; shift 2 ;;
-    --model-routing=*) MODEL_ROUTING="${1#*=}"; shift ;;
     --project-dir) PROJECT_DIR="$2"; shift 2 ;;
-    -h|--help) echo "Usage: $0 [--track <track>]... [--add-track <track>]... [--update] [--gsd] [--model-routing on|off] [--project-dir <path>]"; echo ""; echo "프로젝트 스코프 전용. 글로벌 ~/.claude/는 건드리지 않음."; echo ""; echo "--track       Track 1개 또는 여러 개 (반복 가능). 다중 시 union으로 설치"; echo "--add-track   기존 설치 위에 추가 (.mcp.json/.claude/* 보존하면서 union)"; echo "--update      기존 설치의 정책 파일(rules/agents/commands/hooks/CLAUDE.md)만 templates로 덮어쓰기 (백업 자동 생성)"; echo "--model-routing on: 6-gate 단계별 권장 모델 Rule 설치 (기본 off)"; exit 0 ;;
+    -h|--help) echo "Usage: $0 [--track <track>]... [--add-track <track>]... [--update] [--gsd] [--project-dir <path>]"; echo ""; echo "프로젝트 스코프 전용. 글로벌 ~/.claude/는 건드리지 않음."; echo ""; echo "--track       Track 1개 또는 여러 개 (반복 가능). 다중 시 union으로 설치"; echo "--add-track   기존 설치 위에 추가 (.mcp.json/.claude/* 보존하면서 union)"; echo "--update      기존 설치의 정책 파일(rules/agents/commands/hooks/CLAUDE.md)만 templates로 덮어쓰기 (백업 자동 생성)"; exit 0 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
@@ -79,12 +76,6 @@ for t in "${SELECTED_TRACKS[@]}"; do
     exit 1
   fi
 done
-
-# 검증
-case "$MODEL_ROUTING" in
-  on|off) ;;
-  *) echo "Invalid --model-routing value: $MODEL_ROUTING (must be 'on' or 'off')"; exit 1 ;;
-esac
 
 # ============================================================
 # Utility Functions
@@ -321,7 +312,7 @@ section "4/7" "Track Components ($TRACK)"
 
 # --- Track → Rule Mapping ---
 COMMON_RULES="git-policy change-management gates-taxonomy"
-DEV_RULES="test-policy ship-checklist code-style error-handling ecc-security-common ecc-performance-common"
+DEV_RULES="test-policy ship-checklist code-style error-handling ecc-performance-common"
 UI_RULES="design-workflow"
 
 # Track-specific rules (case statement for bash 3.2 compatibility on macOS)
@@ -330,12 +321,12 @@ get_track_rules() {
     csr-supabase) echo "tauri shadcn api-contract" ;;
     csr-fastify)  echo "tauri shadcn api-contract database" ;;
     csr-fastapi)  echo "tauri shadcn api-contract database" ;;
-    ssr-htmx)     echo "htmx seo" ;;
-    ssr-nextjs)   echo "nextjs seo shadcn" ;;
+    ssr-htmx)     echo "htmx" ;;
+    ssr-nextjs)   echo "nextjs shadcn" ;;
     data)         echo "pyside6 data-analysis" ;;
     executive)    echo "" ;;
     tooling)      echo "cli-development" ;;
-    full)         echo "tauri shadcn api-contract database htmx seo nextjs pyside6 data-analysis cli-development" ;;
+    full)         echo "tauri shadcn api-contract database htmx nextjs pyside6 data-analysis cli-development" ;;
     *)            echo "" ;;
   esac
 }
@@ -365,11 +356,7 @@ for rule in $RULES_TO_INSTALL; do
   fi
 done
 
-# Model Routing rule (opt-in, D24)
-if [ "$MODEL_ROUTING" = "on" ]; then
-  safe_copy "$TEMPLATES/rules/model-routing.md" "$PROJ/rules/model-routing.md"
-  info "Model routing enabled (6-gate model mapping guide)"
-fi
+# (model-routing rule 제거됨 — 강제 rule 아님. ecc-performance-common.md의 Model Selection 참조)
 
 # --- Commands ---
 # uzys: commands (dev tracks only)
@@ -754,13 +741,14 @@ multi_status() {
 RULES_FOUND=$(ls "$PROJ/rules/"*.md 2>/dev/null | wc -l | tr -d ' ')
 case "$TRACK" in
   executive) RULES_EXPECTED=3 ;;
-  tooling) RULES_EXPECTED=10 ;;
-  data) RULES_EXPECTED=11 ;;
-  ssr-htmx) RULES_EXPECTED=12 ;;
-  csr-supabase|ssr-nextjs) RULES_EXPECTED=13 ;;
-  csr-fastify|csr-fastapi) RULES_EXPECTED=14 ;;
-  full) RULES_EXPECTED=20 ;;
-  *) RULES_EXPECTED=14 ;;
+  tooling) RULES_EXPECTED=9 ;;
+  data) RULES_EXPECTED=10 ;;
+  ssr-htmx) RULES_EXPECTED=10 ;;
+  ssr-nextjs) RULES_EXPECTED=11 ;;
+  csr-supabase) RULES_EXPECTED=12 ;;
+  csr-fastify|csr-fastapi) RULES_EXPECTED=13 ;;
+  full) RULES_EXPECTED=18 ;;
+  *) RULES_EXPECTED=13 ;;
 esac
 [ "$MULTI" = true ] && RULES_EXP_DISP="multi" || RULES_EXP_DISP="$RULES_EXPECTED"
 RULES_STATUS=$(multi_status "$RULES_FOUND" "$RULES_EXPECTED")
