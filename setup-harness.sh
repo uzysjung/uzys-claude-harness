@@ -902,7 +902,43 @@ echo ""
 echo -e "  Track: ${BOLD}$TRACK_DISPLAY${NC}"
 [ "$ADD_MODE" = true ] && echo -e "  Mode:  ${BOLD}--add-track${NC} (기존 .mcp.json/.claude/* 보존하며 union)"
 echo -e "  GSD: $([ "$GSD" = true ] && echo "yes" || echo "no")"
-echo -e "  Model Routing: $([ "$MODEL_ROUTING" = "on" ] && echo "on" || echo "off (default)")"
+echo ""
+
+# ============================================================
+# ECC Plugin 프로젝트 스코프 설치 프롬프트 (v26.15.0)
+# 대화형일 때만 표시. 모든 Track 대상.
+# ============================================================
+if [ -t 0 ]; then
+  section "ECC" "Plugin 프로젝트 스코프 설치 (선택사항)"
+  echo "  ECC = everything-claude-code. continuous-learning-v2, security-scan,"
+  echo "        ecc-e2e 등 유용한 스킬/에이전트/커맨드 번들."
+  echo ""
+  read -rp "  ECC plugin을 프로젝트 스코프로 설치(copy)하시겠습니까? [y/N]: " ECC_ANSWER
+  if [[ "$ECC_ANSWER" =~ ^[Yy]$ ]]; then
+    # 글로벌 ECC cache 확인, 없으면 설치
+    ECC_CACHE="$HOME/.claude/plugins/cache/everything-claude-code/everything-claude-code"
+    if [ ! -d "$ECC_CACHE" ]; then
+      echo "  글로벌 ECC plugin 설치 중..."
+      claude plugin marketplace add affaan-m/everything-claude-code 2>/dev/null || true
+      claude plugin install everything-claude-code@everything-claude-code 2>/dev/null && info "글로벌 ECC 설치 완료" || warn "ECC 글로벌 설치 실패 (수동 실행 필요)"
+    fi
+    if [ -d "$ECC_CACHE" ]; then
+      read -rp "  ECC에서 불필요 항목을 제거(prune)하시겠습니까? [y/N]: " PRUNE_ANSWER
+      if [[ "$PRUNE_ANSWER" =~ ^[Yy]$ ]]; then
+        bash "$SCRIPT_DIR/prune-ecc.sh" --apply --force
+      else
+        bash "$SCRIPT_DIR/prune-ecc.sh" --apply --force --copy-only
+      fi
+      echo ""
+      info "사용: claude --plugin-dir .claude/local-plugins/ecc"
+    else
+      warn "ECC 글로벌 cache 미발견. 설치 후 'bash prune-ecc.sh --apply' 수동 실행"
+    fi
+  else
+    info "ECC 설치 스킵. 나중에 'bash prune-ecc.sh --apply' 실행 가능"
+  fi
+fi
+
 echo ""
 echo -e "${BOLD}Next steps:${NC}"
 echo -e "  1. Start Claude Code: ${CYAN}claude${NC}"

@@ -16,6 +16,7 @@
 #   --force           확인 prompt 생략.
 #   --dest <path>     복사 대상 경로 (기본: .claude/local-plugins/ecc)
 #   --keep-existing   dest가 이미 있으면 덮어쓰기 안 함 (기본은 재복사)
+#   --copy-only       prune 단계 skip. 전체 ECC를 project local로 복사만.
 #
 # 안전성:
 #   - 글로벌 ~/.claude/plugins/cache/ : read-only (cp 소스로만 사용)
@@ -30,12 +31,14 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; BO
 APPLY=false
 FORCE=false
 KEEP_EXISTING=false
+COPY_ONLY=false
 DEST=".claude/local-plugins/ecc"
 while [ $# -gt 0 ]; do
   case "$1" in
     --apply) APPLY=true; shift ;;
     --force) FORCE=true; shift ;;
     --keep-existing) KEEP_EXISTING=true; shift ;;
+    --copy-only) COPY_ONLY=true; shift ;;
     --dest)
       [ -z "${2:-}" ] || [[ "$2" == --* ]] && { echo "ERROR: --dest requires a value" >&2; exit 1; }
       DEST="$2"; shift 2 ;;
@@ -212,24 +215,30 @@ if [ "$APPLY" = false ]; then
   exit 0
 fi
 
-if [ "$FORCE" = false ]; then
-  echo ""
-  echo -e "  ${YELLOW}경고:${NC} ${PRUNE_COUNT}건을 ${DEST} 하위에서 영구 삭제합니다."
-  echo "  글로벌 cache는 영향 없음. 다른 프로젝트도 영향 없음."
-  read -rp "  진행? [y/N]: " ANSWER
-  [[ ! "$ANSWER" =~ ^[Yy]$ ]] && { warn "취소됨"; exit 0; }
-fi
-
-DELETED=0
-FAILED=0
-for target in "${PRUNE_TARGETS[@]}"; do
-  if rm -rf "$target" 2>/dev/null; then
-    DELETED=$((DELETED+1))
-  else
-    FAILED=$((FAILED+1))
-    fail "삭제 실패: $target"
+# v26.15.0 — --copy-only: prune 단계 skip
+if [ "$COPY_ONLY" = true ]; then
+  info "copy-only 모드 — prune 단계 skip (전체 ECC 유지)"
+  DELETED=0
+  FAILED=0
+else
+  if [ "$FORCE" = false ]; then
+    echo ""
+    echo -e "  ${YELLOW}경고:${NC} ${PRUNE_COUNT}건을 ${DEST} 하위에서 영구 삭제합니다."
+    echo "  글로벌 cache는 영향 없음. 다른 프로젝트도 영향 없음."
+    read -rp "  진행? [y/N]: " ANSWER
+    [[ ! "$ANSWER" =~ ^[Yy]$ ]] && { warn "취소됨"; exit 0; }
   fi
-done
+  DELETED=0
+  FAILED=0
+  for target in "${PRUNE_TARGETS[@]}"; do
+    if rm -rf "$target" 2>/dev/null; then
+      DELETED=$((DELETED+1))
+    else
+      FAILED=$((FAILED+1))
+      fail "삭제 실패: $target"
+    fi
+  done
+fi
 
 # --- Step 5: .gitignore + 사용 안내 ---
 section "[5/5] Post-actions"
@@ -239,6 +248,41 @@ if ! grep -q "^.claude/local-plugins/" .gitignore 2>/dev/null; then
 else
   info ".gitignore 이미 등록됨"
 fi
+
+# v26.15.0 — DELETED / KEPT 상세 목록 출력
+if [ "$COPY_ONLY" = false ] && [ "$DELETED" -gt 0 ]; then
+  echo ""
+  echo -e "${BOLD}========== DELETED ($DELETED) ==========${NC}"
+  for category in skills agents commands; do
+    local_deleted=()
+    for target in "${PRUNE_TARGETS[@]}"; do
+      case "$target" in
+        *"/$category/"*)
+          local_deleted+=("$(basename "$target")") ;;
+      esac
+    done
+    if [ "${#local_deleted[@]}" -gt 0 ]; then
+      echo -e "  ${RED}$category/${NC} (${#local_deleted[@]}):"
+      printf '    - %s\n' "${local_deleted[@]}" | sort
+    fi
+  done
+fi
+
+echo ""
+echo -e "${BOLD}========== KEPT ($KEEP_COUNT) ==========${NC}"
+for category in skills agents commands; do
+  dir="$DEST/$category"
+  [ ! -d "$dir" ] && continue
+  kept_items=()
+  for item in "$dir"/*; do
+    [ -e "$item" ] || continue
+    kept_items+=("$(basename "$item" | sed 's/\.md$//')")
+  done
+  if [ "${#kept_items[@]}" -gt 0 ]; then
+    echo -e "  ${GREEN}$category/${NC} (${#kept_items[@]}):"
+    printf '    - %s\n' "${kept_items[@]}" | sort
+  fi
+done
 
 echo ""
 echo -e "${BOLD}========== Summary ==========${NC}"
