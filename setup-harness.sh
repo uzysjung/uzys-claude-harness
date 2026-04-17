@@ -835,7 +835,7 @@ printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Agents" "$AGENTS_FOUND"
 
 # Hooks
 HOOKS_FOUND=$(ls "$PROJ/hooks/"*.sh 2>/dev/null | wc -l | tr -d ' ')
-HOOKS_EXP=9
+HOOKS_EXP=8
 HOOKS_STATUS=$(multi_status "$HOOKS_FOUND" "$HOOKS_EXP")
 printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Hooks" "$HOOKS_FOUND" "$HOOKS_EXP" "$HOOKS_STATUS"
 
