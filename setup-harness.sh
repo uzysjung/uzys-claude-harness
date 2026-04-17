@@ -288,7 +288,7 @@ elif command -v jq &> /dev/null; then
 
   # Track별 조건부 추가
   case "$TRACK" in
-    csr-fastify|csr-fastapi|ssr-htmx|ssr-nextjs|full)
+    csr-supabase|csr-fastify|csr-fastapi|ssr-htmx|ssr-nextjs|full)
       jq '.mcpServers["railway-mcp-server"] = {"type":"stdio","command":"npx","args":["-y","@railway/mcp-server"]}' .mcp.json.tmp > .mcp.json.tmp2 \
         && mv .mcp.json.tmp2 .mcp.json.tmp || { fail "jq railway 실패"; exit 1; }
       ;;
@@ -359,20 +359,20 @@ fi
 case "$TRACK" in
   csr-*|ssr-*|full)
     echo -n "  Impeccable..."
-    npx skills add pbakaus/impeccable 2>/dev/null && info "installed" || warn "already installed"
+    npx skills add pbakaus/impeccable --yes 2>/dev/null && info "installed" || warn "already installed"
     ;;
 esac
 
 # Playwright (모든 dev Track 공통, 이전 UI 한정에서 이동)
 if [ "$TRACK" != "executive" ]; then
   echo -n "  Playwright skill..."
-  npx skills add testdino-hq/playwright-skill 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add testdino-hq/playwright-skill --yes 2>/dev/null && info "installed" || warn "already installed"
 fi
 
 # 공통 도구 (Phase 4b 신규)
 if [ "$TRACK" != "executive" ]; then
   echo -n "  find-skills (vercel-labs)..."
-  npx skills add vercel-labs/skills --skill find-skills 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add vercel-labs/skills --skill find-skills --yes 2>/dev/null && info "installed" || warn "already installed"
 
   echo -n "  agent-browser..."
   if command -v agent-browser &> /dev/null; then
@@ -382,7 +382,7 @@ if [ "$TRACK" != "executive" ]; then
   fi
 
   echo -n "  architecture-decision-record..."
-  npx skills add yonatangross/orchestkit 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add yonatangross/orchestkit --yes 2>/dev/null && info "installed" || warn "already installed"
 fi
 
 # Supabase MCP는 .mcp.json으로 이관됨 (claude mcp add 제거)
@@ -402,20 +402,20 @@ esac
 case "$TRACK" in
   csr-*|ssr-nextjs|full)
     echo -n "  react-best-practices..."
-    npx skills add vercel-labs/agent-skills --skill react-best-practices 2>/dev/null && info "installed" || warn "already installed"
+    npx skills add vercel-labs/agent-skills --skill react-best-practices --yes 2>/dev/null && info "installed" || warn "already installed"
 
     echo -n "  shadcn-ui..."
-    npx skills add shadcn/ui 2>/dev/null && info "installed" || warn "already installed"
+    npx skills add shadcn/ui --yes 2>/dev/null && info "installed" || warn "already installed"
 
     echo -n "  web-design-guidelines..."
-    npx skills add vercel-labs/agent-skills --skill web-design-guidelines 2>/dev/null && info "installed" || warn "already installed"
+    npx skills add vercel-labs/agent-skills --skill web-design-guidelines --yes 2>/dev/null && info "installed" || warn "already installed"
     ;;
 esac
 
 case "$TRACK" in
   ssr-nextjs|full)
     echo -n "  next-best-practices..."
-    npx skills add vercel-labs/next-skills 2>/dev/null && info "installed" || warn "already installed"
+    npx skills add vercel-labs/next-skills --yes 2>/dev/null && info "installed" || warn "already installed"
     ;;
 esac
 
@@ -550,7 +550,16 @@ echo -e "${BOLD}├─────────────────┼──�
 
 # Rules
 RULES_FOUND=$(ls "$PROJ/rules/"*.md 2>/dev/null | wc -l | tr -d ' ')
-if [ "$TRACK" = "executive" ]; then RULES_EXPECTED=3; elif [ "$TRACK" = "tooling" ]; then RULES_EXPECTED=12; elif [ "$TRACK" = "full" ]; then RULES_EXPECTED=22; elif [ "$TRACK" = "data" ]; then RULES_EXPECTED=13; else RULES_EXPECTED=16; fi
+case "$TRACK" in
+  executive) RULES_EXPECTED=3 ;;
+  tooling) RULES_EXPECTED=12 ;;
+  data) RULES_EXPECTED=13 ;;
+  ssr-htmx) RULES_EXPECTED=14 ;;
+  csr-supabase|ssr-nextjs) RULES_EXPECTED=15 ;;
+  csr-fastify|csr-fastapi) RULES_EXPECTED=16 ;;
+  full) RULES_EXPECTED=22 ;;
+  *) RULES_EXPECTED=16 ;;
+esac
 RULES_STATUS=$([ "$RULES_FOUND" -ge "$RULES_EXPECTED" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
 printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Rules" "$RULES_FOUND" "$RULES_EXPECTED" "$RULES_STATUS"
 
