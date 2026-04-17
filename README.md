@@ -111,7 +111,29 @@ bash setup-harness.sh --track csr-fastapi                # Track 직접 지정
 bash setup-harness.sh --track ssr-nextjs --gsd            # GSD 오케스트레이터 포함
 bash setup-harness.sh --track tooling                     # 메타 프로젝트 (bash, markdown, CLI)
 bash setup-harness.sh --track csr-fastapi --model-routing on  # 모델 라우팅 가이드 활성 (opt-in)
+
+# v26.11.0 — 다중 Track (union 설치)
+bash setup-harness.sh --track tooling --track csr-fastapi   # 동시 다중 Track (union)
+bash setup-harness.sh --add-track csr-fastapi               # 기존 설치에 Track 추가 (.mcp.json jq merge)
 ```
+
+### Optional: ECC plugin 89 KEEP prune (v26.10.0+)
+
+ECC plugin 통째 156 skills이 컨텍스트 부담일 때 사용자 정의 89개만 남기고 prune:
+
+```bash
+# 1. ECC plugin 설치 (글로벌 user scope)
+claude plugin install everything-claude-code@everything-claude-code
+
+# 2. project local 복사본 + prune (변경 없음, dry-run 기본)
+bash prune-ecc.sh
+bash prune-ecc.sh --apply --force   # 실제 적용
+
+# 3. 사용
+claude --plugin-dir .claude/local-plugins/ecc
+```
+
+D16 안전 (글로벌 read-only). 다른 프로젝트 영향 없음. ECC plugin 업데이트 후 재실행 필요.
 
 ### 설치 후 자동 검증 테이블
 

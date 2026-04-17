@@ -191,6 +191,64 @@ Impeccable 스킬은 네임스페이스 없이 직접 호출:
 | `/delight` `/overdrive` | 개성 추가 / 기술적 야심 |
 | `/optimize` | UI 성능 최적화 |
 
+## Multi-Track 설치 (v26.11.0+)
+
+여러 Track의 union 설치가 필요할 때 (예: tooling + Python API).
+
+### 동시 다중 Track
+
+```bash
+bash setup-harness.sh --track tooling --track csr-fastapi --project-dir .
+```
+
+- Rules/Skills/Plugins/MCP 모두 union 설치
+- 검증 테이블의 `Status`는 `—` 표시 (다중 시 expected 카운트 검증 skip)
+
+### 사후 Track 추가 (`--add-track`)
+
+기존 설치 위에 새 Track 항목만 union 추가:
+
+```bash
+bash setup-harness.sh --track tooling --project-dir .       # 첫 설치
+bash setup-harness.sh --add-track csr-fastapi --project-dir .  # Track 추가
+```
+
+차이점:
+- 일반 재실행은 `.mcp.json` 보존만 (새 MCP 추가 X)
+- `--add-track`은 jq merge로 새 Track의 MCP 자동 추가
+- Rules/Skills/Agents/Commands는 safe_copy로 자동 union (이미 있으면 보존)
+
+## ECC Plugin 선별 prune (v26.10.0+)
+
+ECC plugin 156 skills + 48 agents + 79 commands가 컨텍스트 부담일 때 사용자 정의 89개만 유지:
+
+```bash
+# 1. ECC plugin 설치 (글로벌 user scope cache)
+claude plugin install everything-claude-code@everything-claude-code
+
+# 2. dry-run으로 prune 시뮬레이션
+bash prune-ecc.sh
+
+# 3. 실제 적용 (project local 복사 + KEEP 89건 유지, 228건 prune)
+bash prune-ecc.sh --apply --force
+
+# 4. 사용
+claude --plugin-dir .claude/local-plugins/ecc
+```
+
+특징:
+- **D16 안전**: 글로벌 `~/.claude/plugins/cache/`는 read-only
+- **이 프로젝트만**: `.claude/local-plugins/ecc/`. 다른 프로젝트 영향 없음
+- **idempotent**: 두 번 실행 안전. ECC plugin 업데이트 시 재실행
+
+옵션:
+- `--apply`: 실제 적용 (기본 dry-run)
+- `--force`: 확인 prompt 생략
+- `--dest <path>`: 복사 위치 변경
+- `--keep-existing`: dest 있으면 재복사 안 함
+
+KEEP 89개는 `prune-ecc.sh`의 `KEEP_ITEMS` 변수에 정의. 수정 가능.
+
 ## Track Scenarios
 
 ### CSR Project (csr-fastapi)

@@ -18,21 +18,29 @@ TEMPLATES="$SCRIPT_DIR/templates"
 # ============================================================
 # 이 스크립트는 프로젝트 스코프 전용. 글로벌 ~/.claude/는 절대 건드리지 않음.
 TRACK=""
+SELECTED_TRACKS=()  # v26.11.0 — 다중 Track 지원
+ADD_MODE=false      # v26.11.0 — 기존 설치 위에 추가 모드
 GSD=false
 MODEL_ROUTING="off"
 PROJECT_DIR="$(pwd)"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --track) TRACK="$2"; shift 2 ;;
+    --track) SELECTED_TRACKS+=("$2"); shift 2 ;;
+    --add-track) SELECTED_TRACKS+=("$2"); ADD_MODE=true; shift 2 ;;
     --gsd) GSD=true; shift ;;
     --model-routing) MODEL_ROUTING="$2"; shift 2 ;;
     --model-routing=*) MODEL_ROUTING="${1#*=}"; shift ;;
     --project-dir) PROJECT_DIR="$2"; shift 2 ;;
-    -h|--help) echo "Usage: $0 [--track <track>] [--gsd] [--model-routing on|off] [--project-dir <path>]"; echo ""; echo "프로젝트 스코프 전용. 글로벌 ~/.claude/는 건드리지 않음."; echo ""; echo "--model-routing on: 6-gate 단계별 권장 모델 Rule 설치 (기본 off)"; exit 0 ;;
+    -h|--help) echo "Usage: $0 [--track <track>]... [--add-track <track>]... [--gsd] [--model-routing on|off] [--project-dir <path>]"; echo ""; echo "프로젝트 스코프 전용. 글로벌 ~/.claude/는 건드리지 않음."; echo ""; echo "--track       Track 1개 또는 여러 개 (반복 가능). 다중 시 union으로 설치"; echo "--add-track   기존 설치 위에 추가 (.mcp.json/.claude/* 보존하면서 union)"; echo "--model-routing on: 6-gate 단계별 권장 모델 Rule 설치 (기본 off)"; exit 0 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
+
+# 후방호환: TRACK은 첫 번째 Track (기존 변수 사용처 유지)
+if [ "${#SELECTED_TRACKS[@]}" -gt 0 ]; then
+  TRACK="${SELECTED_TRACKS[0]}"
+fi
 
 # 검증
 case "$MODEL_ROUTING" in
@@ -83,6 +91,43 @@ safe_copy_dir() {
   fi
 }
 
+# v26.11.0 — 다중 Track 지원 헬퍼
+# any_track 'pattern1|pattern2|pattern3': SELECTED_TRACKS 중 하나라도 패턴 매칭 시 0
+# 주의: bash case 변수 확장 시 '|' OR이 일관되지 않아 IFS 분리로 직접 처리
+any_track() {
+  local raw="$1"
+  local IFS='|'
+  local patterns
+  read -ra patterns <<< "$raw"
+  local t p
+  for t in "${SELECTED_TRACKS[@]}"; do
+    for p in "${patterns[@]}"; do
+      case "$t" in
+        $p) return 0 ;;
+      esac
+    done
+  done
+  return 1
+}
+
+# has_dev_track: SELECTED_TRACKS 중 executive 외 dev Track 존재 여부
+has_dev_track() {
+  local t
+  for t in "${SELECTED_TRACKS[@]}"; do
+    [ "$t" != "executive" ] && return 0
+  done
+  return 1
+}
+
+# all_executive: SELECTED_TRACKS이 모두 executive (또는 비어있음)
+all_executive() {
+  local t
+  for t in "${SELECTED_TRACKS[@]}"; do
+    [ "$t" != "executive" ] && return 1
+  done
+  return 0
+}
+
 # ============================================================
 # Prerequisites
 # ============================================================
@@ -113,7 +158,7 @@ section "2/7" "Track Selection"
 
 TRACKS=("csr-supabase" "csr-fastify" "csr-fastapi" "ssr-htmx" "ssr-nextjs" "data" "executive" "tooling" "full")
 
-if [ -z "$TRACK" ]; then
+if [ "${#SELECTED_TRACKS[@]}" -eq 0 ]; then
   echo ""
   echo -e "  ${BOLD}Available Tracks:${NC}"
   echo ""
@@ -124,18 +169,25 @@ if [ -z "$TRACK" ]; then
   read -rp "  Select track (1-${#TRACKS[@]}): " TRACK_NUM
   if [[ "$TRACK_NUM" -ge 1 && "$TRACK_NUM" -le "${#TRACKS[@]}" ]]; then
     TRACK="${TRACKS[$((TRACK_NUM-1))]}"
+    SELECTED_TRACKS=("$TRACK")
   else
     fail "Invalid selection"
     exit 1
   fi
 fi
 
-info "Track: $TRACK"
+# 다중 Track 표시 + ADD_MODE 안내
+if [ "${#SELECTED_TRACKS[@]}" -eq 1 ]; then
+  info "Track: $TRACK"
+else
+  info "Tracks: ${SELECTED_TRACKS[*]} (다중 — union 설치)"
+fi
+[ "$ADD_MODE" = true ] && info "Mode: --add-track (기존 .mcp.json/.claude/* 보존하며 union 추가)"
 
 # ============================================================
 # Step 3: GSD Selection
 # ============================================================
-if [ "$GSD" = false ] && [ "$TRACK" != "executive" ] && [ -t 0 ]; then
+if [ "$GSD" = false ] && has_dev_track && [ -t 0 ]; then
   read -rp "  Install GSD (large project orchestrator)? [y/N]: " GSD_ANSWER
   if [[ "$GSD_ANSWER" =~ ^[Yy]$ ]]; then
     GSD=true
@@ -178,16 +230,21 @@ get_track_rules() {
   esac
 }
 
-# Determine which rules to install
+# Determine which rules to install (다중 Track union)
 RULES_TO_INSTALL="$COMMON_RULES"
-if [ "$TRACK" != "executive" ]; then
+if has_dev_track; then
   RULES_TO_INSTALL="$RULES_TO_INSTALL $DEV_RULES"
 fi
-# UI rules for tracks with UI
-case "$TRACK" in
-  csr-*|ssr-*|full) RULES_TO_INSTALL="$RULES_TO_INSTALL $UI_RULES" ;;
-esac
-RULES_TO_INSTALL="$RULES_TO_INSTALL $(get_track_rules "$TRACK")"
+# UI rules: SELECTED_TRACKS 중 하나라도 csr-*/ssr-*/full
+if any_track 'csr-*|ssr-*|full'; then
+  RULES_TO_INSTALL="$RULES_TO_INSTALL $UI_RULES"
+fi
+# Track-specific rules (모든 SELECTED_TRACKS의 union)
+for T in "${SELECTED_TRACKS[@]}"; do
+  RULES_TO_INSTALL="$RULES_TO_INSTALL $(get_track_rules "$T")"
+done
+# 중복 제거
+RULES_TO_INSTALL=$(echo "$RULES_TO_INSTALL" | tr ' ' '\n' | awk 'NF && !seen[$0]++' | tr '\n' ' ')
 
 # Copy rules
 for rule in $RULES_TO_INSTALL; do
@@ -206,7 +263,7 @@ fi
 
 # --- Commands ---
 # uzys: commands (dev tracks only)
-if [ "$TRACK" != "executive" ]; then
+if has_dev_track; then
   for cmd in spec plan build test review ship auto; do
     safe_copy "$TEMPLATES/commands/uzys/${cmd}.md" "$PROJ/commands/uzys/${cmd}.md"
   done
@@ -229,7 +286,7 @@ safe_copy "$TEMPLATES/agents/strategist.md" "$PROJ/agents/strategist.md"
 safe_copy "$TEMPLATES/agents/code-reviewer.md" "$PROJ/agents/code-reviewer.md"     # ECC
 safe_copy "$TEMPLATES/agents/security-reviewer.md" "$PROJ/agents/security-reviewer.md" # ECC
 # P1-5: silent-failure-hunter (dev Track 한정)
-if [ "$TRACK" != "executive" ]; then
+if has_dev_track; then
   safe_copy "$TEMPLATES/agents/silent-failure-hunter.md" "$PROJ/agents/silent-failure-hunter.md" # ECC
   # Phase 5.1 A14: build-error-resolver (ECC, dev Track 한정)
   safe_copy "$TEMPLATES/agents/build-error-resolver.md" "$PROJ/agents/build-error-resolver.md"
@@ -244,41 +301,33 @@ safe_copy "$TEMPLATES/skills/spec-scaling/SKILL.md" "$PROJ/skills/spec-scaling/S
 # 공통 cherry-pick 스킬 (Phase 4b A3, A4)
 safe_copy_dir "$TEMPLATES/skills/deep-research" "$PROJ/skills/deep-research"
 # market-research는 executive Track 한정
-if [ "$TRACK" = "executive" ] || [ "$TRACK" = "full" ]; then
+if any_track 'executive|full'; then
   safe_copy_dir "$TEMPLATES/skills/market-research" "$PROJ/skills/market-research"
 fi
 
 # Test/eval skills (D22 — behavior-level testing)
-if [ "$TRACK" != "executive" ]; then
+if has_dev_track; then
   safe_copy_dir "$TEMPLATES/skills/eval-harness" "$PROJ/skills/eval-harness"
   safe_copy_dir "$TEMPLATES/skills/verification-loop" "$PROJ/skills/verification-loop"
   safe_copy_dir "$TEMPLATES/skills/agent-introspection-debugging" "$PROJ/skills/agent-introspection-debugging"
 fi
 # e2e-testing은 UI Track 한정
-case "$TRACK" in
-  csr-*|ssr-*|full)
-    safe_copy_dir "$TEMPLATES/skills/e2e-testing" "$PROJ/skills/e2e-testing"
-    ;;
-esac
+if any_track 'csr-*|ssr-*|full'; then
+  safe_copy_dir "$TEMPLATES/skills/e2e-testing" "$PROJ/skills/e2e-testing"
+fi
 
 # v26.10.0 — Track별 ECC cherry-pick skills (ECC plugin 통째 설치 대체)
-case "$TRACK" in
-  data|csr-fastapi|full)
-    safe_copy_dir "$TEMPLATES/skills/python-patterns" "$PROJ/skills/python-patterns"
-    safe_copy_dir "$TEMPLATES/skills/python-testing" "$PROJ/skills/python-testing"
-    ;;
-esac
-case "$TRACK" in
-  ssr-nextjs|full)
-    safe_copy_dir "$TEMPLATES/skills/nextjs-turbopack" "$PROJ/skills/nextjs-turbopack"
-    ;;
-esac
-case "$TRACK" in
-  executive|full)
-    safe_copy_dir "$TEMPLATES/skills/investor-materials" "$PROJ/skills/investor-materials"
-    safe_copy_dir "$TEMPLATES/skills/investor-outreach" "$PROJ/skills/investor-outreach"
-    ;;
-esac
+if any_track 'data|csr-fastapi|full'; then
+  safe_copy_dir "$TEMPLATES/skills/python-patterns" "$PROJ/skills/python-patterns"
+  safe_copy_dir "$TEMPLATES/skills/python-testing" "$PROJ/skills/python-testing"
+fi
+if any_track 'ssr-nextjs|full'; then
+  safe_copy_dir "$TEMPLATES/skills/nextjs-turbopack" "$PROJ/skills/nextjs-turbopack"
+fi
+if any_track 'executive|full'; then
+  safe_copy_dir "$TEMPLATES/skills/investor-materials" "$PROJ/skills/investor-materials"
+  safe_copy_dir "$TEMPLATES/skills/investor-outreach" "$PROJ/skills/investor-outreach"
+fi
 
 # --- Hooks ---
 safe_copy "$TEMPLATES/hooks/session-start.sh" "$PROJ/hooks/session-start.sh"
@@ -295,35 +344,39 @@ chmod +x "$PROJ/hooks/"*.sh
 # --- .claude/settings.json (committable, $CLAUDE_PROJECT_DIR 사용) ---
 safe_copy "$TEMPLATES/settings.json" "$PROJ/settings.json"
 
-# --- .mcp.json (프로젝트 MCP, Track별 동적 조립) ---
-if [ -f .mcp.json ]; then
-  warn ".mcp.json 이미 존재 — 사용자 추가 항목 보존 위해 생성 스킵"
+# --- .mcp.json (프로젝트 MCP, Track별 동적 조립, ADD_MODE 시 jq merge) ---
+if [ -f .mcp.json ] && [ "$ADD_MODE" = false ]; then
+  warn ".mcp.json 이미 존재 — 사용자 추가 항목 보존 위해 생성 스킵 (재실행/추가 시 --add-track 사용)"
 elif command -v jq &> /dev/null; then
-  # 임시 파일 정리 trap
   trap 'rm -f .mcp.json.tmp .mcp.json.tmp2' EXIT
 
-  # 공통 항목 (chrome-devtools, context7, github)
-  cp "$TEMPLATES/mcp.json" .mcp.json.tmp
+  # base: ADD_MODE 시 기존 .mcp.json 보존, 아니면 템플릿
+  if [ "$ADD_MODE" = true ] && [ -f .mcp.json ]; then
+    cp .mcp.json .mcp.json.tmp
+    info "ADD_MODE: 기존 .mcp.json 보존하면서 새 Track의 MCP union"
+  else
+    cp "$TEMPLATES/mcp.json" .mcp.json.tmp
+  fi
 
-  # Track별 조건부 추가
-  case "$TRACK" in
-    csr-supabase|csr-fastify|csr-fastapi|ssr-htmx|ssr-nextjs|full)
-      jq '.mcpServers["railway-mcp-server"] = {"type":"stdio","command":"npx","args":["-y","@railway/mcp-server"]}' .mcp.json.tmp > .mcp.json.tmp2 \
-        && mv .mcp.json.tmp2 .mcp.json.tmp || { fail "jq railway 실패"; exit 1; }
-      ;;
-  esac
-  case "$TRACK" in
-    csr-supabase|full)
-      jq '.mcpServers["supabase"] = {"type":"stdio","command":"npx","args":["-y","@supabase/mcp-server"]}' .mcp.json.tmp > .mcp.json.tmp2 \
-        && mv .mcp.json.tmp2 .mcp.json.tmp || { fail "jq supabase 실패"; exit 1; }
-      ;;
-  esac
+  # Track별 조건부 추가 (다중 Track union, 이미 있으면 jq가 덮어쓰기 — idempotent)
+  if any_track 'csr-supabase|csr-fastify|csr-fastapi|ssr-htmx|ssr-nextjs|full'; then
+    jq '.mcpServers["railway-mcp-server"] = {"type":"stdio","command":"npx","args":["-y","@railway/mcp-server"]}' .mcp.json.tmp > .mcp.json.tmp2 \
+      && mv .mcp.json.tmp2 .mcp.json.tmp || { fail "jq railway 실패"; exit 1; }
+  fi
+  if any_track 'csr-supabase|full'; then
+    jq '.mcpServers["supabase"] = {"type":"stdio","command":"npx","args":["-y","@supabase/mcp-server"]}' .mcp.json.tmp > .mcp.json.tmp2 \
+      && mv .mcp.json.tmp2 .mcp.json.tmp || { fail "jq supabase 실패"; exit 1; }
+  fi
 
   # _comment 제거하고 최종 .mcp.json 생성
   jq 'del(._comment)' .mcp.json.tmp > .mcp.json || { fail "jq finalize 실패"; exit 1; }
   rm -f .mcp.json.tmp
   trap - EXIT
-  info "Created: .mcp.json (Track-aware, 글로벌 mcp add 없음)"
+  if [ "$ADD_MODE" = true ]; then
+    info "Updated: .mcp.json (union 추가)"
+  else
+    info "Created: .mcp.json (Track-aware, 글로벌 mcp add 없음)"
+  fi
 else
   warn ".mcp.json 생성 스킵 — jq 필요 (brew install jq)"
 fi
@@ -354,7 +407,7 @@ fi
 section "5/7" "Plugins & Skills"
 
 # agent-skills (dev tracks only)
-if [ "$TRACK" != "executive" ]; then
+if has_dev_track; then
   echo -n "  agent-skills plugin..."
   claude plugin marketplace add addyosmani/agent-skills 2>/dev/null || true
   claude plugin install agent-skills@addy-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
@@ -364,28 +417,26 @@ fi
 #       기존에 글로벌 ECC plugin 설치된 경우 안내: claude plugin uninstall everything-claude-code@everything-claude-code
 
 # Railway plugin (MCP는 .mcp.json으로 이관됨)
-if [ "$TRACK" != "executive" ]; then
+if has_dev_track; then
   echo -n "  Railway plugin..."
   claude plugin marketplace add railwayapp/railway-plugin 2>/dev/null || true
   claude plugin install railway-plugin@railway-plugin 2>/dev/null && info "installed" || warn "already installed or manual install needed"
 fi
 
 # Impeccable (UI tracks)
-case "$TRACK" in
-  csr-*|ssr-*|full)
-    echo -n "  Impeccable..."
-    npx skills add pbakaus/impeccable --yes 2>/dev/null && info "installed" || warn "already installed"
-    ;;
-esac
+if any_track 'csr-*|ssr-*|full'; then
+  echo -n "  Impeccable..."
+  npx skills add pbakaus/impeccable --yes 2>/dev/null && info "installed" || warn "already installed"
+fi
 
 # Playwright (모든 dev Track 공통, 이전 UI 한정에서 이동)
-if [ "$TRACK" != "executive" ]; then
+if has_dev_track; then
   echo -n "  Playwright skill..."
   npx skills add testdino-hq/playwright-skill --yes 2>/dev/null && info "installed" || warn "already installed"
 fi
 
 # 공통 도구 (Phase 4b 신규)
-if [ "$TRACK" != "executive" ]; then
+if has_dev_track; then
   echo -n "  find-skills (vercel-labs)..."
   npx skills add vercel-labs/skills --skill find-skills --yes 2>/dev/null && info "installed" || warn "already installed"
 
@@ -403,53 +454,45 @@ fi
 # Supabase MCP는 .mcp.json으로 이관됨 (claude mcp add 제거)
 
 # Supabase agent-skills (csr-supabase 전용 + full) — D23
-case "$TRACK" in
-  csr-supabase|full)
-    echo -n "  Supabase agent-skills..."
-    claude plugin marketplace add supabase/agent-skills 2>/dev/null || true
-    claude plugin install supabase@supabase-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+if any_track 'csr-supabase|full'; then
+  echo -n "  Supabase agent-skills..."
+  claude plugin marketplace add supabase/agent-skills 2>/dev/null || true
+  claude plugin install supabase@supabase-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
 
-    echo -n "  Supabase postgres-best-practices..."
-    claude plugin install postgres-best-practices@supabase-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
-    ;;
-esac
+  echo -n "  Supabase postgres-best-practices..."
+  claude plugin install postgres-best-practices@supabase-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+fi
 
-case "$TRACK" in
-  csr-*|ssr-nextjs|full)
-    echo -n "  react-best-practices..."
-    npx skills add vercel-labs/agent-skills --skill react-best-practices --yes 2>/dev/null && info "installed" || warn "already installed"
+if any_track 'csr-*|ssr-nextjs|full'; then
+  echo -n "  react-best-practices..."
+  npx skills add vercel-labs/agent-skills --skill react-best-practices --yes 2>/dev/null && info "installed" || warn "already installed"
 
-    echo -n "  shadcn-ui..."
-    npx skills add shadcn/ui --yes 2>/dev/null && info "installed" || warn "already installed"
+  echo -n "  shadcn-ui..."
+  npx skills add shadcn/ui --yes 2>/dev/null && info "installed" || warn "already installed"
 
-    echo -n "  web-design-guidelines..."
-    npx skills add vercel-labs/agent-skills --skill web-design-guidelines --yes 2>/dev/null && info "installed" || warn "already installed"
-    ;;
-esac
+  echo -n "  web-design-guidelines..."
+  npx skills add vercel-labs/agent-skills --skill web-design-guidelines --yes 2>/dev/null && info "installed" || warn "already installed"
+fi
 
-case "$TRACK" in
-  ssr-nextjs|full)
-    echo -n "  next-best-practices..."
-    npx skills add vercel-labs/next-skills --yes 2>/dev/null && info "installed" || warn "already installed"
-    ;;
-esac
+if any_track 'ssr-nextjs|full'; then
+  echo -n "  next-best-practices..."
+  npx skills add vercel-labs/next-skills --yes 2>/dev/null && info "installed" || warn "already installed"
+fi
 
 # Anthropic document-skills + executive plugins
-case "$TRACK" in
-  executive|full)
-    echo -n "  Anthropic document-skills..."
-    claude plugin marketplace add anthropics/skills 2>/dev/null || true
-    claude plugin install document-skills@anthropic-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+if any_track 'executive|full'; then
+  echo -n "  Anthropic document-skills..."
+  claude plugin marketplace add anthropics/skills 2>/dev/null || true
+  claude plugin install document-skills@anthropic-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
 
-    echo -n "  c-level-skills..."
-    claude plugin marketplace add alirezarezvani/c-level-skills 2>/dev/null || true
-    claude plugin install c-level-skills@c-level-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+  echo -n "  c-level-skills..."
+  claude plugin marketplace add alirezarezvani/c-level-skills 2>/dev/null || true
+  claude plugin install c-level-skills@c-level-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
 
-    echo -n "  finance-skills..."
-    claude plugin marketplace add alirezarezvani/finance-skills 2>/dev/null || true
-    claude plugin install finance-skills@finance-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
-    ;;
-esac
+  echo -n "  finance-skills..."
+  claude plugin marketplace add alirezarezvani/finance-skills 2>/dev/null || true
+  claude plugin install finance-skills@finance-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+fi
 
 # GSD (optional)
 if [ "$GSD" = true ]; then
@@ -458,7 +501,7 @@ if [ "$GSD" = true ]; then
 fi
 
 # Optional: Advanced plugins (interactive only)
-if [ "$TRACK" != "executive" ] && [ -t 0 ]; then
+if has_dev_track && [ -t 0 ]; then
   echo ""
   echo -e "  ${BOLD}Optional Plugins:${NC}"
   read -rp "  Install Trail of Bits security (CodeQL, Semgrep)? [y/N]: " TOB_ANSWER
@@ -511,8 +554,8 @@ for agent in reviewer data-analyst strategist code-reviewer security-reviewer; d
   [ -f "$PROJ/agents/${agent}.md" ] && info "Agent: ${agent}" || { fail "Missing: ${agent}"; ERRORS=$((ERRORS+1)); }
 done
 
-# Executive check
-if [ "$TRACK" = "executive" ]; then
+# Executive check (모든 SELECTED_TRACKS이 executive일 때만)
+if all_executive; then
   if [ ! -d "$PROJ/commands/uzys" ] || [ -z "$(ls -A "$PROJ/commands/uzys" 2>/dev/null)" ]; then
     info "Executive: agent-skills commands not installed (correct)"
   else
@@ -536,11 +579,20 @@ if [ -f "$HOME/.claude/CLAUDE.md" ]; then
   fi
 fi
 
+# Display: 다중 Track이면 union 표기
+if [ "${#SELECTED_TRACKS[@]}" -gt 1 ]; then
+  TRACK_DISPLAY="${SELECTED_TRACKS[*]}"
+  MULTI=true
+else
+  TRACK_DISPLAY="$TRACK"
+  MULTI=false
+fi
+
 # Summary
 echo ""
 if [ "$ERRORS" -eq 0 ]; then
   echo -e "${GREEN}========================================${NC}"
-  echo -e "${GREEN}  Setup Complete — $TRACK${NC}"
+  echo -e "${GREEN}  Setup Complete — $TRACK_DISPLAY${NC}"
   echo -e "${GREEN}========================================${NC}"
 else
   echo -e "${YELLOW}========================================${NC}"
@@ -551,10 +603,19 @@ fi
 # === 설치 결과 검증 테이블 ===
 echo ""
 echo -e "${BOLD}┌─────────────────────────────────────────────────┐${NC}"
-echo -e "${BOLD}│  Installation Report — $TRACK${NC}"
+echo -e "${BOLD}│  Installation Report — $TRACK_DISPLAY${NC}"
 echo -e "${BOLD}├─────────────────┬──────────┬──────────┬─────────┤${NC}"
 printf  "${BOLD}│ %-15s │ %-8s │ %-8s │ %-7s │${NC}\n" "Category" "Found" "Expected" "Status"
 echo -e "${BOLD}├─────────────────┼──────────┼──────────┼─────────┤${NC}"
+
+# v26.11.0: 다중 Track 시 expected 검증 skip (union 카운트 계산 복잡 — Found만 표시)
+multi_status() {
+  if [ "$MULTI" = true ]; then
+    echo "${YELLOW}—${NC}"
+  else
+    [ "$1" -ge "$2" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}"
+  fi
+}
 
 # Rules
 RULES_FOUND=$(ls "$PROJ/rules/"*.md 2>/dev/null | wc -l | tr -d ' ')
@@ -568,35 +629,36 @@ case "$TRACK" in
   full) RULES_EXPECTED=20 ;;
   *) RULES_EXPECTED=14 ;;
 esac
-RULES_STATUS=$([ "$RULES_FOUND" -ge "$RULES_EXPECTED" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
-printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Rules" "$RULES_FOUND" "$RULES_EXPECTED" "$RULES_STATUS"
+[ "$MULTI" = true ] && RULES_EXP_DISP="multi" || RULES_EXP_DISP="$RULES_EXPECTED"
+RULES_STATUS=$(multi_status "$RULES_FOUND" "$RULES_EXPECTED")
+printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Rules" "$RULES_FOUND" "$RULES_EXP_DISP" "$RULES_STATUS"
 
 # Commands
 UZYS_FOUND=$(ls "$PROJ/commands/uzys/"*.md 2>/dev/null | wc -l | tr -d ' ')
 ECC_FOUND=$(ls "$PROJ/commands/ecc/"*.md 2>/dev/null | wc -l | tr -d ' ')
-if [ "$TRACK" = "executive" ]; then UZYS_EXP=0; else UZYS_EXP=7; fi  # 6 + auto
+if all_executive; then UZYS_EXP=0; else UZYS_EXP=7; fi  # 6 + auto
 ECC_EXP=8
-UZYS_STATUS=$([ "$UZYS_FOUND" -ge "$UZYS_EXP" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
-ECC_STATUS=$([ "$ECC_FOUND" -ge "$ECC_EXP" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
+UZYS_STATUS=$(multi_status "$UZYS_FOUND" "$UZYS_EXP")
+ECC_STATUS=$(multi_status "$ECC_FOUND" "$ECC_EXP")
 printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Commands uzys:" "$UZYS_FOUND" "$UZYS_EXP" "$UZYS_STATUS"
 printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Commands ecc:" "$ECC_FOUND" "$ECC_EXP" "$ECC_STATUS"
 
 # Agents
 AGENTS_FOUND=$(ls "$PROJ/agents/"*.md 2>/dev/null | wc -l | tr -d ' ')
-if [ "$TRACK" = "executive" ]; then AGENTS_EXP=5; else AGENTS_EXP=8; fi
-AGENTS_STATUS=$([ "$AGENTS_FOUND" -ge "$AGENTS_EXP" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
+if all_executive; then AGENTS_EXP=5; else AGENTS_EXP=8; fi
+AGENTS_STATUS=$(multi_status "$AGENTS_FOUND" "$AGENTS_EXP")
 printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Agents" "$AGENTS_FOUND" "$AGENTS_EXP" "$AGENTS_STATUS"
 
 # Hooks
 HOOKS_FOUND=$(ls "$PROJ/hooks/"*.sh 2>/dev/null | wc -l | tr -d ' ')
 HOOKS_EXP=9
-HOOKS_STATUS=$([ "$HOOKS_FOUND" -ge "$HOOKS_EXP" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
+HOOKS_STATUS=$(multi_status "$HOOKS_FOUND" "$HOOKS_EXP")
 printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Hooks" "$HOOKS_FOUND" "$HOOKS_EXP" "$HOOKS_STATUS"
 
 # Skills
 SKILLS_FOUND=$(find "$PROJ/skills" -maxdepth 2 -name "SKILL.md" -o -name "config.json" 2>/dev/null | xargs -I{} dirname {} | sort -u | wc -l | tr -d ' ')
-if [ "$TRACK" = "executive" ]; then SKILLS_EXP=5; else SKILLS_EXP=7; fi
-SKILLS_STATUS=$([ "$SKILLS_FOUND" -ge "$SKILLS_EXP" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
+if all_executive; then SKILLS_EXP=5; else SKILLS_EXP=7; fi
+SKILLS_STATUS=$(multi_status "$SKILLS_FOUND" "$SKILLS_EXP")
 printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Skills" "$SKILLS_FOUND" "$SKILLS_EXP" "$SKILLS_STATUS"
 
 # MCP servers
@@ -611,8 +673,14 @@ case "$TRACK" in
   full) MCP_EXP=5 ;;
   *) MCP_EXP=3 ;;
 esac
-MCP_STATUS=$([ "$MCP_FOUND" != "?" ] && [ "$MCP_FOUND" -ge "$MCP_EXP" ] && echo "${GREEN}✅${NC}" || echo "${YELLOW}⚠️${NC}")
-printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "MCP servers" "$MCP_FOUND" "$MCP_EXP" "$MCP_STATUS"
+if [ "$MULTI" = true ]; then
+  MCP_STATUS="${YELLOW}—${NC}"
+  MCP_EXP_DISP="multi"
+else
+  MCP_STATUS=$([ "$MCP_FOUND" != "?" ] && [ "$MCP_FOUND" -ge "$MCP_EXP" ] && echo "${GREEN}✅${NC}" || echo "${YELLOW}⚠️${NC}")
+  MCP_EXP_DISP="$MCP_EXP"
+fi
+printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "MCP servers" "$MCP_FOUND" "$MCP_EXP_DISP" "$MCP_STATUS"
 
 # .mcp-allowlist
 if [ -f ".mcp-allowlist" ]; then
@@ -648,7 +716,8 @@ if [ "$INSTALL_FAILURES" -gt 0 ]; then
 fi
 
 echo ""
-echo -e "  Track: ${BOLD}$TRACK${NC}"
+echo -e "  Track: ${BOLD}$TRACK_DISPLAY${NC}"
+[ "$ADD_MODE" = true ] && echo -e "  Mode:  ${BOLD}--add-track${NC} (기존 .mcp.json/.claude/* 보존하며 union)"
 echo -e "  GSD: $([ "$GSD" = true ] && echo "yes" || echo "no")"
 echo -e "  Model Routing: $([ "$MODEL_ROUTING" = "on" ] && echo "on" || echo "off (default)")"
 echo ""

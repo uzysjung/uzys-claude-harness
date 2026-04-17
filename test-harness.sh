@@ -352,6 +352,38 @@ done
 # gate-check.sh에 auto 예외 존재
 grep -q "uzys:auto" templates/hooks/gate-check.sh 2>/dev/null && pass "gate-check: auto 예외" || fail "gate-check: auto 미지원"
 
+# prune-ecc.sh 존재 + KEEP 89개 정의
+[ -f prune-ecc.sh ] && pass "prune-ecc.sh" || fail "prune-ecc.sh 누락"
+KEEP_LINES=$(awk '/^KEEP_ITEMS=/,/^"/' prune-ecc.sh 2>/dev/null | wc -w | tr -d ' ')
+[ "$KEEP_LINES" -gt 80 ] && pass "prune-ecc.sh KEEP 정의 (${KEEP_LINES} tokens)" || fail "prune-ecc.sh KEEP 누락"
+
+# ============================================================
+# T13. Multi-Track Installation (v26.11.0)
+# ============================================================
+section "T13. Multi-Track Installation"
+
+# T13.1 동시 다중 Track: --track tooling --track csr-fastapi
+T13_DIR=$(mktemp -d)
+cd "$T13_DIR" && git init -q && echo "# T" > README.md && git add . && git -c user.email=t@t -c user.name=t commit -m init -q 2>/dev/null
+bash "$ROOT/setup-harness.sh" --track tooling --track csr-fastapi --project-dir . < /dev/null > /tmp/multi.log 2>&1
+RULES_M=$(ls .claude/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
+MCP_M=$(jq -r '.mcpServers | keys | join(",")' .mcp.json 2>/dev/null || echo "")
+[ "$RULES_M" -ge 14 ] && pass "multi-track Rules: $RULES_M (≥14)" || fail "multi-track Rules: $RULES_M (<14)"
+echo "$MCP_M" | grep -q "railway-mcp-server" && pass "multi-track MCP: railway 포함" || fail "multi-track MCP: railway 누락 ($MCP_M)"
+cd "$ROOT"
+
+# T13.2 --add-track: tooling → csr-fastapi
+T13B_DIR=$(mktemp -d)
+cd "$T13B_DIR" && git init -q && echo "# T" > README.md && git add . && git -c user.email=t@t -c user.name=t commit -m init -q 2>/dev/null
+bash "$ROOT/setup-harness.sh" --track tooling --project-dir . < /dev/null > /tmp/s1.log 2>&1
+RULES_BEFORE=$(ls .claude/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
+bash "$ROOT/setup-harness.sh" --add-track csr-fastapi --project-dir . < /dev/null > /tmp/s2.log 2>&1
+RULES_AFTER=$(ls .claude/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
+MCP_AFTER=$(jq -r '.mcpServers | keys | join(",")' .mcp.json 2>/dev/null || echo "")
+[ "$RULES_AFTER" -gt "$RULES_BEFORE" ] && pass "add-track Rules: $RULES_BEFORE → $RULES_AFTER" || fail "add-track Rules unchanged"
+echo "$MCP_AFTER" | grep -q "railway-mcp-server" && pass "add-track MCP merge: railway 추가" || fail "add-track MCP merge 실패"
+cd "$ROOT"
+
 # ============================================================
 # Summary
 # ============================================================
