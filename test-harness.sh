@@ -65,7 +65,7 @@ done
 # T2. Bash Syntax
 # ============================================================
 section "T2. Bash Syntax"
-for f in setup-harness.sh sync-cherrypicks.sh test-harness.sh templates/hooks/gate-check.sh templates/hooks/protect-files.sh templates/hooks/session-start.sh templates/hooks/spec-drift-check.sh templates/hooks/checkpoint-snapshot.sh templates/hooks/codebase-map.sh templates/hooks/agentshield-gate.sh templates/hooks/mcp-pre-exec.sh; do
+for f in setup-harness.sh sync-cherrypicks.sh test-harness.sh templates/hooks/gate-check.sh templates/hooks/protect-files.sh templates/hooks/session-start.sh templates/hooks/spec-drift-check.sh templates/hooks/checkpoint-snapshot.sh templates/hooks/agentshield-gate.sh templates/hooks/mcp-pre-exec.sh; do
   if [ -f "$ROOT/$f" ]; then
     if bash -n "$ROOT/$f" 2>/dev/null; then
       pass "$f"
@@ -188,7 +188,7 @@ else
       if [ "$TRACK" = "executive" ]; then EXPECTED_AGENTS=5; else EXPECTED_AGENTS=8; fi
       ALLOWLIST_OK=true
       if [ "$TRACK" != "executive" ] && [ ! -f .mcp-allowlist ]; then ALLOWLIST_OK=false; fi
-      if [ "$AGENTS" = "$EXPECTED_AGENTS" ] && [ "$HOOKS" = "8" ] && [ -f .mcp.json ] && [ -f .claude/settings.json ] && [ -f CLAUDE.md ] \
+      if [ "$AGENTS" = "$EXPECTED_AGENTS" ] && [ "$HOOKS" = "7" ] && [ -f .mcp.json ] && [ -f .claude/settings.json ] && [ -f CLAUDE.md ] \
          && [ "$ALLOWLIST_OK" = true ] \
          && ! grep -q "/Users\|/private" .claude/settings.json 2>/dev/null; then
         echo "PASS|$TRACK install" > "$RESULT"

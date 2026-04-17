@@ -49,10 +49,3 @@ Major CR 적용 전, 또는 주요 변경점에서 savepoint 생성:
 git add -A && git commit -m "chore: savepoint before [변경 설명]"
 ```
 
-## Session Protocol
-
-매 세션 시작 시:
-1. SPEC.md/PRD.md 읽기 → Status, Current Phase, Blockers 확인
-2. Change Log 최신 항목 확인
-3. Decision Log에서 현재 Phase 영향 결정 확인
-4. DO NOT CHANGE 영역 재확인

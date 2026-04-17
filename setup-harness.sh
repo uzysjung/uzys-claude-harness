@@ -498,7 +498,6 @@ safe_copy "$TEMPLATES/hooks/mcp-pre-exec.sh" "$PROJ/hooks/mcp-pre-exec.sh"
 # 수동/on-demand 호출 유틸리티 (자동 트리거 없음):
 safe_copy "$TEMPLATES/hooks/spec-drift-check.sh" "$PROJ/hooks/spec-drift-check.sh"  # /uzys:ship에서 명시 호출
 safe_copy "$TEMPLATES/hooks/checkpoint-snapshot.sh" "$PROJ/hooks/checkpoint-snapshot.sh"  # /ecc:checkpoint에서 호출
-safe_copy "$TEMPLATES/hooks/codebase-map.sh" "$PROJ/hooks/codebase-map.sh"  # 수동 실행 도구
 chmod +x "$PROJ/hooks/"*.sh
 
 # --- .claude/settings.json (committable, $CLAUDE_PROJECT_DIR 사용) ---
@@ -835,7 +834,7 @@ printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Agents" "$AGENTS_FOUND"
 
 # Hooks
 HOOKS_FOUND=$(ls "$PROJ/hooks/"*.sh 2>/dev/null | wc -l | tr -d ' ')
-HOOKS_EXP=8
+HOOKS_EXP=7
 HOOKS_STATUS=$(multi_status "$HOOKS_FOUND" "$HOOKS_EXP")
 printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Hooks" "$HOOKS_FOUND" "$HOOKS_EXP" "$HOOKS_STATUS"
 

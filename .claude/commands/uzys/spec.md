@@ -10,16 +10,38 @@ Define phase — 구조화된 스펙을 코드 작성 전에 작성한다.
 5. DO NOT CHANGE 영역을 식별하고 SPEC에 기록한다.
 6. SPEC.md를 `docs/SPEC.md`에 저장한다.
 
-## Test Environment Parity (필수 질의)
+## Pre-SPEC 필수 접수 (UI/Test/E2E)
 
-SPEC 작성 시 다음 4개 항목을 **명시적으로 질문하고 기록**한다. 미기재 시 SPEC 미완료 — Build 단계에서 dev-prod drift 버그로 이어짐.
+SPEC 작성 **전에** 다음 항목을 사용자에게 질문하고 SPEC에 기록한다. 미기재 시 SPEC 미완료 — Build 단계에서 drift 버그로 이어짐.
+
+### A. Test Environment Parity
 
 1. **Prod DB 엔진** — Postgres/MySQL/SQLite/Redis 등 + 버전
 2. **테스트 DB 전략** — testcontainer / docker-compose / staging DB / none. SQLite 대체는 Prod가 SQLite인 경우에만 허용 (test-policy.md Dev-Prod Parity)
 3. **외부 의존성** — Stripe, Supabase, Railway, SES 등. 각각 Mock / Live staging 중 어떤 전략인지
-4. **핵심 E2E 플로우** — 인증(login/callback/me), 결제(checkout/webhook), 파일업로드 등 Mock 금지 대상 목록
 
-이 4개는 SPEC.md의 "Testing Strategy" 섹션에 표로 정리한다.
+→ SPEC.md "Testing Strategy" 섹션에 표로 정리.
+
+### B. 핵심 E2E 플로우
+
+- **Mock 금지 대상 목록**: 인증(login/callback/me), 결제(checkout/webhook), 파일업로드 등
+- 각 플로우별 성공 기준 (예: "login → /me 200 + user_id 일치")
+
+→ SPEC.md "Testing Strategy"의 E2E 하위 목록으로.
+
+### C. Design Context (UI Track인 경우)
+
+UI 포함 Track(csr-*/ssr-*/full)이면 SPEC 전에 다음 확인:
+
+1. **`DESIGN.md` 존재 여부** — 디자인 방향/톤/레이아웃 원칙 기록. 없으면 `/teach` 또는 `/shape` 스킬로 먼저 작성 유도
+2. **`.impeccable.md` 존재 여부** — 브랜드/청중/톤 컨텍스트. 없으면 `/teach` 선행
+3. **디자인 참조물** — Figma 링크, 스크린샷, 경쟁사 레퍼런스 등
+
+디자인 컨텍스트 없이 UI 코드 작성 금지. Generic AI 미학 산출물 방지.
+
+---
+
+위 A/B/C **세 블록은 SPEC 작성 전 접수**. 답변 없으면 "이 항목 정의가 필요합니다" 질문으로 돌아가 반복. 모두 수집된 후에 본 SPEC 작성 진행.
 
 ## Gate
 

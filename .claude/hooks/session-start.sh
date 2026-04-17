@@ -10,11 +10,6 @@ if [ -n "$BRANCH" ] && [ "$BRANCH" != "HEAD" ]; then
   git pull --rebase 2>/dev/null || true
 fi
 
-# 1b. codebase-map 갱신 (stale 체크는 내부에서. 10분 이내면 skip)
-if [ -x ".claude/hooks/codebase-map.sh" ]; then
-  bash .claude/hooks/codebase-map.sh 2>/dev/null || true
-fi
-
 # 2. SPEC 존재 여부 확인
 SPEC_EXISTS="false"
 if [ -f "docs/SPEC.md" ] || [ -f "SPEC.md" ]; then
