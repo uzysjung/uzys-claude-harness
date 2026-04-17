@@ -16,3 +16,4 @@ docs/checkpoints/
 
 # npx skills 다운로드 캐시 (자동 생성, git 추적 제외)
 .factory/
+.claude/local-plugins/
