@@ -14,27 +14,9 @@
 2. **Integration Tests** — API 엔드포인트, DB 연동
 3. **E2E Tests** — 핵심 사용자 흐름 (Ship 단계 필수)
 
-## Dev-Prod Parity (CRITICAL)
+## Dev-Prod Parity (필수)
 
-개발/테스트 DB 엔진은 Prod와 **동일**해야 한다. 엔진 불일치는 마이그레이션/쿼리/트랜잭션 레벨 버그를 숨긴다.
-
-| Prod Stack | 테스트 DB | 금지 대체 |
-|------------|----------|---------|
-| Railway Postgres / Supabase | Postgres (testcontainer 또는 docker-compose) | SQLite, in-memory mock |
-| Redis (prod) | Redis container | in-process dict fake |
-| S3-호환 스토리지 | MinIO container | 로컬 파일시스템 |
-
-예외 — Prod가 SQLite인 경우에만 SQLite 테스트 허용. "CI 속도/편의"는 근거로 불허.
-
-## Live E2E for Critical Paths (CRITICAL)
-
-다음 흐름은 **Mock 금지** — staging 실환경에서 최소 1건 Live E2E 필수:
-
-- **인증**: login → magic-link/OAuth callback → /me 200
-- **결제**: checkout → webhook → refund
-- **외부 API 의존**: Stripe, Supabase Auth/Realtime, SES, Railway deploy 등
-
-Mock 기반 unit/integration test는 *보조*이지 *충분조건*이 아니다. 인증 플로우가 staging에서 실제 200을 돌려받는지 검증해야 Ship 가능.
+개발/테스트 DB 엔진은 Prod와 **동일**해야 한다. Prod가 Postgres면 테스트도 Postgres (testcontainer 또는 docker-compose). SQLite 대체 금지 — CI 속도/편의는 근거가 아니다. 구체적 설정은 test-driven-development 스킬 참조.
 
 ## TDD Workflow (Mandatory)
 

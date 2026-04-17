@@ -20,6 +20,7 @@ TEMPLATES="$SCRIPT_DIR/templates"
 TRACK=""
 SELECTED_TRACKS=()  # v26.11.0 — 다중 Track 지원
 ADD_MODE=false      # v26.11.0 — 기존 설치 위에 추가 모드
+UPDATE_MODE=false   # v26.13.0 — 기존 설치에 정책 파일만 덮어쓰기
 GSD=false
 MODEL_ROUTING="off"
 PROJECT_DIR="$(pwd)"
@@ -32,11 +33,12 @@ while [[ $# -gt 0 ]]; do
     --add-track)
       [ -z "${2:-}" ] || [[ "$2" == --* ]] && { echo "ERROR: --add-track requires a value" >&2; exit 1; }
       SELECTED_TRACKS+=("$2"); ADD_MODE=true; shift 2 ;;
+    --update) UPDATE_MODE=true; shift ;;
     --gsd) GSD=true; shift ;;
     --model-routing) MODEL_ROUTING="$2"; shift 2 ;;
     --model-routing=*) MODEL_ROUTING="${1#*=}"; shift ;;
     --project-dir) PROJECT_DIR="$2"; shift 2 ;;
-    -h|--help) echo "Usage: $0 [--track <track>]... [--add-track <track>]... [--gsd] [--model-routing on|off] [--project-dir <path>]"; echo ""; echo "프로젝트 스코프 전용. 글로벌 ~/.claude/는 건드리지 않음."; echo ""; echo "--track       Track 1개 또는 여러 개 (반복 가능). 다중 시 union으로 설치"; echo "--add-track   기존 설치 위에 추가 (.mcp.json/.claude/* 보존하면서 union)"; echo "--model-routing on: 6-gate 단계별 권장 모델 Rule 설치 (기본 off)"; exit 0 ;;
+    -h|--help) echo "Usage: $0 [--track <track>]... [--add-track <track>]... [--update] [--gsd] [--model-routing on|off] [--project-dir <path>]"; echo ""; echo "프로젝트 스코프 전용. 글로벌 ~/.claude/는 건드리지 않음."; echo ""; echo "--track       Track 1개 또는 여러 개 (반복 가능). 다중 시 union으로 설치"; echo "--add-track   기존 설치 위에 추가 (.mcp.json/.claude/* 보존하면서 union)"; echo "--update      기존 설치의 정책 파일(rules/agents/commands/hooks/CLAUDE.md)만 templates로 덮어쓰기 (백업 자동 생성)"; echo "--model-routing on: 6-gate 단계별 권장 모델 Rule 설치 (기본 off)"; exit 0 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
@@ -175,6 +177,60 @@ all_executive() {
   done
   return 0
 }
+
+# ============================================================
+# Update Mode (v26.13.0) — 기존 설치의 정책 파일만 templates로 덮어쓰기
+# 대상: rules/, agents/, commands/uzys/, hooks/, .claude/CLAUDE.md
+# 보존: settings.json, gate-status.json, .mcp.json, docs/*, SPEC.md, PRD.md
+# 원칙: 타깃 디렉토리에 이미 존재하는 파일만 덮어쓴다 (Track 혼입 방지)
+# ============================================================
+if [ "$UPDATE_MODE" = true ]; then
+  section "UPDATE" "정책 파일 갱신 (templates → .claude/)"
+  cd "$PROJECT_DIR" || { fail "cd $PROJECT_DIR 실패"; exit 1; }
+  if [ ! -d ".claude" ]; then
+    fail ".claude/ 디렉토리가 없음. --update는 기존 설치 위에서만 동작한다."
+    echo "  먼저 setup-harness.sh --track <track> --project-dir . 로 초기 설치 필요." >&2
+    exit 1
+  fi
+
+  BACKUP_DIR=".claude.backup-$(date +%Y%m%d-%H%M%S)"
+  if ! cp -R .claude "$BACKUP_DIR"; then
+    fail "백업 생성 실패: $BACKUP_DIR"
+    exit 1
+  fi
+  info "Backup created: $BACKUP_DIR"
+
+  # 기존 파일만 덮어쓰기: 타깃 디렉토리의 파일 목록 기준 → templates에서 매칭되는 것만 복사
+  update_dir() {
+    local target="$1" source="$2" pattern="${3:-*}"
+    [ ! -d "$target" ] && return 0
+    [ ! -d "$source" ] && return 0
+    local count=0 f base
+    for f in "$target"/$pattern; do
+      [ -f "$f" ] || continue
+      base=$(basename "$f")
+      if [ -f "$source/$base" ]; then
+        cp "$source/$base" "$f" && count=$((count+1))
+      fi
+    done
+    info "$target: $count files updated"
+  }
+
+  update_dir ".claude/rules" "$TEMPLATES/rules" "*.md"
+  update_dir ".claude/agents" "$TEMPLATES/agents" "*.md"
+  update_dir ".claude/commands/uzys" "$TEMPLATES/commands/uzys" "*.md"
+  update_dir ".claude/hooks" "$TEMPLATES/hooks" "*.sh"
+
+  if [ -f ".claude/CLAUDE.md" ] && [ -f "$TEMPLATES/CLAUDE.md" ]; then
+    cp "$TEMPLATES/CLAUDE.md" ".claude/CLAUDE.md" && info ".claude/CLAUDE.md 갱신"
+  fi
+
+  echo ""
+  info "Update complete."
+  echo "  Diff 확인: diff -r $BACKUP_DIR .claude"
+  echo "  Rollback:  rm -rf .claude && mv $BACKUP_DIR .claude"
+  exit 0
+fi
 
 # ============================================================
 # Prerequisites

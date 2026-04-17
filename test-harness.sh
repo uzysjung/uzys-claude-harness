@@ -357,11 +357,9 @@ grep -q "uzys:auto" templates/hooks/gate-check.sh 2>/dev/null && pass "gate-chec
 KEEP_LINES=$(awk '/^KEEP_ITEMS=/,/^"/' prune-ecc.sh 2>/dev/null | wc -w | tr -d ' ')
 [ "$KEEP_LINES" -gt 80 ] && pass "prune-ecc.sh KEEP 정의 (${KEEP_LINES} tokens)" || fail "prune-ecc.sh KEEP 누락"
 
-# Dev-Prod parity + Live E2E gates (v26.12.1)
-grep -q "Prod-DB parity" templates/rules/ship-checklist.md && pass "ship-checklist: Prod-DB parity gate" || fail "ship-checklist: Prod-DB parity 누락"
-grep -q "인증 플로우 Live E2E" templates/rules/ship-checklist.md && pass "ship-checklist: Live E2E auth gate" || fail "ship-checklist: Live E2E 누락"
+# Dev-Prod parity (Rule — 필수) + 핵심 플로우 E2E (test 스킬로 이관)
 grep -q "Dev-Prod Parity" templates/rules/test-policy.md && pass "test-policy: Dev-Prod Parity 원칙" || fail "test-policy: Dev-Prod Parity 누락"
-grep -q "Live E2E for Critical Paths" templates/rules/test-policy.md && pass "test-policy: Live E2E 원칙" || fail "test-policy: Live E2E 누락"
+grep -q "핵심 사용자 기능 플로우 E2E" templates/commands/uzys/test.md && pass "uzys:test: 핵심 E2E 단계" || fail "uzys:test: 핵심 E2E 누락"
 
 # ============================================================
 # T13. Multi-Track Installation (v26.11.0)
@@ -388,6 +386,42 @@ RULES_AFTER=$(ls .claude/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
 MCP_AFTER=$(jq -r '.mcpServers | keys | join(",")' .mcp.json 2>/dev/null || echo "")
 [ "$RULES_AFTER" -gt "$RULES_BEFORE" ] && pass "add-track Rules: $RULES_BEFORE → $RULES_AFTER" || fail "add-track Rules unchanged"
 echo "$MCP_AFTER" | grep -q "railway-mcp-server" && pass "add-track MCP merge: railway 추가" || fail "add-track MCP merge 실패"
+cd "$ROOT"
+
+# ============================================================
+# T14. Update Mode (v26.13.0)
+# ============================================================
+section "T14. Update Mode"
+
+# T14.1 초기 설치 후 rules 파일 변조 → --update 시 templates 원본으로 복원
+T14_DIR=$(mktemp -d)
+cd "$T14_DIR" && git init -q && echo "# T" > README.md && git add . && git -c user.email=t@t -c user.name=t commit -m init -q 2>/dev/null
+bash "$ROOT/setup-harness.sh" --track tooling --project-dir . < /dev/null > /tmp/u1.log 2>&1
+
+# rules/test-policy.md를 인위적으로 오염
+echo "## TAMPERED" >> .claude/rules/test-policy.md
+TAMPERED_BEFORE=$(grep -c "TAMPERED" .claude/rules/test-policy.md)
+
+# update 실행
+bash "$ROOT/setup-harness.sh" --update --project-dir . < /dev/null > /tmp/u2.log 2>&1
+UPDATE_EXIT=$?
+
+TAMPERED_AFTER=$(grep -c "TAMPERED" .claude/rules/test-policy.md 2>/dev/null)
+[ -z "$TAMPERED_AFTER" ] && TAMPERED_AFTER=-1
+BACKUP_DIRS=$(ls -d .claude.backup-* 2>/dev/null | wc -l | tr -d ' ')
+
+[ "$UPDATE_EXIT" -eq 0 ] && pass "update: exit 0" || fail "update: exit $UPDATE_EXIT"
+[ "$TAMPERED_BEFORE" -eq 1 ] && pass "update: tamper 사전 주입 확인" || fail "update: tamper 주입 실패"
+[ "$TAMPERED_AFTER" -eq 0 ] && pass "update: 오염된 rule 원본 복원" || fail "update: 오염 잔존 ($TAMPERED_AFTER)"
+[ "$BACKUP_DIRS" -ge 1 ] && pass "update: 백업 디렉토리 생성 ($BACKUP_DIRS)" || fail "update: 백업 누락"
+
+# T14.2 .claude/ 없이 --update 실행 시 명확 에러
+T14B_DIR=$(mktemp -d)
+cd "$T14B_DIR" && git init -q && echo "# T" > README.md && git add . && git -c user.email=t@t -c user.name=t commit -m init -q 2>/dev/null
+bash "$ROOT/setup-harness.sh" --update --project-dir . < /dev/null > /tmp/u3.log 2>&1
+NO_INSTALL_EXIT=$?
+[ "$NO_INSTALL_EXIT" -ne 0 ] && pass "update: 미설치 상태 거부 (exit $NO_INSTALL_EXIT)" || fail "update: 미설치 허용 (exit 0)"
+
 cd "$ROOT"
 
 # ============================================================
