@@ -493,6 +493,13 @@ if has_dev_track; then
   claude plugin install railway-plugin@railway-plugin 2>/dev/null && info "installed" || warn "already installed or manual install needed"
 fi
 
+# Railway agent-skills — Railway MCP가 설치되는 Track과 동일 (csr-*, ssr-*, full)
+if any_track 'csr-*|ssr-*|full'; then
+  echo -n "  Railway agent-skills..."
+  claude plugin marketplace add railwayapp/railway-skills 2>/dev/null || true
+  claude plugin install railway@railway-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+fi
+
 # Impeccable (UI tracks)
 if any_track 'csr-*|ssr-*|full'; then
   echo -n "  Impeccable..."

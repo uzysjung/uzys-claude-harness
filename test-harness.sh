@@ -308,7 +308,7 @@ rm -rf "$T11_DIR"
 section "T12. Install Catalog Consistency"
 
 # 카탈로그 필수 플러그인 (setup-harness.sh에 grep 존재해야 함)
-for ITEM in "addy-agent-skills" "railway-plugin" "supabase-agent-skills" "anthropic-agent-skills" "c-level-skills" "finance-skills"; do
+for ITEM in "addy-agent-skills" "railway-plugin" "railway-skills" "supabase-agent-skills" "anthropic-agent-skills" "c-level-skills" "finance-skills"; do
   if grep -q "$ITEM" setup-harness.sh 2>/dev/null; then
     pass "plugin: $ITEM"
   else
