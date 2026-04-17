@@ -159,7 +159,7 @@ section "4/7" "Track Components ($TRACK)"
 
 # --- Track → Rule Mapping ---
 COMMON_RULES="git-policy change-management gates-taxonomy"
-DEV_RULES="test-policy ship-checklist code-style error-handling ecc-git-workflow ecc-security-common ecc-performance-common gsd-planner-antipatterns"
+DEV_RULES="test-policy ship-checklist code-style error-handling ecc-security-common ecc-performance-common"
 UI_RULES="design-workflow"
 
 # Track-specific rules (case statement for bash 3.2 compatibility on macOS)
@@ -560,13 +560,13 @@ echo -e "${BOLD}├─────────────────┼──�
 RULES_FOUND=$(ls "$PROJ/rules/"*.md 2>/dev/null | wc -l | tr -d ' ')
 case "$TRACK" in
   executive) RULES_EXPECTED=3 ;;
-  tooling) RULES_EXPECTED=12 ;;
-  data) RULES_EXPECTED=13 ;;
-  ssr-htmx) RULES_EXPECTED=14 ;;
-  csr-supabase|ssr-nextjs) RULES_EXPECTED=15 ;;
-  csr-fastify|csr-fastapi) RULES_EXPECTED=16 ;;
-  full) RULES_EXPECTED=22 ;;
-  *) RULES_EXPECTED=16 ;;
+  tooling) RULES_EXPECTED=10 ;;
+  data) RULES_EXPECTED=11 ;;
+  ssr-htmx) RULES_EXPECTED=12 ;;
+  csr-supabase|ssr-nextjs) RULES_EXPECTED=13 ;;
+  csr-fastify|csr-fastapi) RULES_EXPECTED=14 ;;
+  full) RULES_EXPECTED=20 ;;
+  *) RULES_EXPECTED=14 ;;
 esac
 RULES_STATUS=$([ "$RULES_FOUND" -ge "$RULES_EXPECTED" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
 printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Rules" "$RULES_FOUND" "$RULES_EXPECTED" "$RULES_STATUS"
@@ -575,7 +575,7 @@ printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Rules" "$RULES_FOUND" "
 UZYS_FOUND=$(ls "$PROJ/commands/uzys/"*.md 2>/dev/null | wc -l | tr -d ' ')
 ECC_FOUND=$(ls "$PROJ/commands/ecc/"*.md 2>/dev/null | wc -l | tr -d ' ')
 if [ "$TRACK" = "executive" ]; then UZYS_EXP=0; else UZYS_EXP=7; fi  # 6 + auto
-ECC_EXP=10
+ECC_EXP=8
 UZYS_STATUS=$([ "$UZYS_FOUND" -ge "$UZYS_EXP" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
 ECC_STATUS=$([ "$ECC_FOUND" -ge "$ECC_EXP" ] && echo "${GREEN}✅${NC}" || echo "${RED}❌${NC}")
 printf "│ %-15s │ %-8s │ %-8s │ %b       │\n" "Commands uzys:" "$UZYS_FOUND" "$UZYS_EXP" "$UZYS_STATUS"
