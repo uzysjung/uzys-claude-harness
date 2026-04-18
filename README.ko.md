@@ -165,7 +165,7 @@ bash setup-harness.sh --gsd ...              # GSD 오케스트레이터 포함 
 
 | Track | 스택 | 역할 |
 |-------|-----|-----|
-| `csr-supabase` | React + Supabase | 개발자 |
+| `csr-supabase` | Supabase + React/shadcn/ui | 개발자 |
 | `csr-fastify` | TypeScript REST API + React/shadcn/ui | 개발자 |
 | `csr-fastapi` | Python REST API + React/shadcn/ui | 개발자 |
 | `ssr-htmx` | FastAPI + Jinja2 + HTMX + daisyUI | 개발자 |

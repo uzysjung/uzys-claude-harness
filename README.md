@@ -151,7 +151,7 @@ bash setup-harness.sh --gsd ...              # include GSD orchestrator (large p
 
 | Track | Stack | Role | Auto-installed |
 |-------|-------|------|----------------|
-| `csr-supabase` | React + Supabase | Developer | + Tauri, Supabase MCP |
+| `csr-supabase` | Supabase + React/shadcn/ui | Developer | + Tauri, Supabase MCP |
 | `csr-fastify` | TypeScript REST API + React/shadcn/ui | Developer | + Tauri, Railway MCP |
 | `csr-fastapi` | Python REST API + React/shadcn/ui | Developer | + Tauri, Railway MCP |
 | `ssr-htmx` | FastAPI + Jinja2 + HTMX + daisyUI | Developer | + Railway MCP |
