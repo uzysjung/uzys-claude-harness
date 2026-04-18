@@ -1,0 +1,39 @@
+name: test-harness
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quick:
+    name: Quick test (no install)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq (Ubuntu only — macOS ships with jq)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update -qq && sudo apt-get install -y jq
+
+      - name: Show versions
+        run: |
+          bash --version | head -1
+          jq --version
+          git --version
+
+      - name: Bash syntax check
+        run: |
+          bash -n setup-harness.sh
+          bash -n test-harness.sh
+          bash -n install.sh
+          bash -n prune-ecc.sh
+          for f in templates/hooks/*.sh; do bash -n "$f"; done
+
+      - name: Run test-harness --quick
+        run: bash test-harness.sh --quick

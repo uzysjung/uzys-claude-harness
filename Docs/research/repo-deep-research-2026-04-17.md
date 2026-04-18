@@ -1,4 +1,4 @@
-# uzysClaudeUniversalEnv 종합 리서치 리포트
+# uzys-claude-harness 종합 리서치 리포트
 
 *Generated: 2026-04-17 | Sources: 5 reviewer agents + 4 phase 액션 | Confidence: High*
 

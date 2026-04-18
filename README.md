@@ -1,250 +1,285 @@
-# Claude Code Agent Harness
+# uzys-claude-harness
 
-멀티 역할(CEO/CTO/CISO/CPO/CSO/데이터 사이언티스트)과 멀티 트랙 기술 스택을 위한 Claude Code 하네스 시스템. agent-skills를 워크플로우 뼈대로, ECC cherry-pick을 도구 레이어로, 11개 행동 원칙을 기반으로 동작한다.
+> A Claude Code agent harness — 6-gate workflow + Ralph loop + 9 stack tracks. Lean by design.
 
-## CLAUDE.md 위치 (canonical 명시)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/github/v/tag/uzysjung/uzys-claude-harness?label=version)](https://github.com/uzysjung/uzys-claude-harness/releases)
+[![Tests](https://img.shields.io/badge/tests-111%20PASS%20%2F%200%20FAIL-brightgreen)](test-harness.sh)
 
-이 리포지토리에는 4종류 CLAUDE.md가 있음 — 역할 분리:
+🇰🇷 **한국어 README**: [README.ko.md](./README.ko.md)
 
-| 위치 | 역할 | 누가 사용? |
-|------|------|----------|
-| `/CLAUDE.md` (root) | **이 메타 리포 자체용** (tooling Track) | uzysClaudeUniversalEnv 개발 시 |
-| `/.claude/CLAUDE.md` | **이 메타 리포 적용된 글로벌 원칙** (11 Principles + Decision Meta-Rule) | 이 리포에서 작업 시 Claude가 읽음 |
-| `/templates/CLAUDE.md` | **신규 프로젝트로 복사되는 원본 템플릿** | `setup-harness.sh`가 신규 프로젝트의 `.claude/CLAUDE.md`로 복사 |
-| `/templates/project-claude/<track>.md` | **신규 프로젝트의 root `/CLAUDE.md`로 복사되는 Track별 가이드** | `setup-harness.sh`가 신규 프로젝트 root에 복사 |
+## What is this?
 
-**Canonical 원본**: `/templates/CLAUDE.md` 와 `/templates/project-claude/<track>.md`. 메타 리포 자체의 `/CLAUDE.md` + `/.claude/CLAUDE.md`는 메타 작업용이고, 사용자가 직접 편집하지 않음.
+A **deterministic harness** around [Claude Code](https://claude.com/claude-code) that:
 
-## Architecture
+- Enforces a **6-gate workflow** (`Spec → Plan → Build → Test → Review → Ship`) via hooks
+- Supports **9 stack tracks** (csr-supabase / csr-fastify / csr-fastapi / ssr-htmx / ssr-nextjs / data / executive / tooling / full)
+- Bundles **vetted plugins, skills, MCP servers, and agents** per track ([Reference.md](./Reference.md))
+- Stays **lean** — Rule 17 files / Hook 6 auto-registered. Removes anything obvious or duplicate.
+- Self-improves via **continuous-learning + Ralph loop** (SPEC-driven autonomous cycle)
+- Project-scoped only. **Global `~/.claude/` is never touched.**
 
-**프로젝트 스코프 전용**. 글로벌 `~/.claude/`는 절대 건드리지 않음.
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                Project (.claude/)                            │
-│  CLAUDE.md (11 Principles + Decision Meta-Rule + Gates)     │
-│  agents/ (reviewer, data-analyst, strategist + ECC 2개)     │
-│                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │  commands/    │  │  rules/      │  │  skills/     │      │
-│  │  uzys:* (6)  │  │  git-policy  │  │  CL-v2 (ECC) │      │
-│  │  ecc:*  (8)  │  │  test-policy │  │  spec-scaling │      │
-│  │              │  │  [track...]  │  │  strategic-  │      │
-│  │              │  │              │  │  compact     │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-│                                                              │
-│  ┌──────────────┐  ┌──────────────┐                         │
-│  │  agents/     │  │  hooks/      │                         │
-│  │  code-review │  │  session-    │                         │
-│  │  security-   │  │  start.sh   │                         │
-│  │  reviewer    │  │  protect.sh │                         │
-│  │  (ECC)       │  │  gate.sh   │                         │
-│  └──────────────┘  └──────────────┘                         │
-└─────────────────────────────────────────────────────────────┘
-                            │
-┌─────────────────────────────────────────────────────────────┐
-│              Plugins & External Tools                        │
-│  agent-skills (Addy Osmani) — Workflow backbone              │
-│  Railway — Deployment                                        │
-│  Impeccable — Design quality                                 │
-│  Anthropic document-skills — pptx/docx/xlsx/pdf              │
-│  ECC AgentShield — Security scan                             │
-│  GSD (optional) — Large project orchestration                │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## Tracks
-
-| Track | Stack | Role |
-|-------|-------|------|
-| `csr-supabase` | Supabase + Edge Functions + React + shadcn/ui + Tauri | Developer |
-| `csr-fastify` | Railway + Fastify + React + shadcn/ui + Tauri | Developer |
-| `csr-fastapi` | Railway + FastAPI + React + shadcn/ui + Tauri | Developer |
-| `ssr-htmx` | Railway + FastAPI + Jinja2 + HTMX + Tailwind/daisyUI | Developer |
-| `ssr-nextjs` | Railway + Next.js + React + shadcn/ui | Developer |
-| `data` | Python + DuckDB + Trino + ML/DL + PySide6 | Data Scientist |
-| `executive` | PPT/Excel/Word/PDF/Proposals/DD | CPO/CSO/CTO |
-| `tooling` | Bash + Markdown + CLI tools (meta-projects) | Tool/Harness Developer |
-| `full` | Union of all | All roles |
-
-### Choosing a Track (결정 가이드)
-
-| 상황 | 권장 Track |
-|------|----------|
-| Python REST API + React 프론트 | `csr-fastapi` |
-| TypeScript REST API + React 프론트 | `csr-fastify` |
-| 실시간/Auth/PostgreSQL 우선 (Supabase) | `csr-supabase` |
-| SEO 필요 + React (SSR) | `ssr-nextjs` |
-| 최소 JS (서버 렌더 + HTMX) | `ssr-htmx` |
-| 데이터 분석/ML/DL/PySide6 desktop | `data` |
-| 제안서/PPT/재무모델 (코드 없음) | `executive` |
-| Bash/CLI/Markdown 메타 프로젝트 | `tooling` |
-| 둘 이상 동시 (예: tooling + Python) | `--track tooling --track csr-fastapi` (다중) 또는 `full` |
-
-## Core Principles
-
-11 behavioral principles derived from Karpathy's LLM observations, Anthropic Harness Design, and real-world agent operations:
-
-1. **Think Before Acting** — No assumptions. Confirm when ambiguous.
-2. **Simplicity First** — Unmentioned = out of scope.
-3. **Surgical Changes** — Touch only what's needed. DO NOT CHANGE protection.
-4. **Goal-Driven Execution** — Verifiable success criteria.
-5. **Separate Eval from Gen** — Implementation ≠ verification (SOD via reviewer subagent).
-6. **Long-Running Management** — Phase + human gates.
-7. **Fact vs Opinion** — Sources required.
-8. **Sprint Contract** — Agree on "done" before starting.
-9. **Circuit Breakers** — 3 failures → stop and report.
-10. **Harness Maintenance** — Start simple, add only when needed, remove quarterly.
-11. **Perimeter Not Blueprint** — Define what+why+boundaries, let agent decide how.
-
-### Design Philosophy
-
-- **HyperAgents**: Meta-improvement editable with human gate. Experience accumulation via auto memory + CL-v2 instincts.
-- **gitagent SOD**: Agent definitions version-controlled. Reviewer ≠ implementor. Memory in Git.
-- **agent-skills**: 6-gate workflow (Define→Plan→Build→Verify→Review→Ship) as the backbone.
+Built for senior engineers / multi-role users (CEO/CTO/CISO/data scientist) who want the same harness across very different stacks.
 
 ## Installation
+
+### Step 1 — Pick your Track
+
+| Stack you're building | Track to install |
+|----------------------|----------------|
+| Python REST API + React frontend | `csr-fastapi` |
+| TypeScript REST API + React frontend | `csr-fastify` |
+| Realtime / Auth / Postgres (Supabase) | `csr-supabase` |
+| SEO + React (SSR) | `ssr-nextjs` |
+| Minimal JS (server-rendered + HTMX) | `ssr-htmx` |
+| Data analysis / ML / DL / PySide6 desktop | `data` |
+| Proposals / PPT / financial models (no code) | `executive` |
+| Bash / CLI / markdown meta-projects | `tooling` |
+| Two or more (e.g., tooling + Python) | `--track tooling --track csr-fastapi` (multi) or `full` |
+
+### Step 2 — Install
+
+Replace `<TRACK>` with your choice from above (e.g., `csr-fastapi`).
+
+```bash
+# in your project directory:
+curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
+  | bash -s -- --track <TRACK> --project-dir .
+```
+
+That single line does:
+1. Shallow-clones the harness to a temp dir
+2. Runs `setup-harness.sh --track <TRACK>` in your project
+3. Cleans up the temp dir
+
+After install you'll see an Installation Report (`✅` row per category).
+
+### Step 3 — Start Claude Code
+
+```bash
+claude
+# inside Claude Code:
+/uzys:spec    # define what you're building
+/uzys:auto    # then run the full pipeline (Plan → Build → Test → Review → Ship)
+```
+
+---
+
+## Common scenarios
+
+### Add another Track to an existing install
+
+Already installed `csr-fastapi`? Want to also add `tooling` (for the harness's own bash/markdown work)?
+
+```bash
+bash /path/to/uzys-claude-harness/setup-harness.sh --add-track tooling --project-dir .
+```
+
+`--add-track` preserves existing `.claude/*` and merges new MCPs into `.mcp.json` via `jq` (idempotent).
+
+### Update an existing install to the latest harness version
+
+When a new release comes out (check [CHANGELOG.md](./CHANGELOG.md)):
+
+```bash
+bash /path/to/uzys-claude-harness/setup-harness.sh --update --project-dir .
+```
+
+What `--update` does:
+1. **Backup** — snapshots current `.claude/` to `.claude.backup-<timestamp>/`
+2. **Overwrite** — replaces `rules/*.md`, `agents/*.md`, `commands/uzys/*.md`, `hooks/*.sh`, `.claude/CLAUDE.md` with latest templates (only files that already exist — no Track creep)
+3. **Prune orphans** — removes files in `.claude/` that no longer exist in templates (e.g., deprecated `ecc-security-common.md`)
+4. **Clean stale hook refs** — removes `settings.json` PreToolUse/PostToolUse entries that point to non-existent hook files
+
+**Preserved**: `gate-status.json`, `.mcp.json` (your custom MCPs stay), `docs/SPEC.md`/`PRD.md`, `.claude/settings.local.json`.
+
+Rollback if needed:
+```bash
+rm -rf .claude && mv .claude.backup-<timestamp> .claude
+```
+
+### Install on this repo itself (dogfooding)
+
+```bash
+git clone https://github.com/uzysjung/uzys-claude-harness.git
+cd uzys-claude-harness
+bash setup-harness.sh --track tooling --project-dir .
+```
+
+### Multi-Track in one go (union)
+
+```bash
+bash setup-harness.sh --track tooling --track csr-fastapi --project-dir .
+```
+
+Use this when you know upfront you need multiple tracks. Faster than two separate runs.
+
+### Optional — install ECC plugin project-scoped
+
+After `setup-harness.sh` finishes (interactive sessions only), it asks:
+
+```
+[ECC] Install ECC plugin project-scoped (copy)? [y/N]
+[ECC] Prune unused items (keep 89 curated)? [y/N]
+```
+
+Answering `y` to both copies [Everything-Claude-Code](https://github.com/affaan-m/everything-claude-code) to `.claude/local-plugins/ecc/` and prunes ~228 unused items. Use it via:
+
+```bash
+claude --plugin-dir .claude/local-plugins/ecc
+# or alias in ~/.zshrc:
+# alias claude-ecc='claude --plugin-dir .claude/local-plugins/ecc'
+```
+
+The global `~/.claude/` is never touched.
+
+### Other flags
+
+```bash
+bash setup-harness.sh --help                 # show full options
+bash setup-harness.sh --gsd ...              # include GSD orchestrator (large projects)
+```
 
 ### Prerequisites
 
 - Node.js 22+
 - Git
-- Claude Code CLI
-- jq (recommended)
+- Claude Code CLI (`claude`)
+- jq (recommended; bash fallback exists)
 
-### Quick Start — One-liner 설치
+## Tracks (full reference)
 
-```bash
-# 프로젝트 디렉토리에서 바로 설치 (리포 클론 불필요)
-curl -fsSL https://raw.githubusercontent.com/uzysjung/uzysClaudeUniversalEnv/main/install.sh | bash -s -- --track csr-fastapi
-```
+| Track | Stack | Role | Auto-installed |
+|-------|-------|------|----------------|
+| `csr-supabase` | Supabase + React + shadcn/ui + Tauri | Developer | + Supabase MCP |
+| `csr-fastify` | Railway + Fastify + React + shadcn/ui + Tauri | Developer | + Railway MCP |
+| `csr-fastapi` | Railway + FastAPI + React + shadcn/ui + Tauri | Developer | + Railway MCP |
+| `ssr-htmx` | Railway + FastAPI + Jinja2 + HTMX | Developer | + Railway MCP |
+| `ssr-nextjs` | Railway + Next.js + React + shadcn/ui | Developer | + Railway MCP, next-skills |
+| `data` | Python + DuckDB + Trino + ML/DL + PySide6 | Data Scientist | + polars/dask/wshobson skills, Anthropic data plugin |
+| `executive` | PPT/Excel/Word/PDF + proposals/DD | CPO/CSO/CTO | + document-skills, c-level-skills, finance-skills |
+| `tooling` | Bash + Markdown + CLI tools (meta projects) | Tool Developer | + cli-development rules |
+| `full` | Union of everything | All | All MCPs + all plugins |
 
-### 또는 소스에서 설치
+Common to all dev tracks: `addy-agent-skills`, `Impeccable`, `Playwright`, `find-skills`, ADR skill, `context7` MCP, `github` MCP, `chrome-devtools` MCP. Full asset list: [Reference.md](./Reference.md).
 
-```bash
-# 1. Clone this repo
-git clone https://github.com/uzysjung/uzysClaudeUniversalEnv.git
-
-# 2. Set up a project
-cd /path/to/your/project
-bash /path/to/uzysClaudeUniversalEnv/setup-harness.sh --track csr-fastapi
-```
-
-### setup-harness.sh Options
-
-```bash
-bash setup-harness.sh                                    # Interactive mode (Track 선택 프롬프트)
-bash setup-harness.sh --track csr-fastapi                # Track 직접 지정
-bash setup-harness.sh --track ssr-nextjs --gsd            # GSD 오케스트레이터 포함
-bash setup-harness.sh --track tooling                     # 메타 프로젝트 (bash, markdown, CLI)
-bash setup-harness.sh --track csr-fastapi --model-routing on  # 모델 라우팅 가이드 활성 (opt-in)
-
-# v26.11.0 — 다중 Track (union 설치)
-bash setup-harness.sh --track tooling --track csr-fastapi   # 동시 다중 Track (union)
-bash setup-harness.sh --add-track csr-fastapi               # 기존 설치에 Track 추가 (.mcp.json jq merge)
-```
-
-### Optional: ECC plugin 89 KEEP prune (v26.10.0+)
-
-ECC plugin 통째 156 skills이 컨텍스트 부담일 때 사용자 정의 89개만 남기고 prune:
-
-```bash
-# 1. ECC plugin 설치 (글로벌 user scope)
-claude plugin install everything-claude-code@everything-claude-code
-
-# 2. project local 복사본 + prune (변경 없음, dry-run 기본)
-bash prune-ecc.sh
-bash prune-ecc.sh --apply --force   # 실제 적용
-
-# 3. 사용 (매번 17자 입력 부담이면 alias 등록)
-claude --plugin-dir .claude/local-plugins/ecc
-# 또는 ~/.zshrc / ~/.bashrc 에:
-# alias claude-ecc='claude --plugin-dir .claude/local-plugins/ecc'
-```
-
-D16 안전 (글로벌 read-only). 다른 프로젝트 영향 없음. ECC plugin 업데이트 후 재실행 필요.
-
-### Plugin Marketplace 신뢰 등급
-
-`setup-harness.sh`가 외부 marketplace에서 plugin을 설치합니다. **버전 핀 없이 최신 다운로드** — 사용 전 신뢰 등급 확인:
-
-| Plugin | Marketplace | 신뢰 등급 | 비고 |
-|--------|------------|----------|------|
-| `agent-skills` | `addyosmani/agent-skills` | ★★★★ 커뮤니티 | Claude Code workflow 표준 |
-| `everything-claude-code` | `affaan-m/everything-claude-code` | ★★★ 커뮤니티 | 156 skills (prune-ecc.sh로 89 KEEP 권장) |
-| `railway-plugin` | `railwayapp/railway-plugin` | ★★★★★ 공식 | Railway 공식 |
-| `agent-skills (Supabase)` | `supabase/agent-skills` | ★★★★★ 공식 | Supabase 공식 |
-| `document-skills` | `anthropics/skills` | ★★★★★ 공식 | Anthropic 공식 |
-| `c-level-skills`, `finance-skills` | `alirezarezvani/*` | ★★ 개인 | 개인 계정 — 검토 후 사용 |
-| `npx -y @railway/mcp-server` | npm | 버전 핀 부재 | supply chain 위험 인지 |
-
-신뢰 부족 plugin 차단: `--track executive` 사용 또는 setup-harness.sh의 해당 case 분기 수동 제거.
-
-### 설치 후 자동 검증 테이블
-
-설치 완료 시 10개 카테고리 검증 결과가 자동 출력됩니다:
+## How it works
 
 ```
-┌─────────────────┬──────────┬──────────┬─────────┐
-│ Category        │ Found    │ Expected │ Status  │
-├─────────────────┼──────────┼──────────┼─────────┤
-│ Rules           │ 16       │ 16       │ ✅      │
-│ Commands uzys:  │ 7        │ 7        │ ✅      │
-│ Agents          │ 8        │ 8        │ ✅      │
-│ Hooks           │ 9        │ 9        │ ✅      │
-│ ...             │          │          │         │
-└─────────────────┴──────────┴──────────┴─────────┘
+┌────────────────────────────────────────────────────────────────┐
+│  Project (.claude/)                                             │
+│  CLAUDE.md  →  11 principles + Decision meta-rule + gates       │
+│                                                                  │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
+│  │ commands/   │  │ rules/ (17) │  │ skills/     │             │
+│  │ uzys:* (7)  │  │ git-policy  │  │ CL-v2       │             │
+│  │ ecc:*  (8)  │  │ test-policy │  │ spec-scaling│             │
+│  │             │  │ ship-       │  │ deep-       │             │
+│  │             │  │ checklist   │  │ research    │             │
+│  └─────────────┘  └─────────────┘  └─────────────┘             │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
+│  │ agents/ (8) │  │ hooks/ (6)  │  │ .mcp.json   │             │
+│  │ reviewer    │  │ session     │  │ context7    │             │
+│  │ data-       │  │ protect     │  │ github      │             │
+│  │ analyst     │  │ gate-check  │  │ chrome-     │             │
+│  │ strategist  │  │ agentshield │  │ devtools    │             │
+│  │ + 5 ECC     │  │ + 1 utility │  │ + per-track │             │
+│  └─────────────┘  └─────────────┘  └─────────────┘             │
+└────────────────────────────────────────────────────────────────┘
 ```
 
-### Workflow
+The 6-gate workflow is enforced by `gate-check.sh` (PreToolUse hook). Skipping a gate returns exit 2 with a blocker message. `/uzys:auto` runs the full pipeline as a Ralph loop until SPEC compliance is met (max 5 iterations).
 
-```bash
-claude                  # Claude Code 시작 (session-start hook 자동)
-/uzys:spec              # 1. SPEC 작성 (Define)
-/uzys:auto              # 2. 나머지 자동 진행 (Plan → Build → Test → Review → Ship)
-                        #    SPEC 정합성 Ralph loop — 될 때까지 반복
+## 11 Behavioral Principles
+
+Distilled from Karpathy's LLM observations + Anthropic Harness Design + production agent operations:
+
+1. **Think Before Acting** — No assumptions
+2. **Simplicity First** — Unmentioned = out of scope
+3. **Surgical Changes** — Touch only what's needed; DO NOT CHANGE protection
+4. **Goal-Driven Execution** — Verifiable success criteria
+5. **Separate Eval from Gen** — SOD via reviewer subagent (context fork)
+6. **Long-Running Management** — Phases + human gates
+7. **Fact vs Opinion** — Sources required
+8. **Sprint Contract** — Define "done" before starting
+9. **Circuit Breakers** — 3 failures → stop and report
+10. **Harness Maintenance** — Start simple, add only when needed, prune quarterly
+11. **Perimeter Not Blueprint** — Define what+why+boundaries; let the agent decide how
+
+Plus a **Decision Making meta-rule**: every value judgment must be backed by an explicit, verifiable criterion. No vibes-based decisions.
+
+## Documentation
+
+| File | Purpose |
+|------|---------|
+| [README.ko.md](./README.ko.md) | Korean version of this README |
+| [USAGE.md](./USAGE.md) | Day-to-day workflow guide (`/uzys:*` commands, gate flow) |
+| [**Reference.md**](./Reference.md) | **Catalog of all installed assets** (Plugins / Skills / MCP / Agents / Cherry-pick) with trust tier and exact install commands |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | How to add tracks / rules / hooks / commands |
+| [CHANGELOG.md](./CHANGELOG.md) | Release history |
+
+## Optional ECC integration
+
+[Everything-Claude-Code (ECC)](https://github.com/affaan-m/everything-claude-code) bundles 300+ skills/agents/commands. The `setup-harness.sh` end-of-flow offers a 2-step prompt:
+
+```
+[ECC] Plugin 프로젝트 스코프 설치 (선택사항)
+  1. Install ECC project-scoped (copy)? [y/N]
+  2. Prune unused items (keep 89 curated)? [y/N]
+  → DELETED/KEPT file list shown after prune
 ```
 
-> **Note**: setup-harness.sh는 항상 프로젝트 스코프. 글로벌 `~/.claude/`는 절대 수정하지 않음.
-> v26.10.0부터 ECC plugin 통째 설치 대신 **Track별 cherry-pick** (4기준 ALL True 항목만). 이전에 설치한 ECC plugin은 사용자가 직접 `claude plugin uninstall everything-claude-code@everything-claude-code`로 정리.
-> `--model-routing=on` 활성 시 6-gate별 Haiku/Sonnet/Opus 모델 가이드가 참조 가능.
+Run with `claude --plugin-dir .claude/local-plugins/ecc` afterwards. Global `~/.claude/` stays untouched.
 
-## References
+## Installation report
 
-> 📚 **전체 외부/내부 자산 카탈로그**: [**Reference.md**](./Reference.md)
-> Plugins / Skills / MCP / Agents / Cherry-pick / 자체 작성 — 출처, 신뢰 등급(✅/🟢/🟡), Track별 적용, 정확한 설치 명령을 한곳에 정리.
+After `setup-harness.sh` completes you get a verification table:
 
-### 핵심 영감 출처 (디자인 원칙)
+```
+│ Category         │ Found  │ Expected │ Status │
+│ Rules            │ 8      │ 8        │   ✅   │
+│ Commands uzys:   │ 7      │ 7        │   ✅   │
+│ Commands ecc:    │ 8      │ 8        │   ✅   │
+│ Agents           │ 8      │ 8        │   ✅   │
+│ Hooks            │ 7      │ 7        │   ✅   │
+│ Skills           │ 7      │ 7        │   ✅   │
+│ MCP servers      │ 3      │ 3        │   ✅   │
+│ .mcp-allowlist   │ yes    │ yes      │   ✅   │
+│ settings.json    │ yes    │ yes      │   ✅   │
+│ Plugins          │ tried  │ network  │   ✅   │
+```
 
-| Source | Contribution |
-|--------|-------------|
-| [agent-skills](https://github.com/addyosmani/agent-skills) | Workflow backbone (6-gate) |
-| [ECC](https://github.com/affaan-m/everything-claude-code) | CL-v2, code-reviewer, security-reviewer, AgentShield |
-| [Anthropic skills](https://github.com/anthropics/skills) | pptx/docx/xlsx/pdf |
-| [Railway](https://docs.railway.com) | Deployment |
-| [Impeccable](https://github.com/pbakaus/impeccable) | Design quality |
-| [GSD](https://github.com/gsd-build/get-shit-done) | Optional orchestrator |
-| Karpathy LLM observations | Principles 1-4 |
-| Anthropic Harness Design | Principles 5-6, 8, 10 |
-| [HyperAgents](https://arxiv.org/abs/2603.19461) | Self-improvement architecture |
-| [gitagent](https://github.com/open-gitagent/gitagent) | SOD, SOUL.md, Git-native agents |
+CI runs `bash test-harness.sh --quick` (≈5s, 85 tests) on every PR.
 
-## Contributing
+## Security model
 
-### Adding Rules
+- **MCP allowlist**: `.mcp-allowlist` file gates every MCP call via `mcp-pre-exec.sh` hook
+- **D16 protection**: `setup-harness.sh --project-dir` blocks `~/.claude/*`, `/etc/*`, system bins
+- **`.env` / credentials shielded**: `protect-files.sh` hook blocks Write/Edit on protected paths
+- **Pre-ship security gate**: `agentshield-gate.sh` runs `npx ecc-agentshield scan` before `/uzys:ship`
+- See [Reference.md §8](./Reference.md#8-보안--신뢰-정책) for the full security policy
 
-1. Create `templates/rules/your-rule.md`
-2. Add track mapping in `setup-harness.sh` (`TRACK_EXTRA_RULES`)
-3. Test with `setup-harness.sh --track <relevant-track>`
+## Project Direction
 
-### Modifying Agents
+This harness is built around three commitments (see `templates/CLAUDE.md`):
 
-All agents: `templates/agents/` (글로벌 디렉토리 없음, 전부 프로젝트 스코프 설치)
-
-### Adding Commands
-
-Create `.md` file in `templates/commands/<namespace>/`
+1. **ECC.tools dependency** — minimal in-house code; orchestrate ECC skills/agents via `/uzys:*`
+2. **Ralph loop autonomy** — SPEC-based autonomous cycle via continuous-learning-v2 + `/uzys:auto`
+3. **Lean by design** — feature additions only after "is this in ECC already?" check; quarterly P10 audit
 
 ## License
 
-MIT
+MIT — Copyright (c) 2026 Jay (Uzys Jung). See [LICENSE](./LICENSE).
+
+## References
+
+Core design influences (full asset catalog in [Reference.md](./Reference.md)):
+
+- [agent-skills](https://github.com/addyosmani/agent-skills) — 6-gate workflow backbone
+- [Everything-Claude-Code](https://github.com/affaan-m/everything-claude-code) — vetted skills/agents/commands
+- [Anthropic skills](https://github.com/anthropics/skills) — document workflows (pptx/docx/xlsx/pdf)
+- [Impeccable](https://github.com/pbakaus/impeccable) — design quality
+- [Railway](https://docs.railway.com) — deployment integration
+- [HyperAgents](https://arxiv.org/abs/2603.19461) — self-improvement architecture
+- [gitagent](https://github.com/open-gitagent/gitagent) — SOD via reviewer subagent
+- Karpathy LLM observations + Anthropic Harness Design — principles 1–11

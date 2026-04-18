@@ -132,7 +132,7 @@ cat > README.md <<'EOF'
 Local Markdown Notebook (React + Tauri). 하네스 적용 환경.
 EOF
 git add . && git commit -m "init" -q
-bash "$HOME/Development/Claude-Workspace/uzysClaudeUniversalEnv/setup-harness.sh" \
+bash "$HOME/Development/Claude-Workspace/uzys-claude-harness/setup-harness.sh" \
   --track csr-fastapi --project-dir .
 cd ..
 ```

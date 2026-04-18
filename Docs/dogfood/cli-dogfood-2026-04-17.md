@@ -1,6 +1,6 @@
 # CLI Dogfood — 2026-04-17
 
-**Target**: uzysClaudeUniversalEnv (bash CLI 하네스)
+**Target**: uzys-claude-harness (bash CLI 하네스)
 **Version tested**: v26.14.1 + `9735f0d`
 **Method**: 사용자 관점에서 fresh install / multi-track / --update / error paths / workflow gate 실측
 
