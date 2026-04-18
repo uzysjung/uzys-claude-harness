@@ -4,7 +4,7 @@ Thanks for your interest. This project follows a minimal contribution model — 
 
 ## Before you start
 
-1. Read [README.md](./README.md) and [Reference.md](./Reference.md)
+1. Read [README.md](./README.md) and [docs/REFERENCE.md](./docs/REFERENCE.md)
 2. Check existing [issues](https://github.com/uzysjung/uzys-claude-harness/issues) and [tags](https://github.com/uzysjung/uzys-claude-harness/tags)
 3. For non-trivial changes: open an issue first to discuss scope
 
@@ -15,18 +15,18 @@ git clone https://github.com/uzysjung/uzys-claude-harness.git
 cd uzys-claude-harness
 
 # Install on this repo itself (dogfooding)
-bash setup-harness.sh --track tooling --project-dir .
+bash scripts/setup-harness.sh --track tooling --project-dir .
 
 # Run the full test suite (≈8 min, 111 tests)
-bash test-harness.sh
+bash scripts/test-harness.sh
 
 # Or run quick mode for iteration (≈5s, 85 tests, skips install tests)
-bash test-harness.sh --quick
+bash scripts/test-harness.sh --quick
 ```
 
 ## Adding a new Track
 
-Tracks are defined in `setup-harness.sh`. Adding `mytrack`:
+Tracks are defined in `scripts/setup-harness.sh`. Adding `mytrack`:
 
 1. **Validation list** — add `mytrack` to `VALID_TRACKS` (line ~75)
 2. **Track menu** — add `mytrack` to `TRACKS=(...)` (line ~316)
@@ -39,7 +39,7 @@ Tracks are defined in `setup-harness.sh`. Adding `mytrack`:
 5. **Project CLAUDE template** — create `templates/project-claude/mytrack.md` with stack info
 6. **Expected count** — add case in `RULES_EXPECTED` switch (line ~807)
 7. **test-harness** — add `mytrack` to `T5_TRACKS` array (line ~178)
-8. Update [Reference.md](./Reference.md) and the Tracks table in README files
+8. Update [docs/REFERENCE.md](./docs/REFERENCE.md) and the Tracks table in README files
 
 ## Adding a Rule
 
@@ -47,11 +47,11 @@ Rules live in `templates/rules/*.md`. They are non-obvious project-specific inva
 
 1. Create `templates/rules/your-rule.md` (≤60 lines, focused)
 2. Decide which Tracks need it:
-   - All dev tracks → add to `DEV_RULES` in `setup-harness.sh`
+   - All dev tracks → add to `DEV_RULES` in `scripts/setup-harness.sh`
    - UI tracks (csr-*, ssr-*) → add to `UI_RULES`
    - Single Track → add to `get_track_rules()` case
 3. Update `RULES_EXPECTED` counts
-4. Run `bash test-harness.sh --quick` and verify
+4. Run `bash scripts/test-harness.sh --quick` and verify
 
 **Anti-patterns** (don't add):
 - "Use `const` instead of `let`" → linter does this
@@ -69,13 +69,13 @@ Hooks live in `templates/hooks/*.sh`. Two types:
 - jq fallback required (some users won't have jq)
 
 **On-demand utilities** (called explicitly by commands):
-- Documented in `Reference.md`
+- Documented in `docs/REFERENCE.md`
 - Not registered in `settings.json`
 
 After adding:
-- Add to `setup-harness.sh` install list
+- Add to `scripts/setup-harness.sh` install list
 - Update `HOOKS_EXP` count
-- Add to `test-harness.sh` T2 syntax check list
+- Add to `scripts/test-harness.sh` T2 syntax check list
 - Add unit test in T3 (positive + negative)
 
 ## Adding a `/uzys:*` command
@@ -84,7 +84,7 @@ Commands live in `templates/commands/uzys/*.md`.
 
 1. Create the command file with frontmatter (model, description)
 2. Update `gate-check.sh` if it should be gated by previous phases
-3. Add to `setup-harness.sh` install loop
+3. Add to `scripts/setup-harness.sh` install loop
 4. Add gate-check unit test in T11 (workflow E2E smoke)
 
 ## Commit conventions
@@ -117,10 +117,10 @@ Scope:
 
 ## Pull Request checklist
 
-- [ ] `bash test-harness.sh` passes (full or quick if change is trivial)
-- [ ] If you added/removed files: counts updated in `setup-harness.sh` (`HOOKS_EXP`, `RULES_EXPECTED`) and `test-harness.sh` (T5, T13)
+- [ ] `bash scripts/test-harness.sh` passes (full or quick if change is trivial)
+- [ ] If you added/removed files: counts updated in `scripts/setup-harness.sh` (`HOOKS_EXP`, `RULES_EXPECTED`) and `scripts/test-harness.sh` (T5, T13)
 - [ ] Both `templates/` and `.claude/` paths synced (if applicable)
-- [ ] `Reference.md` updated for any new asset
+- [ ] `docs/REFERENCE.md` updated for any new asset
 - [ ] No regression in `--quick` mode
 - [ ] Commit message follows conventions
 

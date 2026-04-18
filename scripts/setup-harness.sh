@@ -11,7 +11,9 @@
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-TEMPLATES="$SCRIPT_DIR/templates"
+# v27.1.0 — scripts/ 디렉토리로 이동: templates는 repo root의 형제
+HARNESS_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+TEMPLATES="$HARNESS_ROOT/templates"
 
 # ============================================================
 # Argument Parsing

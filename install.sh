@@ -29,7 +29,7 @@ git clone --depth 1 "$REPO" "$TMP/harness" 2>/dev/null || {
 }
 
 echo "Running setup-harness.sh..."
-bash "$TMP/harness/setup-harness.sh" "$@"
+bash "$TMP/harness/scripts/setup-harness.sh" "$@"
 EXIT_CODE=$?
 
 echo ""

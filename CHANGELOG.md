@@ -5,11 +5,38 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.1.0] — 2026-04-18
+
+### Changed
+- 디렉토리 구조 OSS 표준 준수 (root 13 → 8 파일):
+  - `setup-harness.sh`, `prune-ecc.sh`, `sync-cherrypicks.sh`, `test-harness.sh` → `scripts/`
+  - `Reference.md` → `docs/REFERENCE.md`
+  - `USAGE.md` → `docs/USAGE.md`
+  - `Docs/` → `docs/` (case rename)
+- `install.sh` root 유지 (curl 진입점, 사용자 호환 유지)
+- 모든 path 참조 일괄 업데이트 (README/CONTRIBUTING/CHANGELOG/CI workflow/scripts 내부)
+- `setup-harness.sh`/`test-harness.sh` ROOT 변수 변경: scripts/ 안에서 실행 시 부모를 repo root로 인식
+
+### BREAKING (수동 설치만)
+- 수동 명령은 이제 `bash scripts/setup-harness.sh ...` 형태 (이전 `bash setup-harness.sh`)
+- `curl | bash` 한 줄 설치는 그대로 작동 — install.sh가 새 경로 호출
+
+## [v27.0.0] — 2026-04-18
+
+### Added
+- README.md (영어 first) + README.ko.md (한국어) 분리
+- CONTRIBUTING.md, CHANGELOG.md, .github/workflows/test.yml (CI)
+- Catch phrase + badges + Track별 설치 단계 (Step 1-3) + 시나리오별 명령
+
+### Changed
+- 리포 이름: `uzysClaudeUniversalEnv` → `uzys-claude-harness`
+- 디렉토리 cleanup: 124MB backup 삭제, 5 .DS_Store 삭제, 잡파일 정리
+
 ## [v26.17.0] — 2026-04-18
 
 ### Added
-- `Reference.md` — single catalog of all installed assets (Plugins / Skills / MCP / Agents / Cherry-pick / own) with trust tier (✅ official / 🟢 vetted third-party / 🟡 community), per-track applicability, exact install commands
-- `README.md` link to Reference.md prominent at top of References section
+- `docs/REFERENCE.md` — single catalog of all installed assets (Plugins / Skills / MCP / Agents / Cherry-pick / own) with trust tier (✅ official / 🟢 vetted third-party / 🟡 community), per-track applicability, exact install commands
+- `README.md` link to docs/REFERENCE.md prominent at top of References section
 
 ### Security
 - AgentShield CRITICAL 1 + HIGH 2 false positives resolved (`--no-verify` text in git-policy → "hook 검증 우회 플래그", "Goal-backward" in plan-checker → "Outcome-driven")
@@ -36,7 +63,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 ## [v26.15.0] — 2026-04-18
 
 ### Added
-- `setup-harness.sh` end-of-flow ECC plugin prompt (interactive only, all tracks):
+- `scripts/setup-harness.sh` end-of-flow ECC plugin prompt (interactive only, all tracks):
   - Q1: install ECC project-scoped? [y/N]
   - Q2: prune unused items? [y/N]
 - `prune-ecc.sh --copy-only` flag (copy without prune)
@@ -68,11 +95,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 ## [v26.12.0] — 2026-04-17
 
 ### Added
-- `templates/track-mcp-map.tsv` — externalized Track→MCP mapping. New MCPs need only a single TSV row, no `setup-harness.sh` edit
-- `Docs/research/repo-deep-research-2026-04-17.md` — 5-axis self-research across reviewer agents
+- `templates/track-mcp-map.tsv` — externalized Track→MCP mapping. New MCPs need only a single TSV row, no `scripts/setup-harness.sh` edit
+- `docs/research/repo-deep-research-2026-04-17.md` — 5-axis self-research across reviewer agents
 
 ### Changed
-- `setup-harness.sh` `.mcp.json` assembly switched from inline case statements to TSV-driven loop with `jq --arg`/`--argjson`
+- `scripts/setup-harness.sh` `.mcp.json` assembly switched from inline case statements to TSV-driven loop with `jq --arg`/`--argjson`
 
 ## [v26.11.0] — 2026-04-17
 
@@ -85,13 +112,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ### Changed (BREAKING for old installs)
 - ECC plugin replaced by **Track-based cherry-picks** (`.dev-references/cherrypicks.lock`). Existing global ECC users should run `claude plugin uninstall everything-claude-code@everything-claude-code` after migration
-- `prune-ecc.sh` (new) for project-local ECC copy + selective prune (89 user-defined KEEP items)
+- `scripts/prune-ecc.sh` (new) for project-local ECC copy + selective prune (89 user-defined KEEP items)
 
 ## Earlier history
 
 Tags v26.0.0 through v26.9.x: foundational work — 6-gate workflow, 11 principles, initial Track set, security hardening, reviewer subagent (SOD), agent-skills integration. See `git log` for details.
 
-[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v26.17.0...HEAD
+[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.1.0...HEAD
+[v27.1.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.1.0
+[v27.0.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.0.0
 [v26.17.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v26.17.0
 [v26.16.1]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v26.16.1
 [v26.16.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v26.16.0

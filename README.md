@@ -14,7 +14,7 @@ A **deterministic harness** around [Claude Code](https://claude.com/claude-code)
 
 - Enforces a **6-gate workflow** (`Spec → Plan → Build → Test → Review → Ship`) via hooks
 - Supports **9 stack tracks** (csr-supabase / csr-fastify / csr-fastapi / ssr-htmx / ssr-nextjs / data / executive / tooling / full)
-- Bundles **vetted plugins, skills, MCP servers, and agents** per track ([Reference.md](./Reference.md))
+- Bundles **vetted plugins, skills, MCP servers, and agents** per track ([docs/REFERENCE.md](./docs/REFERENCE.md))
 - Stays **lean** — Rule 17 files / Hook 6 auto-registered. Removes anything obvious or duplicate.
 - Self-improves via **continuous-learning + Ralph loop** (SPEC-driven autonomous cycle)
 - Project-scoped only. **Global `~/.claude/` is never touched.**
@@ -72,7 +72,7 @@ claude
 Already installed `csr-fastapi`? Want to also add `tooling` (for the harness's own bash/markdown work)?
 
 ```bash
-bash /path/to/uzys-claude-harness/setup-harness.sh --add-track tooling --project-dir .
+bash /path/to/uzys-claude-harness/scripts/setup-harness.sh --add-track tooling --project-dir .
 ```
 
 `--add-track` preserves existing `.claude/*` and merges new MCPs into `.mcp.json` via `jq` (idempotent).
@@ -82,7 +82,7 @@ bash /path/to/uzys-claude-harness/setup-harness.sh --add-track tooling --project
 When a new release comes out (check [CHANGELOG.md](./CHANGELOG.md)):
 
 ```bash
-bash /path/to/uzys-claude-harness/setup-harness.sh --update --project-dir .
+bash /path/to/uzys-claude-harness/scripts/setup-harness.sh --update --project-dir .
 ```
 
 What `--update` does:
@@ -103,20 +103,20 @@ rm -rf .claude && mv .claude.backup-<timestamp> .claude
 ```bash
 git clone https://github.com/uzysjung/uzys-claude-harness.git
 cd uzys-claude-harness
-bash setup-harness.sh --track tooling --project-dir .
+bash scripts/setup-harness.sh --track tooling --project-dir .
 ```
 
 ### Multi-Track in one go (union)
 
 ```bash
-bash setup-harness.sh --track tooling --track csr-fastapi --project-dir .
+bash scripts/setup-harness.sh --track tooling --track csr-fastapi --project-dir .
 ```
 
 Use this when you know upfront you need multiple tracks. Faster than two separate runs.
 
 ### Optional — install ECC plugin project-scoped
 
-After `setup-harness.sh` finishes (interactive sessions only), it asks:
+After `scripts/setup-harness.sh` finishes (interactive sessions only), it asks:
 
 ```
 [ECC] Install ECC plugin project-scoped (copy)? [y/N]
@@ -136,8 +136,8 @@ The global `~/.claude/` is never touched.
 ### Other flags
 
 ```bash
-bash setup-harness.sh --help                 # show full options
-bash setup-harness.sh --gsd ...              # include GSD orchestrator (large projects)
+bash scripts/setup-harness.sh --help                 # show full options
+bash scripts/setup-harness.sh --gsd ...              # include GSD orchestrator (large projects)
 ```
 
 ### Prerequisites
@@ -161,7 +161,7 @@ bash setup-harness.sh --gsd ...              # include GSD orchestrator (large p
 | `tooling` | Bash + Markdown + CLI tools (meta projects) | Tool Developer | + cli-development rules |
 | `full` | Union of everything | All | All MCPs + all plugins |
 
-Common to all dev tracks: `addy-agent-skills`, `Impeccable`, `Playwright`, `find-skills`, ADR skill, `context7` MCP, `github` MCP, `chrome-devtools` MCP. Full asset list: [Reference.md](./Reference.md).
+Common to all dev tracks: `addy-agent-skills`, `Impeccable`, `Playwright`, `find-skills`, ADR skill, `context7` MCP, `github` MCP, `chrome-devtools` MCP. Full asset list: [docs/REFERENCE.md](./docs/REFERENCE.md).
 
 ## How it works
 
@@ -213,14 +213,14 @@ Plus a **Decision Making meta-rule**: every value judgment must be backed by an 
 | File | Purpose |
 |------|---------|
 | [README.ko.md](./README.ko.md) | Korean version of this README |
-| [USAGE.md](./USAGE.md) | Day-to-day workflow guide (`/uzys:*` commands, gate flow) |
-| [**Reference.md**](./Reference.md) | **Catalog of all installed assets** (Plugins / Skills / MCP / Agents / Cherry-pick) with trust tier and exact install commands |
+| [docs/USAGE.md](./docs/USAGE.md) | Day-to-day workflow guide (`/uzys:*` commands, gate flow) |
+| [**docs/REFERENCE.md**](./docs/REFERENCE.md) | **Catalog of all installed assets** (Plugins / Skills / MCP / Agents / Cherry-pick) with trust tier and exact install commands |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | How to add tracks / rules / hooks / commands |
 | [CHANGELOG.md](./CHANGELOG.md) | Release history |
 
 ## Optional ECC integration
 
-[Everything-Claude-Code (ECC)](https://github.com/affaan-m/everything-claude-code) bundles 300+ skills/agents/commands. The `setup-harness.sh` end-of-flow offers a 2-step prompt:
+[Everything-Claude-Code (ECC)](https://github.com/affaan-m/everything-claude-code) bundles 300+ skills/agents/commands. The `scripts/setup-harness.sh` end-of-flow offers a 2-step prompt:
 
 ```
 [ECC] Plugin 프로젝트 스코프 설치 (선택사항)
@@ -233,7 +233,7 @@ Run with `claude --plugin-dir .claude/local-plugins/ecc` afterwards. Global `~/.
 
 ## Installation report
 
-After `setup-harness.sh` completes you get a verification table:
+After `scripts/setup-harness.sh` completes you get a verification table:
 
 ```
 │ Category         │ Found  │ Expected │ Status │
@@ -249,7 +249,7 @@ After `setup-harness.sh` completes you get a verification table:
 │ Plugins          │ tried  │ network  │   ✅   │
 ```
 
-CI runs `bash test-harness.sh --quick` (≈5s, 85 tests) on every PR.
+CI runs `bash scripts/test-harness.sh --quick` (≈5s, 85 tests) on every PR.
 
 ## Security model
 
@@ -257,7 +257,7 @@ CI runs `bash test-harness.sh --quick` (≈5s, 85 tests) on every PR.
 - **D16 protection**: `setup-harness.sh --project-dir` blocks `~/.claude/*`, `/etc/*`, system bins
 - **`.env` / credentials shielded**: `protect-files.sh` hook blocks Write/Edit on protected paths
 - **Pre-ship security gate**: `agentshield-gate.sh` runs `npx ecc-agentshield scan` before `/uzys:ship`
-- See [Reference.md §8](./Reference.md#8-보안--신뢰-정책) for the full security policy
+- See [docs/REFERENCE.md §8](./docs/REFERENCE.md#8-보안--신뢰-정책) for the full security policy
 
 ## Project Direction
 
@@ -273,7 +273,7 @@ MIT — Copyright (c) 2026 Jay (Uzys Jung). See [LICENSE](./LICENSE).
 
 ## References
 
-Core design influences (full asset catalog in [Reference.md](./Reference.md)):
+Core design influences (full asset catalog in [docs/REFERENCE.md](./docs/REFERENCE.md)):
 
 - [agent-skills](https://github.com/addyosmani/agent-skills) — 6-gate workflow backbone
 - [Everything-Claude-Code](https://github.com/affaan-m/everything-claude-code) — vetted skills/agents/commands

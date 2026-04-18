@@ -24,7 +24,9 @@
 set -u
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+# v27.1.0 — scripts/ 안에서 실행. ROOT = repo root (templates / docs 등의 형제)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 QUICK=false
 STRICT=false
@@ -65,7 +67,7 @@ done
 # T2. Bash Syntax
 # ============================================================
 section "T2. Bash Syntax"
-for f in setup-harness.sh sync-cherrypicks.sh test-harness.sh templates/hooks/gate-check.sh templates/hooks/protect-files.sh templates/hooks/session-start.sh templates/hooks/spec-drift-check.sh templates/hooks/checkpoint-snapshot.sh templates/hooks/agentshield-gate.sh templates/hooks/mcp-pre-exec.sh; do
+for f in scripts/setup-harness.sh scripts/sync-cherrypicks.sh scripts/test-harness.sh templates/hooks/gate-check.sh templates/hooks/protect-files.sh templates/hooks/session-start.sh templates/hooks/spec-drift-check.sh templates/hooks/checkpoint-snapshot.sh templates/hooks/agentshield-gate.sh templates/hooks/mcp-pre-exec.sh; do
   if [ -f "$ROOT/$f" ]; then
     if bash -n "$ROOT/$f" 2>/dev/null; then
       pass "$f"
@@ -182,7 +184,7 @@ else
     T5_RESULTS+=("$RESULT")
     (
       cd "$DIR" && git init -q && echo "# Test" > README.md && git add . && git commit -m init -q 2>/dev/null
-      bash "$ROOT/setup-harness.sh" --track "$TRACK" --project-dir . < /dev/null > "/tmp/setup-$TRACK.log" 2>&1
+      bash "$ROOT/scripts/setup-harness.sh" --track "$TRACK" --project-dir . < /dev/null > "/tmp/setup-$TRACK.log" 2>&1
       AGENTS=$(ls .claude/agents/*.md 2>/dev/null | wc -l | tr -d ' ')
       HOOKS=$(ls .claude/hooks/*.sh 2>/dev/null | wc -l | tr -d ' ')
       if [ "$TRACK" = "executive" ]; then EXPECTED_AGENTS=5; else EXPECTED_AGENTS=8; fi
@@ -234,7 +236,7 @@ fi
 # T7. Global Commands Removed
 # ============================================================
 section "T7. setup-harness.sh Global Commands Check"
-GLOBAL_CMDS=$(grep -E "^[[:space:]]*claude mcp add|^[[:space:]]*cp.*\\\$HOME|^[[:space:]]*safe_copy.*CLAUDE_HOME" setup-harness.sh 2>/dev/null | wc -l | tr -d ' ')
+GLOBAL_CMDS=$(grep -E "^[[:space:]]*claude mcp add|^[[:space:]]*cp.*\$HOME|^[[:space:]]*safe_copy.*CLAUDE_HOME" scripts/setup-harness.sh 2>/dev/null | wc -l | tr -d ' ')
 [ "$GLOBAL_CMDS" = "0" ] && pass "글로벌 수정 명령 0건" || fail "글로벌 수정 명령 ${GLOBAL_CMDS}건"
 
 # ============================================================
@@ -297,7 +299,7 @@ if [ "$QUICK" = true ]; then
 else
   T11_DIR=$(mktemp -d)
   cd "$T11_DIR" && git init -q && echo "# E2E Test" > README.md && git add . && git commit -m init -q 2>/dev/null
-  bash "$ROOT/setup-harness.sh" --track tooling --project-dir . < /dev/null > /tmp/e2e-setup.log 2>&1
+  bash "$ROOT/scripts/setup-harness.sh" --track tooling --project-dir . < /dev/null > /tmp/e2e-setup.log 2>&1
 
   # Step 1: gate-check spec → 통과
   echo '{"tool_input":{"skill":"uzys:spec"}}' | bash .claude/hooks/gate-check.sh > /dev/null 2>&1 \
@@ -324,7 +326,7 @@ section "T12. Install Catalog Consistency"
 
 # 카탈로그 필수 플러그인 (setup-harness.sh에 grep 존재해야 함)
 for ITEM in "addy-agent-skills" "railway-plugin" "railway-skills" "supabase-agent-skills" "anthropic-agent-skills" "c-level-skills" "finance-skills"; do
-  if grep -q "$ITEM" setup-harness.sh 2>/dev/null; then
+  if grep -q "$ITEM" scripts/setup-harness.sh 2>/dev/null; then
     pass "plugin: $ITEM"
   else
     fail "plugin: $ITEM 누락"
@@ -333,7 +335,7 @@ done
 
 # 카탈로그 필수 스킬 (npx skills add)
 for ITEM in "impeccable" "playwright-skill" "find-skills" "react-best-practices" "shadcn/ui" "web-design-guidelines" "orchestkit" "next-skills"; do
-  if grep -q "$ITEM" setup-harness.sh 2>/dev/null; then
+  if grep -q "$ITEM" scripts/setup-harness.sh 2>/dev/null; then
     pass "skill: $ITEM"
   else
     fail "skill: $ITEM 누락"
@@ -351,7 +353,7 @@ done
 
 # Track별 조건부 MCP (setup-harness.sh에서 jq 추가)
 for ITEM in "railway" "supabase"; do
-  if grep -q "$ITEM" setup-harness.sh 2>/dev/null; then
+  if grep -q "$ITEM" scripts/setup-harness.sh 2>/dev/null; then
     pass "mcp-conditional: $ITEM"
   else
     fail "mcp-conditional: $ITEM 누락"
@@ -368,8 +370,8 @@ done
 grep -q "uzys:auto" templates/hooks/gate-check.sh 2>/dev/null && pass "gate-check: auto 예외" || fail "gate-check: auto 미지원"
 
 # prune-ecc.sh 존재 + KEEP 89개 정의
-[ -f prune-ecc.sh ] && pass "prune-ecc.sh" || fail "prune-ecc.sh 누락"
-KEEP_LINES=$(awk '/^KEEP_ITEMS=/,/^"/' prune-ecc.sh 2>/dev/null | wc -w | tr -d ' ')
+[ -f scripts/prune-ecc.sh ] && pass "prune-ecc.sh" || fail "prune-ecc.sh 누락"
+KEEP_LINES=$(awk "/^KEEP_ITEMS=/,/^\"/" scripts/prune-ecc.sh 2>/dev/null | wc -w | tr -d ' ')
 [ "$KEEP_LINES" -gt 80 ] && pass "prune-ecc.sh KEEP 정의 (${KEEP_LINES} tokens)" || fail "prune-ecc.sh KEEP 누락"
 
 # Dev-Prod parity (Rule — 필수) + 핵심 플로우 E2E (test 스킬로 이관)
@@ -378,7 +380,7 @@ grep -q "핵심 사용자 기능 플로우 E2E" templates/commands/uzys/test.md 
 
 # v26.16.0 — data Track 외부 skill 카탈로그
 for ITEM in "K-Dense-AI/scientific-agent-skills" "wshobson/agents" "anthropics/knowledge-work-plugins"; do
-  if grep -q "$ITEM" setup-harness.sh 2>/dev/null; then
+  if grep -q "$ITEM" scripts/setup-harness.sh 2>/dev/null; then
     pass "data-track skill source: $ITEM"
   else
     fail "data-track skill source: $ITEM 누락"
@@ -400,7 +402,7 @@ else
 # T13.1 동시 다중 Track: --track tooling --track csr-fastapi
 T13_DIR=$(mktemp -d)
 cd "$T13_DIR" && git init -q && echo "# T" > README.md && git add . && git -c user.email=t@t -c user.name=t commit -m init -q 2>/dev/null
-bash "$ROOT/setup-harness.sh" --track tooling --track csr-fastapi --project-dir . < /dev/null > /tmp/multi.log 2>&1
+bash "$ROOT/scripts/setup-harness.sh" --track tooling --track csr-fastapi --project-dir . < /dev/null > /tmp/multi.log 2>&1
 RULES_M=$(ls .claude/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
 MCP_M=$(jq -r '.mcpServers | keys | join(",")' .mcp.json 2>/dev/null || echo "")
 [ "$RULES_M" -ge 13 ] && pass "multi-track Rules: $RULES_M (≥13)" || fail "multi-track Rules: $RULES_M (<13)"
@@ -410,9 +412,9 @@ cd "$ROOT"
 # T13.2 --add-track: tooling → csr-fastapi
 T13B_DIR=$(mktemp -d)
 cd "$T13B_DIR" && git init -q && echo "# T" > README.md && git add . && git -c user.email=t@t -c user.name=t commit -m init -q 2>/dev/null
-bash "$ROOT/setup-harness.sh" --track tooling --project-dir . < /dev/null > /tmp/s1.log 2>&1
+bash "$ROOT/scripts/setup-harness.sh" --track tooling --project-dir . < /dev/null > /tmp/s1.log 2>&1
 RULES_BEFORE=$(ls .claude/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
-bash "$ROOT/setup-harness.sh" --add-track csr-fastapi --project-dir . < /dev/null > /tmp/s2.log 2>&1
+bash "$ROOT/scripts/setup-harness.sh" --add-track csr-fastapi --project-dir . < /dev/null > /tmp/s2.log 2>&1
 RULES_AFTER=$(ls .claude/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
 MCP_AFTER=$(jq -r '.mcpServers | keys | join(",")' .mcp.json 2>/dev/null || echo "")
 [ "$RULES_AFTER" -gt "$RULES_BEFORE" ] && pass "add-track Rules: $RULES_BEFORE → $RULES_AFTER" || fail "add-track Rules unchanged"
@@ -431,14 +433,14 @@ else
 # T14.1 초기 설치 후 rules 파일 변조 → --update 시 templates 원본으로 복원
 T14_DIR=$(mktemp -d)
 cd "$T14_DIR" && git init -q && echo "# T" > README.md && git add . && git -c user.email=t@t -c user.name=t commit -m init -q 2>/dev/null
-bash "$ROOT/setup-harness.sh" --track tooling --project-dir . < /dev/null > /tmp/u1.log 2>&1
+bash "$ROOT/scripts/setup-harness.sh" --track tooling --project-dir . < /dev/null > /tmp/u1.log 2>&1
 
 # rules/test-policy.md를 인위적으로 오염
 echo "## TAMPERED" >> .claude/rules/test-policy.md
 TAMPERED_BEFORE=$(grep -c "TAMPERED" .claude/rules/test-policy.md)
 
 # update 실행
-bash "$ROOT/setup-harness.sh" --update --project-dir . < /dev/null > /tmp/u2.log 2>&1
+bash "$ROOT/scripts/setup-harness.sh" --update --project-dir . < /dev/null > /tmp/u2.log 2>&1
 UPDATE_EXIT=$?
 
 TAMPERED_AFTER=$(grep -c "TAMPERED" .claude/rules/test-policy.md 2>/dev/null)
@@ -453,7 +455,7 @@ BACKUP_DIRS=$(ls -d .claude.backup-* 2>/dev/null | wc -l | tr -d ' ')
 # T14.3 Orphan prune + stale hook ref cleanup (v26.14.0)
 T14C_DIR=$(mktemp -d)
 cd "$T14C_DIR" && git init -q && echo "# T" > README.md && git add . && git -c user.email=t@t -c user.name=t commit -m init -q 2>/dev/null
-bash "$ROOT/setup-harness.sh" --track tooling --project-dir . < /dev/null > /tmp/u4.log 2>&1
+bash "$ROOT/scripts/setup-harness.sh" --track tooling --project-dir . < /dev/null > /tmp/u4.log 2>&1
 
 # orphan 주입: templates에 없는 rule + hook
 echo "# fake rule" > .claude/rules/fake-stale-rule.md
@@ -468,7 +470,7 @@ jq '.hooks.PreToolUse += [{"matcher":"Skill","hooks":[{"type":"command","command
 
 GHOST_BEFORE=$(jq '[.hooks.PreToolUse[].hooks[].command | select(contains("ghost-hook") or contains("fake-stale-hook"))] | length' .claude/settings.json)
 
-bash "$ROOT/setup-harness.sh" --update --project-dir . < /dev/null > /tmp/u5.log 2>&1
+bash "$ROOT/scripts/setup-harness.sh" --update --project-dir . < /dev/null > /tmp/u5.log 2>&1
 
 ORPHAN_RULE_GONE=true; [ -f .claude/rules/fake-stale-rule.md ] && ORPHAN_RULE_GONE=false
 ORPHAN_HOOK_GONE=true; [ -f .claude/hooks/fake-stale-hook.sh ] && ORPHAN_HOOK_GONE=false
@@ -484,7 +486,7 @@ cd "$ROOT"
 # T14.2 .claude/ 없이 --update 실행 시 명확 에러
 T14B_DIR=$(mktemp -d)
 cd "$T14B_DIR" && git init -q && echo "# T" > README.md && git add . && git -c user.email=t@t -c user.name=t commit -m init -q 2>/dev/null
-bash "$ROOT/setup-harness.sh" --update --project-dir . < /dev/null > /tmp/u3.log 2>&1
+bash "$ROOT/scripts/setup-harness.sh" --update --project-dir . < /dev/null > /tmp/u3.log 2>&1
 NO_INSTALL_EXIT=$?
 [ "$NO_INSTALL_EXIT" -ne 0 ] && pass "update: 미설치 상태 거부 (exit $NO_INSTALL_EXIT)" || fail "update: 미설치 허용 (exit 0)"
 

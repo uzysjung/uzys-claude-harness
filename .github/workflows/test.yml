@@ -29,11 +29,12 @@ jobs:
 
       - name: Bash syntax check
         run: |
-          bash -n setup-harness.sh
-          bash -n test-harness.sh
+          bash -n scripts/setup-harness.sh
+          bash -n scripts/test-harness.sh
+          bash -n scripts/prune-ecc.sh
+          bash -n scripts/sync-cherrypicks.sh
           bash -n install.sh
-          bash -n prune-ecc.sh
           for f in templates/hooks/*.sh; do bash -n "$f"; done
 
       - name: Run test-harness --quick
-        run: bash test-harness.sh --quick
+        run: bash scripts/test-harness.sh --quick
