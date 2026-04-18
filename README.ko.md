@@ -165,11 +165,11 @@ bash setup-harness.sh --gsd ...              # GSD 오케스트레이터 포함 
 
 | Track | 스택 | 역할 |
 |-------|-----|-----|
-| `csr-supabase` | Supabase + React + shadcn/ui + Tauri | 개발자 |
-| `csr-fastify` | Railway + Fastify + React + shadcn/ui + Tauri | 개발자 |
-| `csr-fastapi` | Railway + FastAPI + React + shadcn/ui + Tauri | 개발자 |
-| `ssr-htmx` | Railway + FastAPI + Jinja2 + HTMX | 개발자 |
-| `ssr-nextjs` | Railway + Next.js + React + shadcn/ui | 개발자 |
+| `csr-supabase` | React + Supabase | 개발자 |
+| `csr-fastify` | TypeScript REST API + React/shadcn/ui | 개발자 |
+| `csr-fastapi` | Python REST API + React/shadcn/ui | 개발자 |
+| `ssr-htmx` | FastAPI + Jinja2 + HTMX + daisyUI | 개발자 |
+| `ssr-nextjs` | Next.js + shadcn/ui | 개발자 |
 | `data` | Python + DuckDB + Trino + ML/DL + PySide6 | 데이터 사이언티스트 |
 | `executive` | PPT/Excel/Word/PDF + 제안서/DD | CPO/CSO/CTO |
 | `tooling` | Bash + Markdown + CLI 도구 (메타 프로젝트) | 도구/하네스 개발자 |

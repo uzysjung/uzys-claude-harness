@@ -151,11 +151,11 @@ bash setup-harness.sh --gsd ...              # include GSD orchestrator (large p
 
 | Track | Stack | Role | Auto-installed |
 |-------|-------|------|----------------|
-| `csr-supabase` | Supabase + React + shadcn/ui + Tauri | Developer | + Supabase MCP |
-| `csr-fastify` | Railway + Fastify + React + shadcn/ui + Tauri | Developer | + Railway MCP |
-| `csr-fastapi` | Railway + FastAPI + React + shadcn/ui + Tauri | Developer | + Railway MCP |
-| `ssr-htmx` | Railway + FastAPI + Jinja2 + HTMX | Developer | + Railway MCP |
-| `ssr-nextjs` | Railway + Next.js + React + shadcn/ui | Developer | + Railway MCP, next-skills |
+| `csr-supabase` | React + Supabase | Developer | + Tauri, Supabase MCP |
+| `csr-fastify` | TypeScript REST API + React/shadcn/ui | Developer | + Tauri, Railway MCP |
+| `csr-fastapi` | Python REST API + React/shadcn/ui | Developer | + Tauri, Railway MCP |
+| `ssr-htmx` | FastAPI + Jinja2 + HTMX + daisyUI | Developer | + Railway MCP |
+| `ssr-nextjs` | Next.js + shadcn/ui | Developer | + Railway MCP, next-skills |
 | `data` | Python + DuckDB + Trino + ML/DL + PySide6 | Data Scientist | + polars/dask/wshobson skills, Anthropic data plugin |
 | `executive` | PPT/Excel/Word/PDF + proposals/DD | CPO/CSO/CTO | + document-skills, c-level-skills, finance-skills |
 | `tooling` | Bash + Markdown + CLI tools (meta projects) | Tool Developer | + cli-development rules |
