@@ -488,6 +488,26 @@ if any_track 'executive|full'; then
   safe_copy_dir "$TEMPLATES/skills/investor-outreach" "$PROJ/skills/investor-outreach"
 fi
 
+# v26.16.0 — data Track 외부 skill 5종 (npx skills add + claude plugin)
+# 평가 근거: docs/research/data-track-skills-eval-2026-04-18.md
+if any_track 'data|full'; then
+  echo -n "  polars (K-Dense scientific-skills)..."
+  npx skills add K-Dense-AI/scientific-agent-skills --skill polars --yes 2>/dev/null && info "installed" || warn "already installed"
+
+  echo -n "  dask (K-Dense, 분산처리)..."
+  npx skills add K-Dense-AI/scientific-agent-skills --skill dask --yes 2>/dev/null && info "installed" || warn "already installed"
+
+  echo -n "  python-resource-management (wshobson)..."
+  npx skills add https://github.com/wshobson/agents --skill python-resource-management --yes 2>/dev/null && info "installed" || warn "already installed"
+
+  echo -n "  python-performance-optimization (wshobson)..."
+  npx skills add https://github.com/wshobson/agents --skill python-performance-optimization --yes 2>/dev/null && info "installed" || warn "already installed"
+
+  echo -n "  Anthropic data plugin (visualization, SQL exploration)..."
+  claude plugin marketplace add anthropics/knowledge-work-plugins 2>/dev/null || true
+  claude plugin install data@knowledge-work-plugins 2>/dev/null && info "installed" || warn "already installed or manual"
+fi
+
 # --- Hooks ---
 # 자동 등록 hook (settings.json에서 참조):
 safe_copy "$TEMPLATES/hooks/session-start.sh" "$PROJ/hooks/session-start.sh"

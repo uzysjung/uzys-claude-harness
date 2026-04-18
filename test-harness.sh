@@ -376,6 +376,19 @@ KEEP_LINES=$(awk '/^KEEP_ITEMS=/,/^"/' prune-ecc.sh 2>/dev/null | wc -w | tr -d 
 grep -q "Dev-Prod Parity" templates/rules/test-policy.md && pass "test-policy: Dev-Prod Parity 원칙" || fail "test-policy: Dev-Prod Parity 누락"
 grep -q "핵심 사용자 기능 플로우 E2E" templates/commands/uzys/test.md && pass "uzys:test: 핵심 E2E 단계" || fail "uzys:test: 핵심 E2E 누락"
 
+# v26.16.0 — data Track 외부 skill 카탈로그
+for ITEM in "K-Dense-AI/scientific-agent-skills" "wshobson/agents" "anthropics/knowledge-work-plugins"; do
+  if grep -q "$ITEM" setup-harness.sh 2>/dev/null; then
+    pass "data-track skill source: $ITEM"
+  else
+    fail "data-track skill source: $ITEM 누락"
+  fi
+done
+
+# Project Direction 섹션 (CLAUDE.md)
+grep -q "Project Direction" templates/CLAUDE.md && pass "CLAUDE.md: Project Direction 섹션" || fail "CLAUDE.md: Project Direction 누락"
+grep -q "continuous-learning + Ralph" templates/CLAUDE.md && pass "CLAUDE.md: Ralph 루프 명시" || fail "CLAUDE.md: Ralph 누락"
+
 # ============================================================
 # T13. Multi-Track Installation (v26.11.0)
 # ============================================================

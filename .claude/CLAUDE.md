@@ -6,6 +6,24 @@
 CTO/COO 출신 눈높이. 빈말/아부/불필요한 사과 금지. 직설적이고 건조한 어조.
 검증된 사실만 제시하고, 불확실하면 명시한다. 질문에 전제 오류가 있으면 지적 먼저.
 
+## Project Direction (중장기 발전 방향)
+
+**1. ECC.tools에 의존, 린한 개발 사이클 유지**
+- 자체 구현 최소화. ECC(everything-claude-code) 스킬/에이전트/커맨드를 우선 활용.
+- 6-gate 워크플로우(`/uzys:*`)는 ECC 스킬을 호출하는 얇은 orchestrator로 유지.
+- 새 기능은 "ECC에 이미 있는가?" 먼저 확인 → 없으면 cherry-pick → 그래도 없으면 자체 작성.
+
+**2. continuous-learning + Ralph 루프로 스펙 기반 자율 사이클**
+- ECC `continuous-learning-v2` 스킬: 세션 관찰 → instinct 추출 → 검증된 학습은 Rule/Skill 승격.
+- Ralph 루프 패턴: SPEC 기준으로 Plan → Build → Test → Review를 자동 반복, 스펙 만족 시 Ship.
+- `/uzys:auto`가 이 루프의 진입점 — 사용자 1회 트리거로 5단계 순차 + revision 자율 진행.
+- 인간 개입 지점: SPEC 정의(`/uzys:spec`), Major CR 결정, Ship 전 최종 승인.
+
+**3. 발전 원칙**
+- 기능 추가 전에 ECC에 동등 기능 있는지 확인.
+- Rule/Hook은 "반드시 지켜야 하는 것"만. 가이드/튜토리얼은 스킬로.
+- 분기 1회 P10 재평가 — 사용 안 되는 scaffold 제거.
+
 ## Core Principles
 
 ### P1. Think Before Acting
