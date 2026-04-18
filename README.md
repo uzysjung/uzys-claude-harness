@@ -27,11 +27,11 @@ Built for senior engineers / multi-role users (CEO/CTO/CISO/data scientist) who 
 
 | Stack you're building | Track to install |
 |----------------------|----------------|
-| Python REST API + React frontend | `csr-fastapi` |
-| TypeScript REST API + React frontend | `csr-fastify` |
-| Realtime / Auth / Postgres (Supabase) | `csr-supabase` |
-| SEO + React (SSR) | `ssr-nextjs` |
-| Minimal JS (server-rendered + HTMX) | `ssr-htmx` |
+| Python REST API + React/shadcn/ui frontend | `csr-fastapi` |
+| TypeScript REST API + React/shadcn/ui frontend | `csr-fastify` |
+| Realtime / Auth / Postgres (Supabase) + React/shadcn/ui | `csr-supabase` |
+| SEO + React/shadcn/ui (SSR) | `ssr-nextjs` |
+| Minimal JS (server-rendered + HTMX + daisyUI) | `ssr-htmx` |
 | Data analysis / ML / DL / PySide6 desktop | `data` |
 | Proposals / PPT / financial models (no code) | `executive` |
 | Bash / CLI / markdown meta-projects | `tooling` |

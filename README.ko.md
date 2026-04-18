@@ -27,11 +27,11 @@ CTO/COO 출신 눈높이의 시니어 엔지니어 / 멀티 역할 사용자(CEO
 
 | 만들고 있는 스택 | 설치할 Track |
 |----------------|------------|
-| Python REST API + React 프론트 | `csr-fastapi` |
-| TypeScript REST API + React 프론트 | `csr-fastify` |
-| 실시간/Auth/PostgreSQL (Supabase) | `csr-supabase` |
-| SEO 필요 + React (SSR) | `ssr-nextjs` |
-| 최소 JS (서버 렌더 + HTMX) | `ssr-htmx` |
+| Python REST API + React/shadcn/ui 프론트 | `csr-fastapi` |
+| TypeScript REST API + React/shadcn/ui 프론트 | `csr-fastify` |
+| 실시간/Auth/PostgreSQL (Supabase) + React/shadcn/ui | `csr-supabase` |
+| SEO 필요 + React/shadcn/ui (SSR) | `ssr-nextjs` |
+| 최소 JS (서버 렌더 + HTMX + daisyUI) | `ssr-htmx` |
 | 데이터 분석/ML/DL/PySide6 desktop | `data` |
 | 제안서/PPT/재무모델 (코드 없음) | `executive` |
 | Bash/CLI/Markdown 메타 프로젝트 | `tooling` |
