@@ -5,6 +5,7 @@
 .goose/
 skills-lock.json
 .claude/CLAUDE.md.backup
+.claude/settings.local.json
 .claude/settings.local.json.backup
 .claude/gate-status.json
 

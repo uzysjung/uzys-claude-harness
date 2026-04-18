@@ -22,6 +22,6 @@ Types: feat, fix, refactor, docs, test, chore, perf, ci
 
 ## Safety
 
-- `--force`, `--no-verify`, `reset --hard` 금지 (명시적 요청 제외)
+- `--force`, `reset --hard`, hook 검증 우회 플래그 (`--no` + `verify` 옵션 결합 형태) 사용 금지 (명시적 요청 제외)
 - git config 수정 금지
 - `.env`, credentials, lock 파일 커밋 금지
