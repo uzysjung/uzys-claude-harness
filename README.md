@@ -211,6 +211,11 @@ claude                  # Claude Code 시작 (session-start hook 자동)
 
 ## References
 
+> 📚 **전체 외부/내부 자산 카탈로그**: [**Reference.md**](./Reference.md)
+> Plugins / Skills / MCP / Agents / Cherry-pick / 자체 작성 — 출처, 신뢰 등급(✅/🟢/🟡), Track별 적용, 정확한 설치 명령을 한곳에 정리.
+
+### 핵심 영감 출처 (디자인 원칙)
+
 | Source | Contribution |
 |--------|-------------|
 | [agent-skills](https://github.com/addyosmani/agent-skills) | Workflow backbone (6-gate) |
