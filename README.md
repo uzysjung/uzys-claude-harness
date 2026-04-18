@@ -27,8 +27,8 @@ Built for senior engineers / multi-role users (CEO/CTO/CISO/data scientist) who 
 
 | Stack you're building | Track to install |
 |----------------------|----------------|
-| Python REST API + React/shadcn/ui frontend | `csr-fastapi` |
-| TypeScript REST API + React/shadcn/ui frontend | `csr-fastify` |
+| Python REST API + React/shadcn/ui | `csr-fastapi` |
+| TypeScript REST API + React/shadcn/ui | `csr-fastify` |
 | Realtime / Auth / Postgres (Supabase) + React/shadcn/ui | `csr-supabase` |
 | SEO + React/shadcn/ui (SSR) | `ssr-nextjs` |
 | Minimal JS (server-rendered + HTMX + daisyUI) | `ssr-htmx` |

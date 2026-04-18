@@ -27,8 +27,8 @@ CTO/COO 출신 눈높이의 시니어 엔지니어 / 멀티 역할 사용자(CEO
 
 | 만들고 있는 스택 | 설치할 Track |
 |----------------|------------|
-| Python REST API + React/shadcn/ui 프론트 | `csr-fastapi` |
-| TypeScript REST API + React/shadcn/ui 프론트 | `csr-fastify` |
+| Python REST API + React/shadcn/ui | `csr-fastapi` |
+| TypeScript REST API + React/shadcn/ui | `csr-fastify` |
 | 실시간/Auth/PostgreSQL (Supabase) + React/shadcn/ui | `csr-supabase` |
 | SEO 필요 + React/shadcn/ui (SSR) | `ssr-nextjs` |
 | 최소 JS (서버 렌더 + HTMX + daisyUI) | `ssr-htmx` |
