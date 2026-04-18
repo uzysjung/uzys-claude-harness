@@ -24,6 +24,9 @@ SELECTED_TRACKS=()  # v26.11.0 — 다중 Track 지원
 ADD_MODE=false      # v26.11.0 — 기존 설치 위에 추가 모드
 UPDATE_MODE=false   # v26.13.0 — 기존 설치에 정책 파일만 덮어쓰기
 GSD=false
+WITH_ECC=false      # v27.2.0 — 비대화형 ECC 설치
+WITH_PRUNE=false    # v27.2.0 — 비대화형 ECC prune (--with-prune은 --with-ecc 자동 활성)
+WITH_TOB=false      # v27.2.0 — 비대화형 Trail of Bits 설치
 PROJECT_DIR="$(pwd)"
 
 while [[ $# -gt 0 ]]; do
@@ -36,8 +39,24 @@ while [[ $# -gt 0 ]]; do
       SELECTED_TRACKS+=("$2"); ADD_MODE=true; shift 2 ;;
     --update) UPDATE_MODE=true; shift ;;
     --gsd) GSD=true; shift ;;
+    --with-ecc) WITH_ECC=true; shift ;;
+    --with-prune) WITH_PRUNE=true; WITH_ECC=true; shift ;;
+    --with-tob) WITH_TOB=true; shift ;;
     --project-dir) PROJECT_DIR="$2"; shift 2 ;;
-    -h|--help) echo "Usage: $0 [--track <track>]... [--add-track <track>]... [--update] [--gsd] [--project-dir <path>]"; echo ""; echo "프로젝트 스코프 전용. 글로벌 ~/.claude/는 건드리지 않음."; echo ""; echo "--track       Track 1개 또는 여러 개 (반복 가능). 다중 시 union으로 설치"; echo "--add-track   기존 설치 위에 추가 (.mcp.json/.claude/* 보존하면서 union)"; echo "--update      기존 설치의 정책 파일(rules/agents/commands/hooks/CLAUDE.md)만 templates로 덮어쓰기 (백업 자동 생성)"; exit 0 ;;
+    -h|--help) cat <<HELP
+Usage: $0 [--track <track>]... [--add-track <track>]... [--update] [--gsd] [--project-dir <path>] [--with-ecc] [--with-prune] [--with-tob]
+
+프로젝트 스코프 전용. 글로벌 ~/.claude/는 건드리지 않음.
+
+--track       Track 1개 또는 여러 개 (반복 가능). 다중 시 union으로 설치
+--add-track   기존 설치 위에 추가 (.mcp.json/.claude/* 보존하면서 union)
+--update      기존 설치의 정책 파일만 templates로 덮어쓰기 (백업 자동 생성)
+--gsd         GSD 오케스트레이터 포함
+--with-ecc    ECC plugin 프로젝트 스코프 자동 설치 (인터랙티브 프롬프트 skip, 비대화형용)
+--with-prune  ECC 설치 + 89 KEEP 외 자동 prune (--with-ecc 자동 포함)
+--with-tob    Trail of Bits security plugin 자동 설치
+HELP
+      exit 0 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
@@ -704,11 +723,18 @@ if [ "$GSD" = true ]; then
   npx get-shit-done-cc@latest 2>/dev/null && info "installed" || install_fail "GSD"
 fi
 
-# Optional: Advanced plugins (interactive only)
-if has_dev_track && [ -t 0 ]; then
+# Optional: Trail of Bits security (v27.2.0 — TTY 또는 --with-tob 플래그)
+if has_dev_track && { [ "$WITH_TOB" = true ] || [ -t 0 ] || [ -e /dev/tty ]; }; then
   echo ""
   echo -e "  ${BOLD}Optional Plugins:${NC}"
-  read -rp "  Install Trail of Bits security (CodeQL, Semgrep)? [y/N]: " TOB_ANSWER
+
+  if [ "$WITH_TOB" = true ]; then
+    TOB_ANSWER="y"
+    info "--with-tob 플래그 감지 — 자동 진행"
+  else
+    read -rp "  Install Trail of Bits security (CodeQL, Semgrep)? [y/N]: " TOB_ANSWER < /dev/tty 2>/dev/null || TOB_ANSWER=""
+  fi
+
   if [[ "$TOB_ANSWER" =~ ^[Yy]$ ]]; then
     echo -n "  Trail of Bits security..."
     claude plugin marketplace add trailofbits/skills 2>/dev/null || true
@@ -927,15 +953,24 @@ echo -e "  GSD: $([ "$GSD" = true ] && echo "yes" || echo "no")"
 echo ""
 
 # ============================================================
-# ECC Plugin 프로젝트 스코프 설치 프롬프트 (v26.15.0)
-# 대화형일 때만 표시. 모든 Track 대상.
+# ECC Plugin 프로젝트 스코프 설치 (v27.2.0)
+# 진입 조건: 인터랙티브 (TTY) 또는 --with-ecc/--with-prune 플래그
+# curl|bash 환경에서도 /dev/tty로 인터랙티브 가능
 # ============================================================
-if [ -t 0 ]; then
+if [ "$WITH_ECC" = true ] || [ -t 0 ] || [ -e /dev/tty ]; then
   section "ECC" "Plugin 프로젝트 스코프 설치 (선택사항)"
   echo "  ECC = everything-claude-code. continuous-learning-v2, security-scan,"
   echo "        ecc-e2e 등 유용한 스킬/에이전트/커맨드 번들."
   echo ""
-  read -rp "  ECC plugin을 프로젝트 스코프로 설치(copy)하시겠습니까? [y/N]: " ECC_ANSWER
+
+  # 플래그 명시 시 자동 진행, 아니면 프롬프트 (TTY에서 직접 읽기)
+  if [ "$WITH_ECC" = true ]; then
+    ECC_ANSWER="y"
+    info "--with-ecc 플래그 감지 — 자동 진행"
+  else
+    read -rp "  ECC plugin을 프로젝트 스코프로 설치(copy)하시겠습니까? [y/N]: " ECC_ANSWER < /dev/tty 2>/dev/null || ECC_ANSWER=""
+  fi
+
   if [[ "$ECC_ANSWER" =~ ^[Yy]$ ]]; then
     # 글로벌 ECC cache 확인, 없으면 설치
     ECC_CACHE="$HOME/.claude/plugins/cache/everything-claude-code/everything-claude-code"
@@ -945,7 +980,13 @@ if [ -t 0 ]; then
       claude plugin install everything-claude-code@everything-claude-code 2>/dev/null && info "글로벌 ECC 설치 완료" || warn "ECC 글로벌 설치 실패 (수동 실행 필요)"
     fi
     if [ -d "$ECC_CACHE" ]; then
-      read -rp "  ECC에서 불필요 항목을 제거(prune)하시겠습니까? [y/N]: " PRUNE_ANSWER
+      if [ "$WITH_PRUNE" = true ]; then
+        PRUNE_ANSWER="y"
+        info "--with-prune 플래그 감지 — 자동 prune"
+      else
+        read -rp "  ECC에서 불필요 항목을 제거(prune)하시겠습니까? [y/N]: " PRUNE_ANSWER < /dev/tty 2>/dev/null || PRUNE_ANSWER=""
+      fi
+
       if [[ "$PRUNE_ANSWER" =~ ^[Yy]$ ]]; then
         bash "$SCRIPT_DIR/prune-ecc.sh" --apply --force
       else
@@ -954,10 +995,10 @@ if [ -t 0 ]; then
       echo ""
       info "사용: claude --plugin-dir .claude/local-plugins/ecc"
     else
-      warn "ECC 글로벌 cache 미발견. 설치 후 'bash prune-ecc.sh --apply' 수동 실행"
+      warn "ECC 글로벌 cache 미발견. 설치 후 'bash scripts/prune-ecc.sh --apply' 수동 실행"
     fi
   else
-    info "ECC 설치 스킵. 나중에 'bash prune-ecc.sh --apply' 실행 가능"
+    info "ECC 설치 스킵. 나중에 'bash scripts/prune-ecc.sh --apply' 실행 가능"
   fi
 fi
 

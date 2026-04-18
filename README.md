@@ -116,7 +116,7 @@ Use this when you know upfront you need multiple tracks. Faster than two separat
 
 ### Optional — install ECC plugin project-scoped
 
-After `scripts/setup-harness.sh` finishes (interactive sessions only), it asks:
+In an **interactive terminal** (or `curl | bash` — works via `/dev/tty`), `setup-harness.sh` asks:
 
 ```
 [ECC] Install ECC plugin project-scoped (copy)? [y/N]
@@ -133,11 +133,30 @@ claude --plugin-dir .claude/local-plugins/ecc
 
 The global `~/.claude/` is never touched.
 
+### Non-interactive flags (CI / automation)
+
+For CI or fully unattended installs, skip prompts with explicit flags:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
+  | bash -s -- --track csr-fastapi --project-dir . \
+    --with-ecc \         # install ECC plugin project-scoped (no prompt)
+    --with-prune \       # also prune (implies --with-ecc)
+    --with-tob \         # install Trail of Bits security plugin
+    --gsd                # include GSD orchestrator
+```
+
+| Flag | Effect |
+|------|--------|
+| `--with-ecc` | Skip "install ECC?" prompt → `y` |
+| `--with-prune` | Skip "prune ECC?" prompt → `y` (auto-enables `--with-ecc`) |
+| `--with-tob` | Skip "Trail of Bits?" prompt → `y` |
+| `--gsd` | Install GSD orchestrator |
+
 ### Other flags
 
 ```bash
 bash scripts/setup-harness.sh --help                 # show full options
-bash scripts/setup-harness.sh --gsd ...              # include GSD orchestrator (large projects)
 ```
 
 ### Prerequisites

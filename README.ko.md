@@ -116,7 +116,7 @@ bash scripts/setup-harness.sh --track tooling --track csr-fastapi --project-dir 
 
 ### Optional — ECC plugin 프로젝트 스코프 설치
 
-`scripts/setup-harness.sh` 종료 후 (대화형 세션만) 묻는다:
+**대화형 터미널** (또는 `curl | bash` — `/dev/tty`로 동작) 환경에서 `setup-harness.sh`가 묻는다:
 
 ```
 [ECC] Plugin 프로젝트 스코프 설치 (선택사항)
@@ -134,11 +134,30 @@ claude --plugin-dir .claude/local-plugins/ecc
 
 글로벌 `~/.claude/`는 절대 무영향.
 
+### 비대화형 플래그 (CI / 자동화)
+
+CI나 완전 unattended 환경에서 프롬프트 없이 진행하려면:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
+  | bash -s -- --track csr-fastapi --project-dir . \
+    --with-ecc \         # ECC plugin 자동 설치 (프롬프트 skip)
+    --with-prune \       # prune도 자동 (--with-ecc 자동 포함)
+    --with-tob \         # Trail of Bits 보안 플러그인 설치
+    --gsd                # GSD 오케스트레이터 포함
+```
+
+| 플래그 | 효과 |
+|------|------|
+| `--with-ecc` | "ECC 설치?" 프롬프트 skip → `y` |
+| `--with-prune` | "prune?" 프롬프트 skip → `y` (`--with-ecc` 자동 활성) |
+| `--with-tob` | "Trail of Bits?" 프롬프트 skip → `y` |
+| `--gsd` | GSD 오케스트레이터 설치 |
+
 ### 기타 옵션
 
 ```bash
 bash scripts/setup-harness.sh --help                 # 전체 옵션 표시
-bash scripts/setup-harness.sh --gsd ...              # GSD 오케스트레이터 포함 (대형 프로젝트)
 ```
 
 ### 사전 요구사항
