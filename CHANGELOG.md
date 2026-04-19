@@ -5,6 +5,44 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.5.0] — 2026-04-19
+
+### Fixed
+- `--add-track` 시 ECC/ToB/GSD 프롬프트가 다시 떠서 사용자가 엔터로 skip해야 했던 문제 — ADD_MODE 시 default skip, 명시 플래그(`--with-ecc`/`--with-tob`/`--gsd`)로만 진행
+- GSD 프롬프트가 `curl|bash` 환경에서 진입 못 했던 문제 — `[ -e /dev/tty ]` 검사 + `read … < /dev/tty` 추가 (ECC/ToB와 일관성)
+
+### Documentation
+- README.md / README.ko.md에 "Interactive prompts — what asks, when, how to skip" 섹션 신규: 4개 프롬프트(Track/GSD/ToB/ECC+prune) × 환경(local/`curl\|bash`/CI) 매트릭스, `--add-track`/`--update` SKIP 동작 명시
+
+## [v27.4.0] — 2026-04-19
+
+### Changed
+- `csr-supabase` Track에서 Railway 자동 설치 제거 (Supabase가 자체 backend, redundant)
+  - `track-mcp-map.tsv`: `railway-mcp-server` 패턴에서 `csr-supabase` 제외
+  - `setup-harness.sh`: `railway-plugin` / `railway-skills` 조건 → `csr-fastify\|csr-fastapi\|ssr-htmx\|ssr-nextjs\|full`
+- `csr-supabase`에 Vercel CLI + Netlify CLI 자동 설치 추가 (Supabase backend + JAMstack frontend hosting)
+- `templates/project-claude/csr-supabase.md`: Plugins 섹션 정정
+
+## [v27.3.0] — 2026-04-19
+
+### Added
+- README.md / README.ko.md 양쪽에 OSS 표준 readme 섹션:
+  - **30-second start** — install + claude + `/uzys:spec` + `/uzys:auto` 한 블록
+  - **Why this?** — "Use it when… / Skip it when…" 5-row 비교 표
+  - **Example workflow** — csr-fastapi로 노트 앱 만드는 실전 시나리오 (Pre-SPEC 질의 → /uzys:auto → hook 배경)
+  - **FAQ** — Linux/WSL, 글로벌 보호, --update, 9 Track, ECC opt-in, contributing, Cursor/Codex 호환, override 8문항
+- GitHub Actions CI badge
+
+## [v27.2.0] — 2026-04-18
+
+### Added
+- `--with-ecc` / `--with-prune` / `--with-tob` 플래그: ECC/ToB 프롬프트 비대화형 자동 진행 (CI/automation용). `--with-prune`은 `--with-ecc` 자동 활성
+- `curl | bash` 환경에서도 `/dev/tty`로 ECC/ToB 프롬프트 인터랙티브 동작 (이전엔 stdin이 pipe라 skip)
+
+### Changed
+- ECC/ToB 블록 read에 `< /dev/tty 2>/dev/null` 패턴 적용
+- `--help` 출력 cat heredoc로 정리 (가독성)
+
 ## [v27.1.0] — 2026-04-18
 
 ### Changed
@@ -118,7 +156,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 Tags v26.0.0 through v26.9.x: foundational work — 6-gate workflow, 11 principles, initial Track set, security hardening, reviewer subagent (SOD), agent-skills integration. See `git log` for details.
 
-[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.1.0...HEAD
+[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.5.0...HEAD
+[v27.5.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.5.0
+[v27.4.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.4.0
+[v27.3.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.3.0
+[v27.2.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.2.0
 [v27.1.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.1.0
 [v27.0.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.0.0
 [v26.17.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v26.17.0

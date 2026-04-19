@@ -225,7 +225,7 @@ else
     echo ""
     echo -e "  ${YELLOW}경고:${NC} ${PRUNE_COUNT}건을 ${DEST} 하위에서 영구 삭제합니다."
     echo "  글로벌 cache는 영향 없음. 다른 프로젝트도 영향 없음."
-    read -rp "  진행? [y/N]: " ANSWER
+    read -rp "  진행? [y/N]: " ANSWER < /dev/tty 2>/dev/null || ANSWER=""
     [[ ! "$ANSWER" =~ ^[Yy]$ ]] && { warn "취소됨"; exit 0; }
   fi
   DELETED=0
