@@ -648,7 +648,9 @@ if any_track 'csr-fastify|csr-fastapi|ssr-htmx|ssr-nextjs|full'; then
   claude plugin install railway@railway-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
 fi
 
-# Vercel + Netlify CLI — csr-supabase frontend 배포 (Supabase backend + JAMstack hosting, v27.4.0)
+# Vercel + Netlify + Supabase CLI — csr-supabase 자동화 (v27.6.0: Supabase CLI 추가)
+# Supabase CLI는 'supabase login' (OAuth) 한 번 → CLI 명령 자동.
+# MCP server는 별도로 SUPABASE_ACCESS_TOKEN env var 필요 (project-claude 가이드 참조).
 if any_track 'csr-supabase|full'; then
   echo -n "  Vercel CLI..."
   if command -v vercel &> /dev/null; then
@@ -662,6 +664,13 @@ if any_track 'csr-supabase|full'; then
     info "already installed"
   else
     npm install -g netlify-cli 2>/dev/null && info "installed" || install_fail "netlify CLI"
+  fi
+
+  echo -n "  Supabase CLI..."
+  if command -v supabase &> /dev/null; then
+    info "already installed"
+  else
+    npm install -g supabase 2>/dev/null && info "installed (run 'supabase login' once for OAuth)" || install_fail "supabase CLI"
   fi
 fi
 
