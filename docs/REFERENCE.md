@@ -25,8 +25,10 @@
 | 이름 | 출처 | Tier | Track | 설치 명령 | 용도 |
 |------|------|:-:|------|---------|------|
 | **agent-skills** | [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | 🟢 | dev tracks | `claude plugin install agent-skills@addy-agent-skills` | spec-driven development 8단계 워크플로우 |
-| **railway-plugin** | [railwayapp/railway-plugin](https://github.com/railwayapp/railway-plugin) | ✅ | dev tracks | `claude plugin install railway-plugin@railway-plugin` | Railway 배포/로그/환경변수 |
-| **railway-skills** | [railwayapp/railway-skills](https://github.com/railwayapp/railway-skills) | ✅ | csr-*, ssr-*, full | `claude plugin install railway@railway-skills` | Railway 프로젝트/서비스/배포 관리 (railway-mcp 짝) |
+| **railway-plugin** | [railwayapp/railway-plugin](https://github.com/railwayapp/railway-plugin) | ✅ | csr-fastify, csr-fastapi, ssr-*, full | `claude plugin install railway-plugin@railway-plugin` | Railway 배포/로그/환경변수 (csr-supabase 제외 — Vercel/Netlify 사용) |
+| **railway-skills** | [railwayapp/railway-skills](https://github.com/railwayapp/railway-skills) | ✅ | csr-fastify, csr-fastapi, ssr-*, full | `claude plugin install railway@railway-skills` | Railway 프로젝트/서비스/배포 관리 (railway-mcp 짝) |
+| **Vercel CLI** | [vercel/vercel](https://github.com/vercel/vercel) | ✅ | csr-supabase, full | `npm install -g vercel` | 프론트엔드 배포 (JAMstack) |
+| **Netlify CLI** | [netlify/cli](https://github.com/netlify/cli) | ✅ | csr-supabase, full | `npm install -g netlify-cli` | 프론트엔드 배포 (JAMstack) |
 | **supabase agent-skills** | [supabase/agent-skills](https://github.com/supabase/agent-skills) | ✅ | csr-supabase, full | `claude plugin install supabase@supabase-agent-skills` | Auth/Realtime/Storage/RLS |
 | **postgres-best-practices** | supabase/agent-skills | ✅ | csr-supabase, full | `claude plugin install postgres-best-practices@supabase-agent-skills` | Postgres 쿼리 최적화 |
 | **document-skills** | [anthropics/skills](https://github.com/anthropics/skills) | ✅ | executive, full | `claude plugin install document-skills@anthropic-agent-skills` | docx/pptx/xlsx/pdf/canvas-design 등 |

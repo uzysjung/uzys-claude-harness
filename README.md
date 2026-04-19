@@ -210,7 +210,7 @@ bash scripts/setup-harness.sh --help                 # show full options
 
 | Track | Stack | Role | Auto-installed |
 |-------|-------|------|----------------|
-| `csr-supabase` | Supabase + React/shadcn/ui | Developer | + Tauri, Supabase MCP |
+| `csr-supabase` | Supabase + React/shadcn/ui | Developer | + Tauri, Supabase MCP, Vercel CLI, Netlify CLI |
 | `csr-fastify` | TypeScript REST API + React/shadcn/ui | Developer | + Tauri, Railway MCP |
 | `csr-fastapi` | Python REST API + React/shadcn/ui | Developer | + Tauri, Railway MCP |
 | `ssr-htmx` | FastAPI + Jinja2 + HTMX + daisyUI | Developer | + Railway MCP |

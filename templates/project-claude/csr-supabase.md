@@ -56,8 +56,8 @@ Define(/uzys:spec) -> Plan(/uzys:plan) -> Build(/uzys:build) -> Verify(/uzys:tes
 ## Plugins
 
 - **agent-skills**: 6-gate 워크플로우 엔진
-- **Railway**: 배포 자동화 (Supabase 트랙에서는 보조 용도)
 - **supabase-agent-skills**: Supabase 전용 전문 지식 (공식 플러그인, D23)
+- **Vercel CLI** + **Netlify CLI**: 프론트엔드 배포 (Supabase backend + JAMstack hosting)
 
 ## Commands
 

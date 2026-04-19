@@ -632,18 +632,35 @@ fi
 # ECC: plugin 통째 설치 대신 Track별 cherry-pick으로 전환 (v26.10.0).
 #       기존에 글로벌 ECC plugin 설치된 경우 안내: claude plugin uninstall everything-claude-code@everything-claude-code
 
-# Railway plugin (MCP는 .mcp.json으로 이관됨)
-if has_dev_track; then
+# Railway plugin — Railway 사용 Track만 (csr-supabase는 Vercel/Netlify 사용으로 제외, v27.4.0)
+if any_track 'csr-fastify|csr-fastapi|ssr-htmx|ssr-nextjs|full'; then
   echo -n "  Railway plugin..."
   claude plugin marketplace add railwayapp/railway-plugin 2>/dev/null || true
   claude plugin install railway-plugin@railway-plugin 2>/dev/null && info "installed" || warn "already installed or manual install needed"
 fi
 
-# Railway agent-skills — Railway MCP가 설치되는 Track과 동일 (csr-*, ssr-*, full)
-if any_track 'csr-*|ssr-*|full'; then
+# Railway agent-skills — Railway MCP가 설치되는 Track과 동일
+if any_track 'csr-fastify|csr-fastapi|ssr-htmx|ssr-nextjs|full'; then
   echo -n "  Railway agent-skills..."
   claude plugin marketplace add railwayapp/railway-skills 2>/dev/null || true
   claude plugin install railway@railway-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+fi
+
+# Vercel + Netlify CLI — csr-supabase frontend 배포 (Supabase backend + JAMstack hosting, v27.4.0)
+if any_track 'csr-supabase|full'; then
+  echo -n "  Vercel CLI..."
+  if command -v vercel &> /dev/null; then
+    info "already installed"
+  else
+    npm install -g vercel 2>/dev/null && info "installed" || install_fail "vercel CLI"
+  fi
+
+  echo -n "  Netlify CLI..."
+  if command -v netlify &> /dev/null; then
+    info "already installed"
+  else
+    npm install -g netlify-cli 2>/dev/null && info "installed" || install_fail "netlify CLI"
+  fi
 fi
 
 # Impeccable (UI tracks)
