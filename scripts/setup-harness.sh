@@ -672,6 +672,50 @@ if any_track 'csr-supabase|full'; then
   else
     npm install -g supabase 2>/dev/null && info "installed (run 'supabase login' once for OAuth)" || install_fail "supabase CLI"
   fi
+
+  # .env.example 생성 + .gitignore 보강 (v27.7.0)
+  if [ ! -f ".env.example" ]; then
+    cat > .env.example <<'ENVEOF'
+# .env.example — csr-supabase Track
+# Copy to .env (gitignored) and fill in values: cp .env.example .env
+
+# ===== Supabase Management API (MCP server용) =====
+# Personal Access Token — @supabase/mcp-server가 프로젝트 생성/마이그레이션/Edge Functions 배포에 사용
+# 발급: https://supabase.com/dashboard/account/tokens
+SUPABASE_ACCESS_TOKEN=
+
+# 프로젝트 참조 ID (예: "abcdefghijklmnop")
+# 위치: Supabase Dashboard → Project Settings → General
+SUPABASE_PROJECT_REF=
+
+# DB 패스워드 (supabase db push 등 직접 DB 접근용)
+# 위치: Supabase Dashboard → Project Settings → Database
+SUPABASE_DB_PASSWORD=
+
+# ===== Frontend (public, 클라이언트 노출 OK) =====
+# 위치: Supabase Dashboard → Project Settings → API
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+
+# ===== Optional — 앱 측 AI 기능용 =====
+# OPENAI_API_KEY=
+# ANTHROPIC_API_KEY=
+
+# ===== Note =====
+# - Vercel/Netlify는 별도 CLI login 사용 (env 불필요): vercel login / netlify login
+# - Supabase CLI(supabase login)는 OAuth로 ~/.config/supabase/에 토큰 저장 — env 별개
+# - .env는 .gitignore됨 (자동 추가). 절대 commit 금지.
+ENVEOF
+    info ".env.example 생성 (csr-supabase 토큰 가이드)"
+  fi
+
+  # .gitignore에 .env 추가 (없으면)
+  if [ -f .gitignore ] && ! grep -qE '^\.env$|^\.env\s' .gitignore; then
+    echo "" >> .gitignore
+    echo "# Secret env (auto-added by setup-harness.sh)" >> .gitignore
+    echo ".env" >> .gitignore
+    info ".gitignore에 .env 추가"
+  fi
 fi
 
 # Impeccable (UI tracks)
