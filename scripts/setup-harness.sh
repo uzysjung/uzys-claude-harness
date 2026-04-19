@@ -741,7 +741,8 @@ if [ "$GSD" = true ]; then
 fi
 
 # Optional: Trail of Bits security (v27.2.0 — TTY 또는 --with-tob 플래그)
-if has_dev_track && { [ "$WITH_TOB" = true ] || [ -t 0 ] || [ -e /dev/tty ]; }; then
+# v27.5.0 — ADD_MODE에서는 --with-tob 명시한 경우만 진행 (재프롬프트 노이즈 제거)
+if has_dev_track && { [ "$WITH_TOB" = true ] || { [ "$ADD_MODE" = false ] && { [ -t 0 ] || [ -e /dev/tty ]; }; }; }; then
   echo ""
   echo -e "  ${BOLD}Optional Plugins:${NC}"
 
@@ -973,8 +974,9 @@ echo ""
 # ECC Plugin 프로젝트 스코프 설치 (v27.2.0)
 # 진입 조건: 인터랙티브 (TTY) 또는 --with-ecc/--with-prune 플래그
 # curl|bash 환경에서도 /dev/tty로 인터랙티브 가능
+# v27.5.0 — ADD_MODE에서는 --with-ecc 명시한 경우만 진행 (재프롬프트 노이즈 제거)
 # ============================================================
-if [ "$WITH_ECC" = true ] || [ -t 0 ] || [ -e /dev/tty ]; then
+if [ "$WITH_ECC" = true ] || { [ "$ADD_MODE" = false ] && { [ -t 0 ] || [ -e /dev/tty ]; }; }; then
   section "ECC" "Plugin 프로젝트 스코프 설치 (선택사항)"
   echo "  ECC = everything-claude-code. continuous-learning-v2, security-scan,"
   echo "        ecc-e2e 등 유용한 스킬/에이전트/커맨드 번들."
