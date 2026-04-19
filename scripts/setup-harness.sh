@@ -370,9 +370,11 @@ fi
 
 # ============================================================
 # Step 3: GSD Selection
+# v27.5.0 — /dev/tty로 curl|bash 인터랙티브 지원, ADD_MODE 시 skip
 # ============================================================
-if [ "$GSD" = false ] && has_dev_track && [ -t 0 ]; then
-  read -rp "  Install GSD (large project orchestrator)? [y/N]: " GSD_ANSWER
+if [ "$GSD" = false ] && has_dev_track && [ "$ADD_MODE" = false ] \
+   && { [ -t 0 ] || [ -e /dev/tty ]; }; then
+  read -rp "  Install GSD (large project orchestrator)? [y/N]: " GSD_ANSWER < /dev/tty 2>/dev/null || GSD_ANSWER=""
   if [[ "$GSD_ANSWER" =~ ^[Yy]$ ]]; then
     GSD=true
   fi

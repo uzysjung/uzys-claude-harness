@@ -174,9 +174,37 @@ claude --plugin-dir .claude/local-plugins/ecc
 
 글로벌 `~/.claude/`는 절대 무영향.
 
-### 비대화형 플래그 (CI / 자동화)
+### 인터랙티브 프롬프트 — 무엇을 묻고, 언제 뜨고, 어떻게 skip 하나
 
-CI나 완전 unattended 환경에서 프롬프트 없이 진행하려면:
+`setup-harness.sh`는 4개의 선택 프롬프트가 있다. 각각 비대화형 자동 진행 플래그가 있음.
+
+| 프롬프트 | 언제 표시? | 자동-y 플래그 |
+|---------|----------|--------------|
+| **Track 선택** (1-9) | `--track` 미명시 AND TTY 가용 | `--track <이름>` |
+| **GSD 오케스트레이터** | dev track AND fresh install (`--add-track` 아님) AND TTY 가용 | `--gsd` |
+| **Trail of Bits 보안** | dev track AND fresh install AND TTY 가용 | `--with-tob` |
+| **ECC 프로젝트 스코프 설치** | fresh install AND TTY 가용 | `--with-ecc` |
+| **ECC prune (89 KEEP)** | ECC 설치 확정 후 | `--with-prune` (`--with-ecc` 자동 포함) |
+
+#### 환경 ↔ 프롬프트 동작
+
+| 환경 | TTY 가용? | 프롬프트 표시? |
+|------|:-:|:-:|
+| 로컬 터미널 `bash setup-harness.sh ...` | ✅ | ✅ |
+| **`curl … \| bash …` (터미널에서 실행)** | ✅ (`/dev/tty`로) | ✅ |
+| CI runner / SSH `-T` no-tty | ❌ | ❌ (자동 skip; 플래그 사용) |
+
+#### `--add-track`과 `--update`: 프롬프트 default SKIP
+
+기존 설치 augment 목적인 `--add-track`/`--update`는 ECC/ToB/GSD 프롬프트가 **조용히 skip** (재질문 노이즈 제거). `--add-track` 중에도 ECC를 추가하고 싶으면 명시 플래그 사용:
+
+```bash
+# 기존 설치에 csr-supabase 추가 + 동시에 ECC도 설치
+curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
+  | bash -s -- --add-track csr-supabase --with-ecc --with-prune --project-dir .
+```
+
+#### 완전 비대화형 설치 (CI / 스크립트)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \

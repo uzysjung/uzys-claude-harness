@@ -173,9 +173,37 @@ claude --plugin-dir .claude/local-plugins/ecc
 
 The global `~/.claude/` is never touched.
 
-### Non-interactive flags (CI / automation)
+### Interactive prompts — what asks, when, how to skip
 
-For CI or fully unattended installs, skip prompts with explicit flags:
+`setup-harness.sh` has 4 optional prompts. Each has an explicit flag for unattended/CI use.
+
+| Prompt | When does it appear? | Auto-y flag |
+|--------|---------------------|-------------|
+| **Track selection** (1-9) | `--track` not given AND TTY available | `--track <name>` |
+| **GSD orchestrator** | dev track AND fresh install (not `--add-track`) AND TTY available | `--gsd` |
+| **Trail of Bits security** | dev track AND fresh install AND TTY available | `--with-tob` |
+| **ECC project-scoped install** | fresh install AND TTY available | `--with-ecc` |
+| **ECC prune (89 KEEP)** | After ECC install confirmed | `--with-prune` (implies `--with-ecc`) |
+
+#### Environment ↔ prompt behavior matrix
+
+| Environment | TTY available? | Prompts shown? |
+|-------------|:-:|:-:|
+| Local terminal `bash setup-harness.sh ...` | ✅ | ✅ |
+| **`curl … \| bash …` from terminal** | ✅ (via `/dev/tty`) | ✅ |
+| CI runner / SSH `-T` no-tty | ❌ | ❌ (auto-skip; use flags) |
+
+#### `--add-track` and `--update`: prompts are SUPPRESSED by default
+
+To avoid re-prompting when augmenting an existing install, ECC/ToB/GSD prompts are **silently skipped** for `--add-track` and `--update`. If you actually want to add ECC/ToB during `--add-track`, use the explicit flag:
+
+```bash
+# Add csr-supabase to existing install AND install ECC at the same time
+curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
+  | bash -s -- --add-track csr-supabase --with-ecc --with-prune --project-dir .
+```
+
+#### Full unattended install (CI / scripts)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
