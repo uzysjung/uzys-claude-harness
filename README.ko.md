@@ -97,6 +97,13 @@ claude
 
 이미 `csr-fastapi` 설치했고, `tooling` (하네스의 bash/markdown 작업용)도 추가하고 싶다면:
 
+**원격 (권장 — clone 불필요)**:
+```bash
+curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
+  | bash -s -- --add-track tooling --project-dir .
+```
+
+**로컬 clone에서**:
 ```bash
 bash /path/to/uzys-claude-harness/scripts/setup-harness.sh --add-track tooling --project-dir .
 ```
@@ -107,6 +114,13 @@ bash /path/to/uzys-claude-harness/scripts/setup-harness.sh --add-track tooling -
 
 새 release가 나오면 ([CHANGELOG.md](./CHANGELOG.md) 확인):
 
+**원격 (권장)**:
+```bash
+curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
+  | bash -s -- --update --project-dir .
+```
+
+**로컬 clone에서**:
 ```bash
 bash /path/to/uzys-claude-harness/scripts/setup-harness.sh --update --project-dir .
 ```

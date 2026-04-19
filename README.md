@@ -97,6 +97,13 @@ claude
 
 Already installed `csr-fastapi`? Want to also add `tooling` (for the harness's own bash/markdown work)?
 
+**Remote (recommended — no clone needed)**:
+```bash
+curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
+  | bash -s -- --add-track tooling --project-dir .
+```
+
+**From local clone**:
 ```bash
 bash /path/to/uzys-claude-harness/scripts/setup-harness.sh --add-track tooling --project-dir .
 ```
@@ -107,6 +114,13 @@ bash /path/to/uzys-claude-harness/scripts/setup-harness.sh --add-track tooling -
 
 When a new release comes out (check [CHANGELOG.md](./CHANGELOG.md)):
 
+**Remote (recommended)**:
+```bash
+curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
+  | bash -s -- --update --project-dir .
+```
+
+**From local clone**:
 ```bash
 bash /path/to/uzys-claude-harness/scripts/setup-harness.sh --update --project-dir .
 ```
