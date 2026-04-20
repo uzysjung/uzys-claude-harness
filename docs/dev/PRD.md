@@ -485,7 +485,7 @@ DO NOT CHANGE:
 | @owloops/claude-powerline | github.com/owloops/claude-powerline | 상태표시줄 (D21 교체) |
 | HumanLayer — Harness Engineering | humanlayer.dev/blog/skill-issue-harness-engineering-for-coding-agents | "Coding Agent = AI Model(s) + Harness" 정의 |
 | `Docs/research/` | 본 레포 | harness-engineering-audit-2026-04, memory-architecture-check, mcp-pre-exec-feasibility |
-| Jay의 기존 리포 | uzysjung/std-dev-boilerplate, uzysjung/dyld-vantage | Rules 기반, Track별 참조 |
+| 기존 참조 리포 (private) | `<YOUR_BOILERPLATE_REPO>`, `<YOUR_REFERENCE_REPO>` | Rules 기반, Track별 참조 |
 
 ---
 

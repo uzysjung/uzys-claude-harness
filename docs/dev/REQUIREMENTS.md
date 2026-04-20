@@ -2,7 +2,7 @@
 
 > **Owner**: Jay | **Date**: 2026-04-12
 > **실행 환경**: Claude Code (Opus)
-> **참조 리포**: uzysjung/std-dev-boilerplate, uzysjung/dyld-vantage
+> **참조 리포**: `<YOUR_BOILERPLATE_REPO>`, `<YOUR_REFERENCE_REPO>` (private, 사용자 본인 리포로 교체)
 
 ---
 
@@ -491,14 +491,14 @@ executive 워크플로우: 요청 → strategist subagent + document-skills → 
 | **GSD** | github.com/gsd-build/get-shit-done | 선택적 오케스트레이터 |
 | **claude-code-statusline** | github.com/kcchien/claude-code-statusline | 상태표시줄 (모델, 컨텍스트, 비용, git, rate limit) |
 
-### Jay의 기존 리포 (구현 시 반드시 fetch)
+### 참조 리포 (구현 시 반드시 fetch)
 
 | 리포 | 참조 대상 | 구현 시 지시 |
 |------|-----------|-------------|
-| **uzysjung/std-dev-boilerplate** | .claude/rules/, CLAUDE.md, 스킬/플러그인 구성 전체 | **GitHub MCP로 리포 구조 확인 → 기존 Rules 내용을 기반으로 새 Rules 작성. 기존 것과 중복/충돌 방지** |
-| **uzysjung/dyld-vantage** | .claude/rules/ (htmx.md, seo.md 등), CLAUDE.md | **GitHub MCP로 리포 구조 확인 → SSR/HTMX Track Rules의 실제 참조 원본** |
+| **`<YOUR_BOILERPLATE_REPO>`** | .claude/rules/, CLAUDE.md, 스킬/플러그인 구성 전체 | **GitHub MCP로 리포 구조 확인 → 기존 Rules 내용을 기반으로 새 Rules 작성. 기존 것과 중복/충돌 방지** |
+| **`<YOUR_REFERENCE_REPO>`** | .claude/rules/ (htmx.md, seo.md 등), CLAUDE.md | **GitHub MCP로 리포 구조 확인 → SSR/HTMX Track Rules의 실제 참조 원본** |
 
-> ⚠️ 두 리포는 private. Claude Code에서 GitHub MCP를 통해 접근 가능. 반드시 기존 파일 내용을 읽고, 이미 작성된 Rules/설정과 일관성을 유지하라.
+> ⚠️ 두 리포는 private. 본인의 private boilerplate/reference 리포로 교체 후 Claude Code의 GitHub MCP를 통해 접근. 반드시 기존 파일 내용을 읽고, 이미 작성된 Rules/설정과 일관성을 유지하라.
 
 ### 원칙 & 사상
 

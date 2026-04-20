@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.12.1] — 2026-04-20
+
+### Security
+- `docs/dev/*` (bootstrap-dev.sh / PRD.md / REQUIREMENTS.md) 에 남아있던 개인 private 리포 이름(`uzysjung/std-dev-boilerplate`, `uzysjung/dyld-vantage`) 제거 — generic placeholder(`<YOUR_BOILERPLATE_REPO>`, `<YOUR_REFERENCE_REPO>`)로 치환. public harness repo에서 개인 private 프로젝트 메타데이터 노출 차단. AgentShield 스캔 + `/ecc:security-scan` 요청에 의해 발견.
+
 ## [v27.12.0] — 2026-04-20
 
 ### Added — GoalTrack 이식
@@ -239,7 +244,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 Tags v26.0.0 through v26.9.x: foundational work — 6-gate workflow, 11 principles, initial Track set, security hardening, reviewer subagent (SOD), agent-skills integration. See `git log` for details.
 
-[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.12.0...HEAD
+[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.12.1...HEAD
+[v27.12.1]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.12.1
 [v27.12.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.12.0
 [v27.11.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.11.0
 [v27.10.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.10.0
