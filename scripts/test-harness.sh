@@ -651,6 +651,66 @@ else
 fi
 
 # ============================================================
+# T18. UI Visual Review Skill (v27.11.0)
+# ============================================================
+section "T18. UI Visual Review Skill"
+
+# T18.1 — SKILL.md 존재 + frontmatter
+SKILL_FILE="$ROOT/templates/skills/ui-visual-review/SKILL.md"
+if [ -f "$SKILL_FILE" ]; then
+  pass "ui-visual-review: SKILL.md 존재"
+else
+  fail "ui-visual-review: SKILL.md 없음"
+fi
+
+if [ -f "$SKILL_FILE" ] && grep -q "^name: ui-visual-review" "$SKILL_FILE" && grep -q "^description:" "$SKILL_FILE"; then
+  pass "ui-visual-review: frontmatter 형식"
+else
+  fail "ui-visual-review: frontmatter 누락"
+fi
+
+# T18.2 — 핵심 키워드 (capture, baseline, diff, regression)
+if [ -f "$SKILL_FILE" ]; then
+  KW_FOUND=0
+  for k in "capture|캡처" "baseline" "diff" "regression|REGRESSION"; do
+    grep -qE "$k" "$SKILL_FILE" && KW_FOUND=$((KW_FOUND+1))
+  done
+  if [ "$KW_FOUND" -eq 4 ]; then
+    pass "ui-visual-review: 핵심 키워드 (capture/baseline/diff/regression) $KW_FOUND/4"
+  else
+    fail "ui-visual-review: 키워드 부족 $KW_FOUND/4"
+  fi
+fi
+
+# T18.3 — UI Track 한정 명시 (csr-*, ssr-*, full)
+if [ -f "$SKILL_FILE" ] && grep -qE "csr-\*|ssr-\*|csr-/ssr-" "$SKILL_FILE"; then
+  pass "ui-visual-review: UI Track 한정 명시"
+else
+  fail "ui-visual-review: UI Track 한정 누락"
+fi
+
+# T18.4 — /uzys:test 결합
+if grep -q "ui-visual-review" "$ROOT/templates/commands/uzys/test.md"; then
+  pass "/uzys:test: ui-visual-review 호출 결합"
+else
+  fail "/uzys:test: ui-visual-review 미연동"
+fi
+
+# T18.5 — /uzys:review 결합 (REGRESSION 차단 명시)
+if grep -q "visual-review\|REGRESSION" "$ROOT/templates/commands/uzys/review.md"; then
+  pass "/uzys:review: visual review 결합 + REGRESSION 차단"
+else
+  fail "/uzys:review: visual review 미연동"
+fi
+
+# T18.6 — 출력 경로 규약 (docs/screenshots/ + docs/visual-review-)
+if [ -f "$SKILL_FILE" ] && grep -q "docs/screenshots/" "$SKILL_FILE" && grep -q "docs/visual-review-" "$SKILL_FILE"; then
+  pass "ui-visual-review: 출력 경로 규약 명시"
+else
+  fail "ui-visual-review: 출력 경로 규약 누락"
+fi
+
+# ============================================================
 # Summary
 # ============================================================
 echo ""

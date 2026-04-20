@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.11.0] — 2026-04-20
+
+### Added
+- **`ui-visual-review` skill 신규** (`templates/skills/ui-visual-review/SKILL.md`):
+  - 5단계 프로세스 — 화면 리스트업(`docs/visual-pages.json`) → 캡처(chrome-devtools MCP / Playwright) → diff(L1 해시 → L2 pixelmatch → L3 LLM 시각 비교) → 에이전트 1차 판정(REGRESSION/CHANGED/PASS) → 사용자 승인 게이트
+  - 출력: `docs/screenshots/<phase>/*.png` + `docs/visual-review-<phase>.md`
+  - GoalTrack의 수동 스크린샷 검토 패턴(mvp-/v3-/v4- prefix)을 자동화
+- `/uzys:test`에 UI Track(csr-*/ssr-*/full) 한정 ui-visual-review 호출 권유 섹션 추가
+- `/uzys:review` Process step 5 — `docs/visual-review-<phase>.md` 존재 시 review 입력으로 흡수. **REGRESSION 1건이라도 있으면 Review Gate 차단** (CRITICAL과 동급)
+- **T18 — UI Visual Review Skill 자산 검증** (test-harness): 6개 assertion (SKILL.md/frontmatter/핵심 키워드/UI Track 한정/test·review 결합/출력 경로 규약)
+
+### Stats
+- test-harness assertion: 132 → 139 (PASS, FAIL 0)
+
 ## [v27.10.0] — 2026-04-20
 
 ### Added
@@ -205,7 +219,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 Tags v26.0.0 through v26.9.x: foundational work — 6-gate workflow, 11 principles, initial Track set, security hardening, reviewer subagent (SOD), agent-skills integration. See `git log` for details.
 
-[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.10.0...HEAD
+[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.11.0...HEAD
+[v27.11.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.11.0
 [v27.10.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.10.0
 [v27.9.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.9.0
 [v27.8.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.8.0
