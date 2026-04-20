@@ -168,11 +168,12 @@ fi
 # ============================================================
 # T5. Track Installation Integration (병렬)
 # ============================================================
-section "T5. Track Installation (6 tracks, parallel)"
+section "T5. Track Installation (9 tracks, parallel)"
 if [ "$QUICK" = true ]; then
   skip "T5 (quick mode — install 테스트 스킵)"
 else
-  T5_TRACKS=(tooling csr-supabase csr-fastapi ssr-htmx executive full data)
+  # v27.9.0 — 9 tracks 전체로 확장 (csr-fastify, ssr-nextjs 추가)
+  T5_TRACKS=(tooling csr-supabase csr-fastapi csr-fastify ssr-htmx ssr-nextjs executive full data)
   declare -a T5_PIDS=()
   declare -a T5_DIRS=()
   declare -a T5_RESULTS=()
@@ -492,6 +493,93 @@ NO_INSTALL_EXIT=$?
 
 cd "$ROOT"
 fi  # end T14 quick skip
+
+# ============================================================
+# T15. Install UX Regression (v27.8.0 fix — curl|bash UX)
+# 목적: "설치 항목 씹힘" / "안내 없이 멈춤" 버그 재발 방지
+# ============================================================
+section "T15. Install UX Regression"
+
+# T15.1 — 모든 설치 호출에 stdin /dev/null 바인딩 적용 여부 (≥27건 예상)
+STDIN_COUNT=$(grep -cE "(npx skills add|claude plugin (install|marketplace add)|npm install -g).*</dev/null >/dev/null 2>&1" "$ROOT/scripts/setup-harness.sh")
+if [ "$STDIN_COUNT" -ge 27 ]; then
+  pass "설치 호출 stdin 격리: ${STDIN_COUNT}건 (≥27)"
+else
+  fail "설치 호출 stdin 격리 미흡: ${STDIN_COUNT}건 (<27)"
+fi
+
+# T15.2 — 금지 패턴: 설치 호출에 `2>/dev/null`만 있고 stdin 미닫힘 (regression 지표)
+LEAK_COUNT=$(grep -cE "^\s*(npx skills add|claude plugin (install|marketplace add)|npm install -g)[^<]*[^/]2>/dev/null" "$ROOT/scripts/setup-harness.sh" || true)
+if [ "$LEAK_COUNT" -eq 0 ]; then
+  pass "설치 호출에 stdin 미닫힌 패턴 0건"
+else
+  fail "설치 호출에 stdin 미닫힌 패턴 ${LEAK_COUNT}건 (v27.8.0 regression)"
+fi
+
+# T15.3 — install.sh에 TTY 재부착 헤더 (직접 exec 또는 fd 3 dup 패턴)
+if grep -qE "exec\s*[0-9]*</dev/tty" "$ROOT/install.sh"; then
+  pass "install.sh에 TTY 재부착 헤더 존재"
+else
+  fail "install.sh에 TTY 재부착 헤더 없음"
+fi
+
+# T15.4 — setup-harness.sh에 TTY 재부착 헤더
+if grep -qE "exec\s*[0-9]*</dev/tty" "$ROOT/scripts/setup-harness.sh"; then
+  pass "setup-harness.sh에 TTY 재부착 헤더 존재"
+else
+  fail "setup-harness.sh에 TTY 재부착 헤더 없음"
+fi
+
+# T15.5 — stdin pipe 상태에서 --help가 interactive 없이 즉시 종료
+HELP_RC=$(echo "" | bash "$ROOT/scripts/setup-harness.sh" --help </dev/null >/dev/null 2>&1; echo $?)
+if [ "$HELP_RC" = "0" ]; then
+  pass "stdin pipe + --help: 즉시 exit 0"
+else
+  fail "stdin pipe + --help 이상 (exit=$HELP_RC)"
+fi
+
+# T15.6 — run_quiet 헬퍼 정의 존재
+if grep -q "^run_quiet()" "$ROOT/scripts/setup-harness.sh"; then
+  pass "run_quiet 헬퍼 정의됨"
+else
+  fail "run_quiet 헬퍼 미정의"
+fi
+
+# ============================================================
+# T16. install.sh file:// end-to-end (curl|bash 경로 재현)
+# 목적: 원격 설치 엔트리 전체 경로 (clone → setup → cleanup) 검증
+# ============================================================
+section "T16. install.sh file:// end-to-end"
+if [ "$QUICK" = true ]; then
+  skip "T16 (quick mode)"
+else
+  # 로컬 repo를 file:// URL로 제공하여 install.sh의 git clone 경로를 재현.
+  # commit 되지 않은 변경분까지 포함하기 위해 bundle 대신 원본 .git을 사용.
+  T16_PROJECT=$(mktemp -d)
+  cd "$T16_PROJECT" && git init -q && echo "# T16" > README.md && git add . && git -c user.email=t@t -c user.name=t commit -m init -q 2>/dev/null
+
+  # UZYS_HARNESS_REPO env로 리포 URL 오버라이드 (v27.8.0 신규)
+  UZYS_HARNESS_REPO="file://$ROOT/.git" bash "$ROOT/install.sh" --track tooling --project-dir "$T16_PROJECT" </dev/null >/tmp/install-e2e.log 2>&1
+  INSTALL_RC=$?
+
+  if [ "$INSTALL_RC" = "0" ]; then
+    pass "install.sh exit 0 (file:// repo, tooling track)"
+  else
+    fail "install.sh exit $INSTALL_RC (로그: /tmp/install-e2e.log)"
+  fi
+
+  [ -f "$T16_PROJECT/CLAUDE.md" ] && pass "install.sh: CLAUDE.md 생성" || fail "install.sh: CLAUDE.md 미생성"
+  [ -d "$T16_PROJECT/.claude/agents" ] && pass "install.sh: .claude/agents/ 생성" || fail "install.sh: .claude/agents/ 미생성"
+  [ -f "$T16_PROJECT/.claude/settings.json" ] && pass "install.sh: settings.json 생성" || fail "install.sh: settings.json 미생성"
+  [ -f "$T16_PROJECT/.mcp.json" ] && pass "install.sh: .mcp.json 생성" || fail "install.sh: .mcp.json 미생성"
+
+  # 설치 결과 /tmp clone 정리 확인 — install.sh의 trap이 제거해야 함
+  # (정확한 tmp dir은 알 수 없지만 최소한 프로젝트 내부에는 'harness' 디렉토리가 남지 않아야 함)
+  [ ! -d "$T16_PROJECT/harness" ] && pass "install.sh: 임시 클론 프로젝트 디렉토리로 유출 없음" || fail "install.sh: harness/ 유출"
+
+  cd "$ROOT"
+  rm -rf "$T16_PROJECT"
+fi
 
 # ============================================================
 # Summary

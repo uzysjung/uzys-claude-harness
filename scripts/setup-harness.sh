@@ -10,10 +10,9 @@
 # 각 critical section에서 명시적으로 에러 처리
 
 # v27.8.0 — curl|bash 경유로 호출된 경우 stdin이 pipe라 프롬프트가 보이지 않는다.
-# TTY가 붙어있으면 stdin을 TTY로 재부착 (install.sh에서 이미 했을 수 있으나 이중 안전망).
-# stdin이 이미 tty거나 /dev/tty가 없으면 no-op.
-if [ ! -t 0 ] && [ -e /dev/tty ]; then
-  exec </dev/tty 2>/dev/null || true
+# stdin이 이미 tty면 no-op. 아니면 fd 3에 /dev/tty 먼저 시도 (CI/background 환경 안전).
+if [ ! -t 0 ] && exec 3</dev/tty 2>/dev/null; then
+  exec <&3 3<&-
 fi
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'

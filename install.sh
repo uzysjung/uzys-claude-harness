@@ -19,9 +19,10 @@
 set -e
 
 # v27.8.0 — curl|bash로 호출된 경우 stdin이 pipe라 interactive 프롬프트가 깨진다.
-# TTY가 있으면 stdin을 TTY로 재부착. 없으면 조용히 무시 (CI 환경).
-if [ -e /dev/tty ]; then
-  exec </dev/tty
+# controlling tty가 실제 열리는지 fd 3에 먼저 시도 (set -e + redirection 실패 회피).
+# CI/background 환경에서는 open이 실패하므로 조용히 skip.
+if exec 3</dev/tty 2>/dev/null; then
+  exec <&3 3<&-
 fi
 
 REPO="${UZYS_HARNESS_REPO:-https://github.com/uzysjung/uzys-claude-harness.git}"

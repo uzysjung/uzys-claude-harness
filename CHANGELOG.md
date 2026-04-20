@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.9.0] — 2026-04-20
+
+### Added
+- **T15 — Install UX Regression**: v27.8.0 fix(`</dev/null` 격리, `exec </dev/tty`, `run_quiet` 헬퍼)의 회귀를 막는 6개 assertion. stdin pipe 상태에서 `--help` 즉시 exit 검증 포함
+- **T16 — install.sh file:// end-to-end**: `UZYS_HARNESS_REPO=file://...`로 `curl|bash` 경로를 로컬 git repo로 재현. install.sh 자체가 처음으로 E2E 테스트됨 (clone → setup-harness → asset 생성 → 임시 클론 정리). 6개 assertion
+- **T5 9-track 확장**: 기존 7 tracks → `csr-fastify`, `ssr-nextjs` 추가하여 9 tracks 전수 병렬 검증
+
+### Fixed
+- `install.sh` / `scripts/setup-harness.sh`의 TTY 재부착이 background/CI 환경에서 `set -e` + `Device not configured` 에러로 즉사하던 문제 — fd 3에 먼저 시도하는 `if exec 3</dev/tty 2>/dev/null; then exec <&3 3<&-; fi` 패턴으로 안전하게 우회
+
+### Stats
+- test-harness assertion: 111 → 125 (PASS, FAIL 0)
+
 ## [v27.8.0] — 2026-04-20
 
 ### Fixed
@@ -179,7 +192,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 Tags v26.0.0 through v26.9.x: foundational work — 6-gate workflow, 11 principles, initial Track set, security hardening, reviewer subagent (SOD), agent-skills integration. See `git log` for details.
 
-[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.8.0...HEAD
+[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.9.0...HEAD
+[v27.9.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.9.0
 [v27.8.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.8.0
 [v27.7.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.7.0
 [v27.6.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.6.0
