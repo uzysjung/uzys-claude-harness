@@ -39,9 +39,19 @@ UI 포함 Track(csr-*/ssr-*/full)이면 SPEC 전에 다음 확인:
 
 디자인 컨텍스트 없이 UI 코드 작성 금지. Generic AI 미학 산출물 방지.
 
+### D. North Star (선택, 대형 프로젝트 권장)
+
+`docs/NORTH_STAR.md` 부재 + 다음 중 1개 이상 해당 시 작성 권장:
+
+- 6개월 이상 지속 예상되는 프로젝트
+- 복수 Phase / 복수 사용자 / 외부 의존성이 명확한 경우
+- 신규 기능 우선순위 결정이 잦을 것으로 예상
+
+작성 시 `north-star` 스킬 호출 → `templates/skills/north-star/NORTH_STAR.template.md`를 `docs/NORTH_STAR.md`로 복사 후 7개 섹션(NS Statement / NSM / Will-Won't / Phase / 4-gate / Versioning / Changelog) 채움. 단순 1회성 작업이면 skip.
+
 ---
 
-위 A/B/C **세 블록은 SPEC 작성 전 접수**. 답변 없으면 "이 항목 정의가 필요합니다" 질문으로 돌아가 반복. 모두 수집된 후에 본 SPEC 작성 진행.
+위 A/B/C **세 블록은 SPEC 작성 전 접수** (D는 선택). 답변 없으면 "이 항목 정의가 필요합니다" 질문으로 돌아가 반복. 모두 수집된 후에 본 SPEC 작성 진행.
 
 ## Gate
 

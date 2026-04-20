@@ -24,8 +24,12 @@ Plan phase — 작업을 검증 가능한 작은 단위로 분해한다.
    - Vertical slicing: 수평 레이어가 아닌 수직 기능 단위
    - 각 task에 Acceptance Criteria 정의 (Standard는 milestone 수준, Complex는 task 수준)
    - 의존성 순서 정렬
-4. Sprint Contract: 범위(포함/제외) + 완료 기준 + 제약 조건.
-5. `docs/plan.md` + `docs/todo.md` 생성.
+4. **North Star 4-gate 체크 (Complex 복잡도 + `docs/NORTH_STAR.md` 존재 시)**:
+   - 신규 기능/task가 NORTH_STAR.md §5 Decision Heuristics의 4-gate(Trend/Persona/Capability/Lean)를 모두 통과하는가?
+   - 1개 이상 fail 시 사용자에게 보고 후 결정 대기 (자동 진행 금지)
+   - NORTH_STAR.md 부재 시 skip
+5. Sprint Contract: 범위(포함/제외) + 완료 기준 + 제약 조건.
+6. `docs/plan.md` + `docs/todo.md` 생성.
 
 ## Output
 

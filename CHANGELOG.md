@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.10.0] — 2026-04-20
+
+### Added
+- **`north-star` skill 신규** (`templates/skills/north-star/`):
+  - `SKILL.md` — 4-gate decision heuristic(Trend/Persona/Capability/Lean) + NSM 정의 + Will/Won't/Trade-offs 작성 가이드. CLAUDE.md의 P1/P2/Decision Making을 프로젝트 단위로 인스턴스화.
+  - `NORTH_STAR.template.md` — 7-섹션 템플릿(Statement / NSM / Will-Won't / Phase Roadmap / Decision Heuristics / Versioning / Changelog). GoalTrack의 NORTH_STAR.md를 도메인 비종속으로 일반화.
+- `/uzys:spec`에 D 블록 추가 — 6개월 이상 / 복수 Phase / 우선순위 결정 빈번 시 NORTH_STAR.md 작성 권장 (선택, 1회성 작업은 skip)
+- `/uzys:plan` Process step 4에 north-star 4-gate 체크 — Complex 복잡도 + NORTH_STAR.md 존재 시 task가 4-gate 통과해야 진입. 1개 fail 시 사용자 보고 후 결정 대기. 자동 hook 없음 — 의식적 결정 강제 X.
+- **T17 — North Star Skill 자산 검증** (test-harness): SKILL.md/template 존재, frontmatter, 4-gate 키워드, 7-섹션 구조, /uzys:spec & /uzys:plan 결합. 7개 assertion.
+
+### Stats
+- test-harness assertion: 125 → 132 (PASS, FAIL 0)
+
 ## [v27.9.0] — 2026-04-20
 
 ### Added
@@ -192,7 +205,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 Tags v26.0.0 through v26.9.x: foundational work — 6-gate workflow, 11 principles, initial Track set, security hardening, reviewer subagent (SOD), agent-skills integration. See `git log` for details.
 
-[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.9.0...HEAD
+[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.10.0...HEAD
+[v27.10.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.10.0
 [v27.9.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.9.0
 [v27.8.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.8.0
 [v27.7.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.7.0

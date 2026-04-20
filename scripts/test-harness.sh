@@ -582,6 +582,75 @@ else
 fi
 
 # ============================================================
+# T17. North Star Skill (v27.10.0)
+# ============================================================
+section "T17. North Star Skill"
+
+# T17.1 — skill 디렉토리 + SKILL.md 존재
+if [ -f "$ROOT/templates/skills/north-star/SKILL.md" ]; then
+  pass "north-star skill: SKILL.md 존재"
+else
+  fail "north-star skill: SKILL.md 없음"
+fi
+
+# T17.2 — 템플릿 존재
+if [ -f "$ROOT/templates/skills/north-star/NORTH_STAR.template.md" ]; then
+  pass "north-star skill: NORTH_STAR.template.md 존재"
+else
+  fail "north-star skill: NORTH_STAR.template.md 없음"
+fi
+
+# T17.3 — SKILL.md frontmatter (name + description)
+if grep -q "^name: north-star" "$ROOT/templates/skills/north-star/SKILL.md" && \
+   grep -q "^description:" "$ROOT/templates/skills/north-star/SKILL.md"; then
+  pass "north-star: frontmatter 형식"
+else
+  fail "north-star: frontmatter 누락"
+fi
+
+# T17.4 — 4-gate 정의 (Trend/Persona/Capability/Lean)
+if grep -qE "Trend.*Persona.*Capability.*Lean|Trend\s*\|.*Persona\s*\|.*Capability\s*\|.*Lean" "$ROOT/templates/skills/north-star/SKILL.md"; then
+  pass "north-star: 4-gate 정의 (Trend/Persona/Capability/Lean)"
+else
+  # 다른 표 형식도 허용
+  GATES_FOUND=0
+  for g in "Trend" "Persona" "Capability" "Lean"; do
+    grep -q "$g" "$ROOT/templates/skills/north-star/SKILL.md" && GATES_FOUND=$((GATES_FOUND+1))
+  done
+  if [ "$GATES_FOUND" -eq 4 ]; then
+    pass "north-star: 4-gate 키워드 모두 등장 ($GATES_FOUND/4)"
+  else
+    fail "north-star: 4-gate 키워드 부족 ($GATES_FOUND/4)"
+  fi
+fi
+
+# T17.5 — 템플릿 7-섹션 구조 (NSM, Will, Won't, Trade-offs, Phase, Decision, Changelog)
+TEMPLATE="$ROOT/templates/skills/north-star/NORTH_STAR.template.md"
+SECTIONS_FOUND=0
+for s in "North Star Statement" "North Star Metric" "Will" "Won't" "Trade-offs" "Phase" "Decision Heuristics" "Changelog"; do
+  grep -q "$s" "$TEMPLATE" && SECTIONS_FOUND=$((SECTIONS_FOUND+1))
+done
+if [ "$SECTIONS_FOUND" -ge 7 ]; then
+  pass "north-star template: 7+ 섹션 존재 ($SECTIONS_FOUND/8)"
+else
+  fail "north-star template: 섹션 부족 ($SECTIONS_FOUND/8)"
+fi
+
+# T17.6 — /uzys:spec 에 north-star 호출 라인 존재
+if grep -q "north-star" "$ROOT/templates/commands/uzys/spec.md"; then
+  pass "/uzys:spec: north-star 호출 결합"
+else
+  fail "/uzys:spec: north-star 미연동"
+fi
+
+# T17.7 — /uzys:plan 에 4-gate 체크 라인 존재
+if grep -q "4-gate\|North Star.*4.gate\|NORTH_STAR" "$ROOT/templates/commands/uzys/plan.md"; then
+  pass "/uzys:plan: 4-gate 체크 결합"
+else
+  fail "/uzys:plan: 4-gate 미연동"
+fi
+
+# ============================================================
 # Summary
 # ============================================================
 echo ""
