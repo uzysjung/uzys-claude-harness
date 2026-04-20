@@ -44,6 +44,18 @@ claude
 - **continuous-learning + Ralph 루프**로 자기 개선 (SPEC 기반 자율 사이클)
 - 프로젝트 스코프 전용. **글로벌 `~/.claude/`는 절대 건드리지 않음**
 
+### 자체 skill (custom)
+
+cherry-pick한 외부 skill 외에, 본 하네스가 직접 제공하는 3개 스킬:
+
+| Skill | 목적 | 사용 시점 |
+|-------|------|---------|
+| **`north-star`** | 4-gate decision heuristic(Trend/Persona/Capability/Lean) + NORTH_STAR.md 템플릿. Plan 전 scope creep 차단 | `/uzys:spec` 시작 시 6개월+ 프로젝트 권장, `/uzys:plan`의 Complex task |
+| **`ui-visual-review`** | Playwright/chrome-devtools 스크린샷 캡처 → baseline diff → 에이전트 REGRESSION 분류 → 사용자 승인. Review Gate 차단 연결 | `/uzys:test` PASS (csr-*/ssr-*/full 트랙) |
+| **`spec-scaling`** | SPEC/PRD 300줄 초과 시 기능별(docs/specs/) 또는 영역별(docs/PRD/) 분리 제안 | `/uzys:spec`에서 문서가 커질 때 자동 |
+
+추가로 알아둘 템플릿: **`docs/PLAN.template.md`** (Phase × Milestone 의존성 그래프 + Critical Path), **`docs/NORTH_STAR.template.md`**, **ADR Status 흐름** (`Proposed → Accepted → Superseded/Deprecated`) — `.claude/rules/change-management.md`.
+
 CTO/COO 출신 눈높이의 시니어 엔지니어 / 멀티 역할 사용자(CEO/CTO/CISO/데이터 사이언티스트)가 매우 다른 스택에서 같은 하네스를 쓰고 싶을 때 사용.
 
 ## 설치

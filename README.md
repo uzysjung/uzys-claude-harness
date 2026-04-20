@@ -44,6 +44,18 @@ A **deterministic harness** around [Claude Code](https://claude.com/claude-code)
 - Self-improves via **continuous-learning + Ralph loop** (SPEC-driven autonomous cycle)
 - Project-scoped only. **Global `~/.claude/` is never touched.**
 
+### Built-in custom skills
+
+Beyond the cherry-picked ones, the harness ships three skills of its own:
+
+| Skill | Purpose | When |
+|-------|---------|------|
+| **`north-star`** | 4-gate decision heuristic (Trend / Persona / Capability / Lean) + NORTH_STAR.md template. Filters scope creep before plan phase. | `/uzys:spec` start for 6+ month projects; `/uzys:plan` for Complex tasks |
+| **`ui-visual-review`** | Playwright / chrome-devtools screenshot capture → baseline diff → agent-side REGRESSION classification → user approval. Blocks Review Gate on regression. | `/uzys:test` pass on csr-*/ssr-*/full tracks |
+| **`spec-scaling`** | Detects SPEC/PRD > 300 lines and proposes feature-based or area-based splitting (docs/specs/ or docs/PRD/). | Auto-trigger on `/uzys:spec` when doc grows large |
+
+Plus templates worth knowing: **`docs/PLAN.template.md`** (Phase × Milestone dependency graph with Critical Path), **`docs/NORTH_STAR.template.md`**, and **ADR Status workflow** (`Proposed → Accepted → Superseded/Deprecated`) in `.claude/rules/change-management.md`.
+
 Built for senior engineers / multi-role users (CEO/CTO/CISO/data scientist) who want the same harness across very different stacks.
 
 ## Installation

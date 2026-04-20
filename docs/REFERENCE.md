@@ -120,24 +120,45 @@
 ## 6. 자체 작성 자산
 
 ### Skills (templates/skills/)
-spec-scaling — SPEC.md > 300줄 시 분리 제안 (자체 작성)
+
+| Skill | Track | 용도 | 버전 |
+|-------|------|------|------|
+| **spec-scaling** | 전 dev track | SPEC.md/PRD.md 300줄 초과 시 기능별 or 영역별 분리 제안 (docs/specs/ or docs/PRD/) | v27.12.0 확장 |
+| **north-star** | 전 track | 4-gate decision heuristic (Trend/Persona/Capability/Lean) + NORTH_STAR.md template. Plan 전 scope 필터 | v27.10.0 신규 |
+| **ui-visual-review** | csr-*/ssr-*/full | Playwright/chrome-devtools 스크린샷 캡처 → baseline diff → 에이전트 REGRESSION 분류 → Review Gate 차단 | v27.11.0 신규 |
+
+### Templates (templates/docs/)
+
+- **PLAN.template.md** (v27.12.0) — Sprint Contract / Phase Overview / **Milestone × Dependency Graph** (직렬/병렬/강한 의존 표기) + **Critical Path** / Per-Milestone AC / Risk / Open Questions / Changelog 8섹션
+- **skills/north-star/NORTH_STAR.template.md** (v27.10.0) — NSM / Will-Won't / Phase Roadmap / Decision Heuristics 7섹션
 
 ### Commands (templates/commands/uzys/)
-spec, plan, build, test, review, ship, auto — 6-gate 워크플로우 + Ralph 루프 진입
+spec, plan, build, test, review, ship, auto — 6-gate 워크플로우 + Ralph 루프 진입.
+- **spec**에 D 블록(NORTH_STAR 작성 권유 — 6개월+ 프로젝트)
+- **plan** Process step 4에 4-gate 체크 (Complex 복잡도 + NORTH_STAR.md 존재 시)
+- **test**에 UI Track visual-review 호출 섹션
+- **review** Process step 5에 visual-review 결과 흡수 + **REGRESSION 1건이라도 있으면 Review Gate 차단** (CRITICAL 동급)
 
 ### Rules (templates/rules/)
 17 파일. CLAUDE.md와 짝. `docs/SPEC.md`에서 트랙별 적용 조건 정의.
+- **change-management.md** (v27.12.0 확장) — ADR Status 흐름 `Proposed → Accepted → Superseded/Deprecated` + 채택 프로세스 + 대상/비대상
 
 ### Hooks (templates/hooks/)
 8 파일. 자동 등록 5 (session-start/protect-files/gate-check/agentshield-gate/mcp-pre-exec) + on-demand 3 (spec-drift-check/checkpoint-snapshot/codebase-map).
 *v26.16.1 기준. codebase-map은 v26.14.1에서 자동 등록 해제.*
 
-### Hooks (자체 작성)
+### Scripts (자체 작성)
 - `scripts/prune-ecc.sh` — ECC plugin 프로젝트 스코프 복사 + 89 KEEP 외 제거
-- `scripts/setup-harness.sh` — 모든 설치 orchestrator
-- `scripts/test-harness.sh` — JSON validity / hook unit / track install / multi-track / update mode E2E (5초 quick / 8분 full)
+- `scripts/setup-harness.sh` — 모든 설치 orchestrator. v27.8.0에서 `curl|bash` 설치 UX 버그 fix (stdin/stdout/stderr 격리, fd 3 TTY 재부착)
+- `scripts/test-harness.sh` — 147 assertion (T1~T19). JSON validity / hook unit / 9-track install 병렬 / multi-track / update mode / install.sh file:// E2E / 신규 skill 자산 검증 (5초 quick / 8분 full)
 - `scripts/sync-cherrypicks.sh` — cherry-pick 출처 drift 감지
-- `install.sh` — `curl | bash` 원격 설치 entry
+- `install.sh` — `curl | bash` 원격 설치 entry. `UZYS_HARNESS_REPO` env로 fork URL 오버라이드 가능
+
+### eval-harness 확장 (v27.12.0)
+ECC cherry-pick skill이지만 본 harness에서 확장:
+- `.md` (설계) + `.log` (실행 결과) **쌍 의무화**
+- `.md` 3섹션: **Capability / Regression / Test** 필수
+- `.log` append 포맷 예시 포함
 
 ---
 

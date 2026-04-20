@@ -650,6 +650,13 @@ else
   fail "/uzys:plan: 4-gate 미연동"
 fi
 
+# T17.8 — setup-harness.sh가 north-star skill을 복사하도록 등록됨
+if grep -q "safe_copy_dir.*skills/north-star" "$ROOT/scripts/setup-harness.sh"; then
+  pass "setup-harness: north-star skill 복사 등록"
+else
+  fail "setup-harness: north-star skill 복사 누락 (사용자 프로젝트 전달 실패)"
+fi
+
 # ============================================================
 # T18. UI Visual Review Skill (v27.11.0)
 # ============================================================
@@ -708,6 +715,13 @@ if [ -f "$SKILL_FILE" ] && grep -q "docs/screenshots/" "$SKILL_FILE" && grep -q 
   pass "ui-visual-review: 출력 경로 규약 명시"
 else
   fail "ui-visual-review: 출력 경로 규약 누락"
+fi
+
+# T18.7 — setup-harness.sh가 ui-visual-review skill을 UI Track에서 복사
+if grep -q "safe_copy_dir.*skills/ui-visual-review" "$ROOT/scripts/setup-harness.sh"; then
+  pass "setup-harness: ui-visual-review skill 복사 등록 (UI Track)"
+else
+  fail "setup-harness: ui-visual-review skill 복사 누락"
 fi
 
 # ============================================================

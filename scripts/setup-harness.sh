@@ -509,6 +509,8 @@ fi
 safe_copy_dir "$TEMPLATES/skills/continuous-learning-v2" "$PROJ/skills/continuous-learning-v2"
 safe_copy_dir "$TEMPLATES/skills/strategic-compact" "$PROJ/skills/strategic-compact"
 safe_copy "$TEMPLATES/skills/spec-scaling/SKILL.md" "$PROJ/skills/spec-scaling/SKILL.md"
+# v27.10.0 — north-star: 전 track 적용 (6개월+ 프로젝트 권장, 1회성은 skip 가능)
+safe_copy_dir "$TEMPLATES/skills/north-star" "$PROJ/skills/north-star"
 # 공통 cherry-pick 스킬 (Phase 4b A3, A4)
 safe_copy_dir "$TEMPLATES/skills/deep-research" "$PROJ/skills/deep-research"
 # market-research는 executive Track 한정
@@ -522,9 +524,11 @@ if has_dev_track; then
   safe_copy_dir "$TEMPLATES/skills/verification-loop" "$PROJ/skills/verification-loop"
   safe_copy_dir "$TEMPLATES/skills/agent-introspection-debugging" "$PROJ/skills/agent-introspection-debugging"
 fi
-# e2e-testing은 UI Track 한정
+# e2e-testing + ui-visual-review는 UI Track 한정
 if any_track 'csr-*|ssr-*|full'; then
   safe_copy_dir "$TEMPLATES/skills/e2e-testing" "$PROJ/skills/e2e-testing"
+  # v27.11.0 — ui-visual-review: 스크린샷 회귀 검증 (UI track 한정)
+  safe_copy_dir "$TEMPLATES/skills/ui-visual-review" "$PROJ/skills/ui-visual-review"
 fi
 
 # v26.10.0 — Track별 ECC cherry-pick skills (ECC plugin 통째 설치 대체)

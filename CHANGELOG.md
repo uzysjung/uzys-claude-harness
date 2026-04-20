@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.13.0] — 2026-04-20
+
+### Added
+- **`docs/NORTH_STAR.md` 본 repo 자기 적용 (dogfooding)**:
+  - Statement: "필수적인 skill/plugin/CLAUDE.md/Agent.md 번들만으로 구체적 디렉션 없이도 고수준 서비스를 한 번에 만드는 하네스"
+  - NSM: **HITO — Human-In-The-Loop Occurrences per Feature ≤ 3**
+  - 4-gate 실제 적용 이력 (v27.8~v27.12 Pass/Fail 사례) 기록
+- `README.md` / `README.ko.md`에 **Built-in custom skills** 섹션 신규 — north-star / ui-visual-review / spec-scaling 표 + PLAN template + ADR Status 흐름 요약
+- `docs/REFERENCE.md` 섹션 6 "자체 작성 자산" 전면 확장 — skills 표화(3개 + 버전/Track), Templates 섹션, Commands 결합 상세, eval-harness 확장 명시
+
+### Fixed (중요)
+- **신규 north-star + ui-visual-review skill이 setup-harness.sh에서 복사 안 되던 문제** — `safe_copy_dir` 라인 누락으로 사용자 프로젝트에 전달 실패. v27.10.0/v27.11.0 설치분은 재설치(또는 `--update`) 필요.
+  - north-star: 전 track 설치
+  - ui-visual-review: UI track(csr-*/ssr-*/full) 한정 설치
+- **test-harness T17.8, T18.7 신규 assertion** — setup-harness.sh에 safe_copy_dir 등록 정적 검증으로 재발 방지
+
+### Stats
+- test-harness assertion: 147 → 149 (PASS, FAIL 0)
+
 ## [v27.12.1] — 2026-04-20
 
 ### Security
@@ -244,7 +263,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 Tags v26.0.0 through v26.9.x: foundational work — 6-gate workflow, 11 principles, initial Track set, security hardening, reviewer subagent (SOD), agent-skills integration. See `git log` for details.
 
-[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.12.1...HEAD
+[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.13.0...HEAD
+[v27.13.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.13.0
 [v27.12.1]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.12.1
 [v27.12.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.12.0
 [v27.11.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.11.0
