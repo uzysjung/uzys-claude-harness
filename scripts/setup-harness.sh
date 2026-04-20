@@ -9,6 +9,13 @@
 # set -e는 plugin 설치 실패 시 전체 중단을 방지하기 위해 사용하지 않음
 # 각 critical section에서 명시적으로 에러 처리
 
+# v27.8.0 — curl|bash 경유로 호출된 경우 stdin이 pipe라 프롬프트가 보이지 않는다.
+# TTY가 붙어있으면 stdin을 TTY로 재부착 (install.sh에서 이미 했을 수 있으나 이중 안전망).
+# stdin이 이미 tty거나 /dev/tty가 없으면 no-op.
+if [ ! -t 0 ] && [ -e /dev/tty ]; then
+  exec </dev/tty 2>/dev/null || true
+fi
+
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # v27.1.0 — scripts/ 디렉토리로 이동: templates는 repo root의 형제
@@ -108,6 +115,29 @@ info()  { echo -e "  ${GREEN}✓${NC} $1"; }
 warn()  { echo -e "  ${YELLOW}!${NC} $1"; }
 fail()  { echo -e "  ${RED}✗${NC} $1"; }
 install_fail() { INSTALL_FAILURES=$((INSTALL_FAILURES+1)); FAILED_ITEMS="$FAILED_ITEMS\n  - $1"; warn "$1 (INSTALL FAILED)"; }
+
+# v27.8.0 — 설치 명령 비대화형 실행 래퍼.
+# stdin을 /dev/null에 붙여 interactive 프롬프트(y/n)를 EOF로 종료,
+# stdout/stderr를 임시 로그에 격리해 진행 표시 줄을 덮어쓰지 않게 한다.
+# 실패 시 로그 tail을 stderr로 출력해 디버그 가능.
+# 사용: run_quiet <label> <command...>
+run_quiet() {
+  local label="$1"; shift
+  local log; log=$(mktemp)
+  if "$@" </dev/null >"$log" 2>&1; then
+    rm -f "$log"
+    return 0
+  else
+    local rc=$?
+    # 실패 로그를 stderr로 최대 5줄만 노출 (디버그 단서)
+    if [ -s "$log" ]; then
+      echo "    [debug: $label exit=$rc]" >&2
+      tail -n 5 "$log" | sed 's/^/      /' >&2
+    fi
+    rm -f "$log"
+    return "$rc"
+  fi
+}
 
 # v26.11.2 — install 명령 1회 재시도 래퍼 (네트워크 일시 장애 완화)
 # 사용: retry_install <label> <command...>
@@ -515,20 +545,20 @@ fi
 # 평가 근거: docs/research/data-track-skills-eval-2026-04-18.md
 if any_track 'data|full'; then
   echo -n "  polars (K-Dense scientific-skills)..."
-  npx skills add K-Dense-AI/scientific-agent-skills --skill polars --yes 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add K-Dense-AI/scientific-agent-skills --skill polars --yes </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed"
 
   echo -n "  dask (K-Dense, 분산처리)..."
-  npx skills add K-Dense-AI/scientific-agent-skills --skill dask --yes 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add K-Dense-AI/scientific-agent-skills --skill dask --yes </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed"
 
   echo -n "  python-resource-management (wshobson)..."
-  npx skills add https://github.com/wshobson/agents --skill python-resource-management --yes 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add https://github.com/wshobson/agents --skill python-resource-management --yes </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed"
 
   echo -n "  python-performance-optimization (wshobson)..."
-  npx skills add https://github.com/wshobson/agents --skill python-performance-optimization --yes 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add https://github.com/wshobson/agents --skill python-performance-optimization --yes </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed"
 
   echo -n "  Anthropic data plugin (visualization, SQL exploration)..."
-  claude plugin marketplace add anthropics/knowledge-work-plugins 2>/dev/null || true
-  claude plugin install data@knowledge-work-plugins 2>/dev/null && info "installed" || warn "already installed or manual"
+  claude plugin marketplace add anthropics/knowledge-work-plugins </dev/null >/dev/null 2>&1 || true
+  claude plugin install data@knowledge-work-plugins </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed or manual"
 fi
 
 # --- Hooks ---
@@ -627,8 +657,8 @@ section "5/7" "Plugins & Skills"
 # agent-skills (dev tracks only)
 if has_dev_track; then
   echo -n "  agent-skills plugin..."
-  claude plugin marketplace add addyosmani/agent-skills 2>/dev/null || true
-  claude plugin install agent-skills@addy-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+  claude plugin marketplace add addyosmani/agent-skills </dev/null >/dev/null 2>&1 || true
+  claude plugin install agent-skills@addy-agent-skills </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed or manual install needed"
 fi
 
 # ECC: plugin 통째 설치 대신 Track별 cherry-pick으로 전환 (v26.10.0).
@@ -637,15 +667,15 @@ fi
 # Railway plugin — Railway 사용 Track만 (csr-supabase는 Vercel/Netlify 사용으로 제외, v27.4.0)
 if any_track 'csr-fastify|csr-fastapi|ssr-htmx|ssr-nextjs|full'; then
   echo -n "  Railway plugin..."
-  claude plugin marketplace add railwayapp/railway-plugin 2>/dev/null || true
-  claude plugin install railway-plugin@railway-plugin 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+  claude plugin marketplace add railwayapp/railway-plugin </dev/null >/dev/null 2>&1 || true
+  claude plugin install railway-plugin@railway-plugin </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed or manual install needed"
 fi
 
 # Railway agent-skills — Railway MCP가 설치되는 Track과 동일
 if any_track 'csr-fastify|csr-fastapi|ssr-htmx|ssr-nextjs|full'; then
   echo -n "  Railway agent-skills..."
-  claude plugin marketplace add railwayapp/railway-skills 2>/dev/null || true
-  claude plugin install railway@railway-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+  claude plugin marketplace add railwayapp/railway-skills </dev/null >/dev/null 2>&1 || true
+  claude plugin install railway@railway-skills </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed or manual install needed"
 fi
 
 # Vercel + Netlify + Supabase CLI — csr-supabase 자동화 (v27.6.0: Supabase CLI 추가)
@@ -656,21 +686,21 @@ if any_track 'csr-supabase|full'; then
   if command -v vercel &> /dev/null; then
     info "already installed"
   else
-    npm install -g vercel 2>/dev/null && info "installed" || install_fail "vercel CLI"
+    npm install -g vercel </dev/null >/dev/null 2>&1 && info "installed" || install_fail "vercel CLI"
   fi
 
   echo -n "  Netlify CLI..."
   if command -v netlify &> /dev/null; then
     info "already installed"
   else
-    npm install -g netlify-cli 2>/dev/null && info "installed" || install_fail "netlify CLI"
+    npm install -g netlify-cli </dev/null >/dev/null 2>&1 && info "installed" || install_fail "netlify CLI"
   fi
 
   echo -n "  Supabase CLI..."
   if command -v supabase &> /dev/null; then
     info "already installed"
   else
-    npm install -g supabase 2>/dev/null && info "installed (run 'supabase login' once for OAuth)" || install_fail "supabase CLI"
+    npm install -g supabase </dev/null >/dev/null 2>&1 && info "installed (run 'supabase login' once for OAuth)" || install_fail "supabase CLI"
   fi
 
   # .env.example 생성 + .gitignore 보강 (v27.7.0)
@@ -721,29 +751,29 @@ fi
 # Impeccable (UI tracks)
 if any_track 'csr-*|ssr-*|full'; then
   echo -n "  Impeccable..."
-  npx skills add pbakaus/impeccable --yes 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add pbakaus/impeccable --yes </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed"
 fi
 
 # Playwright (모든 dev Track 공통, 이전 UI 한정에서 이동)
 if has_dev_track; then
   echo -n "  Playwright skill..."
-  npx skills add testdino-hq/playwright-skill --yes 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add testdino-hq/playwright-skill --yes </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed"
 fi
 
 # 공통 도구 (Phase 4b 신규)
 if has_dev_track; then
   echo -n "  find-skills (vercel-labs)..."
-  npx skills add vercel-labs/skills --skill find-skills --yes 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add vercel-labs/skills --skill find-skills --yes </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed"
 
   echo -n "  agent-browser..."
   if command -v agent-browser &> /dev/null; then
     info "already installed"
   else
-    npm install -g agent-browser 2>/dev/null && info "installed" || install_fail "agent-browser"
+    npm install -g agent-browser </dev/null >/dev/null 2>&1 && info "installed" || install_fail "agent-browser"
   fi
 
   echo -n "  architecture-decision-record..."
-  npx skills add yonatangross/orchestkit --skill architecture-decision-record --yes 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add yonatangross/orchestkit --skill architecture-decision-record --yes </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed"
 fi
 
 # Supabase MCP는 .mcp.json으로 이관됨 (claude mcp add 제거)
@@ -751,42 +781,42 @@ fi
 # Supabase agent-skills (csr-supabase 전용 + full) — D23
 if any_track 'csr-supabase|full'; then
   echo -n "  Supabase agent-skills..."
-  claude plugin marketplace add supabase/agent-skills 2>/dev/null || true
-  claude plugin install supabase@supabase-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+  claude plugin marketplace add supabase/agent-skills </dev/null >/dev/null 2>&1 || true
+  claude plugin install supabase@supabase-agent-skills </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed or manual install needed"
 
   echo -n "  Supabase postgres-best-practices..."
-  claude plugin install postgres-best-practices@supabase-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+  claude plugin install postgres-best-practices@supabase-agent-skills </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed or manual install needed"
 fi
 
 if any_track 'csr-*|ssr-nextjs|full'; then
   echo -n "  react-best-practices..."
-  npx skills add vercel-labs/agent-skills --skill react-best-practices --yes 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add vercel-labs/agent-skills --skill react-best-practices --yes </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed"
 
   echo -n "  shadcn-ui..."
-  npx skills add shadcn/ui --yes 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add shadcn/ui --yes </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed"
 
   echo -n "  web-design-guidelines..."
-  npx skills add vercel-labs/agent-skills --skill web-design-guidelines --yes 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add vercel-labs/agent-skills --skill web-design-guidelines --yes </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed"
 fi
 
 if any_track 'ssr-nextjs|full'; then
   echo -n "  next-best-practices..."
-  npx skills add vercel-labs/next-skills --yes 2>/dev/null && info "installed" || warn "already installed"
+  npx skills add vercel-labs/next-skills --yes </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed"
 fi
 
 # Anthropic document-skills + executive plugins
 if any_track 'executive|full'; then
   echo -n "  Anthropic document-skills..."
-  claude plugin marketplace add anthropics/skills 2>/dev/null || true
-  claude plugin install document-skills@anthropic-agent-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+  claude plugin marketplace add anthropics/skills </dev/null >/dev/null 2>&1 || true
+  claude plugin install document-skills@anthropic-agent-skills </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed or manual install needed"
 
   echo -n "  c-level-skills..."
-  claude plugin marketplace add alirezarezvani/c-level-skills 2>/dev/null || true
-  claude plugin install c-level-skills@c-level-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+  claude plugin marketplace add alirezarezvani/c-level-skills </dev/null >/dev/null 2>&1 || true
+  claude plugin install c-level-skills@c-level-skills </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed or manual install needed"
 
   echo -n "  finance-skills..."
-  claude plugin marketplace add alirezarezvani/finance-skills 2>/dev/null || true
-  claude plugin install finance-skills@finance-skills 2>/dev/null && info "installed" || warn "already installed or manual install needed"
+  claude plugin marketplace add alirezarezvani/finance-skills </dev/null >/dev/null 2>&1 || true
+  claude plugin install finance-skills@finance-skills </dev/null >/dev/null 2>&1 && info "installed" || warn "already installed or manual install needed"
 fi
 
 # GSD (optional)
@@ -810,8 +840,8 @@ if has_dev_track && { [ "$WITH_TOB" = true ] || { [ "$ADD_MODE" = false ] && { [
 
   if [[ "$TOB_ANSWER" =~ ^[Yy]$ ]]; then
     echo -n "  Trail of Bits security..."
-    claude plugin marketplace add trailofbits/skills 2>/dev/null || true
-    claude plugin install trailofbits-skills@trailofbits-skills 2>/dev/null && info "installed" || install_fail "Trail of Bits"
+    claude plugin marketplace add trailofbits/skills </dev/null >/dev/null 2>&1 || true
+    claude plugin install trailofbits-skills@trailofbits-skills </dev/null >/dev/null 2>&1 && info "installed" || install_fail "Trail of Bits"
   fi
 fi
 
@@ -1050,8 +1080,8 @@ if [ "$WITH_ECC" = true ] || { [ "$ADD_MODE" = false ] && { [ -t 0 ] || [ -e /de
     ECC_CACHE="$HOME/.claude/plugins/cache/everything-claude-code/everything-claude-code"
     if [ ! -d "$ECC_CACHE" ]; then
       echo "  글로벌 ECC plugin 설치 중..."
-      claude plugin marketplace add affaan-m/everything-claude-code 2>/dev/null || true
-      claude plugin install everything-claude-code@everything-claude-code 2>/dev/null && info "글로벌 ECC 설치 완료" || warn "ECC 글로벌 설치 실패 (수동 실행 필요)"
+      claude plugin marketplace add affaan-m/everything-claude-code </dev/null >/dev/null 2>&1 || true
+      claude plugin install everything-claude-code@everything-claude-code </dev/null >/dev/null 2>&1 && info "글로벌 ECC 설치 완료" || warn "ECC 글로벌 설치 실패 (수동 실행 필요)"
     fi
     if [ -d "$ECC_CACHE" ]; then
       if [ "$WITH_PRUNE" = true ]; then

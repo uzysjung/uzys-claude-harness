@@ -5,6 +5,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.8.0] — 2026-04-20
+
+### Fixed
+- `curl|bash` 설치 중 "설치 항목이 1,3,5처럼 중간에 씹혀 안 보이는" 현상 — MCP/plugin installer의 stdout/stderr 출력이 진행 표시 줄을 덮어쓰는 문제. 모든 설치 호출(`npx skills add`, `claude plugin install`, `claude plugin marketplace add`, `npm install -g`)에 `</dev/null >/dev/null 2>&1` 일관 적용 (27건)
+- `curl|bash` 설치 중 "안내 없이 멈춰서 엔터 쳐야 넘어가는" 현상 — interactive 프롬프트(y/n)가 stdin pipe에 가로막혀 보이지 않는 문제. `</dev/null` stdin 닫기로 EOF 즉시 전달 + `install.sh`와 `scripts/setup-harness.sh` 헤더에 `exec </dev/tty` 이중 안전망 추가
+
+### Added
+- `run_quiet <label> <cmd...>` 설치 래퍼 헬퍼 (`scripts/setup-harness.sh`) — stdin/stdout/stderr 격리 + 실패 시 로그 tail 5줄 stderr 노출. 추후 설치 블록 공통화 시 사용
+- `install.sh`에 사전 의존성 체크 (`git`, `bash`) — 중간 실패 방지
+- `UZYS_HARNESS_REPO` 환경변수로 install.sh의 리포 URL 오버라이드 가능 (fork/mirror 지원)
+
+## [v27.7.0] — 2026-04-19
+
+### Added
+- `csr-supabase` Track 설치 시 `.env.example` 자동 생성 (Supabase Management API Token, Project Ref, DB Password, Public URL/Key, AI API key 주석 포함)
+- `.gitignore`에 `.env` 자동 추가 (시크릿 커밋 사고 방지)
+
+## [v27.6.0] — 2026-04-19
+
+### Added
+- `csr-supabase` Track 설치 시 Supabase CLI(`npm install -g supabase`) 자동 설치 — OAuth login 1회로 프로젝트 관리
+- `templates/project-claude/csr-supabase.md`에 "Supabase 인증 설정 (1회)" 섹션 — CLI login(OAuth) + MCP(`SUPABASE_ACCESS_TOKEN` env) 두 경로 분리 안내
+
 ## [v27.5.0] — 2026-04-19
 
 ### Fixed
@@ -156,7 +179,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 Tags v26.0.0 through v26.9.x: foundational work — 6-gate workflow, 11 principles, initial Track set, security hardening, reviewer subagent (SOD), agent-skills integration. See `git log` for details.
 
-[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.5.0...HEAD
+[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.8.0...HEAD
+[v27.8.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.8.0
+[v27.7.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.7.0
+[v27.6.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.6.0
 [v27.5.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.5.0
 [v27.4.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.4.0
 [v27.3.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.3.0

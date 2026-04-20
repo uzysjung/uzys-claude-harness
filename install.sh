@@ -18,15 +18,29 @@
 # ============================================================
 set -e
 
-REPO="https://github.com/uzysjung/uzys-claude-harness.git"
+# v27.8.0 — curl|bash로 호출된 경우 stdin이 pipe라 interactive 프롬프트가 깨진다.
+# TTY가 있으면 stdin을 TTY로 재부착. 없으면 조용히 무시 (CI 환경).
+if [ -e /dev/tty ]; then
+  exec </dev/tty
+fi
+
+REPO="${UZYS_HARNESS_REPO:-https://github.com/uzysjung/uzys-claude-harness.git}"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
+# v27.8.0 — 사전 의존성 체크 (설치 중간에 죽지 않도록)
+for cmd in git bash; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "ERROR: 필수 명령 '$cmd'가 없습니다. 먼저 설치하세요." >&2
+    exit 1
+  fi
+done
+
 echo "Downloading uzys-claude-harness..."
-git clone --depth 1 "$REPO" "$TMP/harness" 2>/dev/null || {
+if ! git clone --depth 1 "$REPO" "$TMP/harness" 2>&1; then
   echo "ERROR: git clone failed. Check network and repository URL." >&2
   exit 1
-}
+fi
 
 echo "Running setup-harness.sh..."
 bash "$TMP/harness/scripts/setup-harness.sh" "$@"
