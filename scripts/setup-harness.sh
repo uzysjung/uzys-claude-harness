@@ -33,6 +33,7 @@ GSD=false
 WITH_ECC=false      # v27.2.0 — 비대화형 ECC 설치
 WITH_PRUNE=false    # v27.2.0 — 비대화형 ECC prune (--with-prune은 --with-ecc 자동 활성)
 WITH_TOB=false      # v27.2.0 — 비대화형 Trail of Bits 설치
+WITH_TAURI=false    # v27.14.0 — opt-in tauri.md Rule (desktop 확장 시만)
 PROJECT_DIR="$(pwd)"
 
 while [[ $# -gt 0 ]]; do
@@ -48,6 +49,7 @@ while [[ $# -gt 0 ]]; do
     --with-ecc) WITH_ECC=true; shift ;;
     --with-prune) WITH_PRUNE=true; WITH_ECC=true; shift ;;
     --with-tob) WITH_TOB=true; shift ;;
+    --with-tauri) WITH_TAURI=true; shift ;;
     --project-dir) PROJECT_DIR="$2"; shift 2 ;;
     -h|--help) cat <<HELP
 Usage: $0 [--track <track>]... [--add-track <track>]... [--update] [--gsd] [--project-dir <path>] [--with-ecc] [--with-prune] [--with-tob]
@@ -61,6 +63,7 @@ Usage: $0 [--track <track>]... [--add-track <track>]... [--update] [--gsd] [--pr
 --with-ecc    ECC plugin 프로젝트 스코프 자동 설치 (인터랙티브 프롬프트 skip, 비대화형용)
 --with-prune  ECC 설치 + 89 KEEP 외 자동 prune (--with-ecc 자동 포함)
 --with-tob    Trail of Bits security plugin 자동 설치
+--with-tauri  tauri.md Rule 포함 (CSR track 데스크탑 확장 시)
 HELP
       exit 0 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
@@ -430,17 +433,18 @@ DEV_RULES="test-policy ship-checklist code-style error-handling"
 UI_RULES="design-workflow"
 
 # Track-specific rules (case statement for bash 3.2 compatibility on macOS)
+# v27.14.0 — tauri는 --with-tauri 플래그에서만 포함 (대부분 프로젝트에 desktop 요구 없음)
 get_track_rules() {
   case "$1" in
-    csr-supabase) echo "tauri shadcn api-contract" ;;
-    csr-fastify)  echo "tauri shadcn api-contract database" ;;
-    csr-fastapi)  echo "tauri shadcn api-contract database" ;;
+    csr-supabase) echo "shadcn api-contract" ;;
+    csr-fastify)  echo "shadcn api-contract database" ;;
+    csr-fastapi)  echo "shadcn api-contract database" ;;
     ssr-htmx)     echo "htmx" ;;
     ssr-nextjs)   echo "nextjs shadcn" ;;
     data)         echo "pyside6 data-analysis" ;;
     executive)    echo "" ;;
     tooling)      echo "cli-development" ;;
-    full)         echo "tauri shadcn api-contract database htmx nextjs pyside6 data-analysis cli-development" ;;
+    full)         echo "shadcn api-contract database htmx nextjs pyside6 data-analysis cli-development" ;;
     *)            echo "" ;;
   esac
 }
@@ -449,6 +453,10 @@ get_track_rules() {
 RULES_TO_INSTALL="$COMMON_RULES"
 if has_dev_track; then
   RULES_TO_INSTALL="$RULES_TO_INSTALL $DEV_RULES"
+fi
+# v27.14.0 — --with-tauri 명시 시에만 CSR+full track에 tauri Rule 추가
+if [ "$WITH_TAURI" = true ] && any_track 'csr-*|full'; then
+  RULES_TO_INSTALL="$RULES_TO_INSTALL tauri"
 fi
 # UI rules: SELECTED_TRACKS 중 하나라도 csr-*/ssr-*/full
 if any_track 'csr-*|ssr-*|full'; then
@@ -574,6 +582,7 @@ safe_copy "$TEMPLATES/hooks/mcp-pre-exec.sh" "$PROJ/hooks/mcp-pre-exec.sh"
 # 수동/on-demand 호출 유틸리티 (자동 트리거 없음):
 safe_copy "$TEMPLATES/hooks/spec-drift-check.sh" "$PROJ/hooks/spec-drift-check.sh"  # /uzys:ship에서 명시 호출
 safe_copy "$TEMPLATES/hooks/checkpoint-snapshot.sh" "$PROJ/hooks/checkpoint-snapshot.sh"  # /ecc:checkpoint에서 호출
+safe_copy "$TEMPLATES/hooks/hito-counter.sh" "$PROJ/hooks/hito-counter.sh"  # v27.14.0 — HITO baseline 측정 (UserPromptSubmit)
 chmod +x "$PROJ/hooks/"*.sh
 
 # --- .claude/settings.json (committable, $CLAUDE_PROJECT_DIR 사용) ---

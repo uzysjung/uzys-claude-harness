@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.14.0] — 2026-04-20
+
+### Changed
+- **`tauri.md` Rule을 `--with-tauri` 플래그 opt-in으로 분리** — 기존 csr-*/full track에 자동 설치되던 tauri 규칙이 "PRD에 desktop 요구 있을 때만 적용"이라는 조건부 특성인데 모든 CSR 프로젝트에 무조건 포함되어 context noise였음. 이제 명시적 `--with-tauri` 플래그에서만 포함. 기본 설치 시 Rule 1개 감소로 LLM context 최소화.
+- P10 재평가 완료 — Rule 17 / Hook 7 / 자체 skill 3 전수 검토. tauri 외 모든 scaffold는 현역 사용 확인, 추가 slim-down 불필요 (v26.14.0 cleanup 이후 lean 상태 유지).
+
+### Added
+- **`templates/hooks/hito-counter.sh` 신규** — `UserPromptSubmit` hook으로 사용자 prompt 제출 시 `.claude/evals/hito-<date>.log`에 타임스탬프 append (프롬프트 내용은 프라이버시상 기록 안 함). Phase 2 HITO(Human-In-The-Loop Occurrences) NSM baseline 자동 수집 인프라.
+- `templates/settings.json`에 `UserPromptSubmit` hook 섹션 등록 (async, timeout 2s)
+- **T13 확장**: `--with-tauri` 시 tauri.md 설치 / 미지정 시 미설치 assertion 추가
+
+### Stats
+- test-harness assertion: 149 → 151 (PASS, FAIL 0)
+
 ## [v27.13.0] — 2026-04-20
 
 ### Added

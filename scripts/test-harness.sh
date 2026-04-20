@@ -401,14 +401,24 @@ if [ "$QUICK" = true ]; then
 else
 
 # T13.1 동시 다중 Track: --track tooling --track csr-fastapi
+# v27.14.0 — tauri는 opt-in이므로 기본 기대치 12. --with-tauri 시 13.
 T13_DIR=$(mktemp -d)
 cd "$T13_DIR" && git init -q && echo "# T" > README.md && git add . && git -c user.email=t@t -c user.name=t commit -m init -q 2>/dev/null
 bash "$ROOT/scripts/setup-harness.sh" --track tooling --track csr-fastapi --project-dir . < /dev/null > /tmp/multi.log 2>&1
 RULES_M=$(ls .claude/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
 MCP_M=$(jq -r '.mcpServers | keys | join(",")' .mcp.json 2>/dev/null || echo "")
-[ "$RULES_M" -ge 13 ] && pass "multi-track Rules: $RULES_M (≥13)" || fail "multi-track Rules: $RULES_M (<13)"
+[ "$RULES_M" -ge 12 ] && pass "multi-track Rules: $RULES_M (≥12, tauri opt-in)" || fail "multi-track Rules: $RULES_M (<12)"
+# tauri.md가 기본 미설치인지 확인 (v27.14.0)
+[ ! -f .claude/rules/tauri.md ] && pass "multi-track: tauri.md 기본 미설치 (opt-in)" || fail "multi-track: tauri.md 자동 설치됨 (--with-tauri 없이)"
 echo "$MCP_M" | grep -q "railway-mcp-server" && pass "multi-track MCP: railway 포함" || fail "multi-track MCP: railway 누락 ($MCP_M)"
 cd "$ROOT"
+
+# T13.1b --with-tauri 플래그 시 tauri.md 설치되는지
+T13C_DIR=$(mktemp -d)
+cd "$T13C_DIR" && git init -q && echo "# T" > README.md && git add . && git -c user.email=t@t -c user.name=t commit -m init -q 2>/dev/null
+bash "$ROOT/scripts/setup-harness.sh" --track csr-fastapi --with-tauri --project-dir . < /dev/null > /tmp/tauri.log 2>&1
+[ -f .claude/rules/tauri.md ] && pass "--with-tauri: tauri.md 설치됨" || fail "--with-tauri: tauri.md 미설치"
+cd "$ROOT"; rm -rf "$T13C_DIR"
 
 # T13.2 --add-track: tooling → csr-fastapi
 T13B_DIR=$(mktemp -d)
