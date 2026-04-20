@@ -5,6 +5,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.12.0] — 2026-04-20
+
+### Added — GoalTrack 이식
+- **`templates/docs/PLAN.template.md` 신규** — Sprint Contract / Phase Overview / **Milestone × Dependency Graph (직렬/병렬/강한 의존 표기 규약)** / Critical Path / Per-Milestone AC / Risk & Mitigation / Open Questions / Changelog 8섹션. GoalTrack `docs/plan.md` 패턴 일반화.
+- **`templates/rules/change-management.md` ADR 섹션 확장**:
+  - Status 흐름 `Proposed → Accepted → (Superseded | Deprecated)` 정형화
+  - ADR 템플릿에 `PR: #N`, `Supersedes: ADR-M` 필드 추가
+  - "채택 프로세스" (PR 초안 → 검토 → 머지 시 Accepted) 4단계
+  - "어떤 결정이 ADR 대상인가" 대상/비대상 목록
+
+### Added — Vantage 이식
+- **`templates/skills/spec-scaling/SKILL.md` 확장** — SPEC 기능별 분리와 별개로 **PRD 영역별 분리(`docs/PRD/` 계층화)** 패턴 신규. 마스터 PRD.md 구조 예시 + "SPEC vs PRD 분리 가이드" 표 추가. Vantage `.claude/PRD/` 구조 일반화.
+- **`templates/skills/eval-harness/SKILL.md` 확장** — `.md` (설계) + `.log` (실행 결과) **쌍 의무화** + `.md` 3섹션(**Capability / Regression / Test**) 필수 명시 + `.log` append 포맷 예시. Vantage `.claude/evals/*.{md,log}` 구조 일반화.
+
+### Added — 검증
+- **T19 — External 이식 패턴** (test-harness): 8개 assertion (PLAN template + 의존성/Critical Path, ADR Status 흐름 + 채택 프로세스, spec-scaling PRD 계층화 + 가이드, eval-harness .md+.log 쌍 + 3섹션)
+
+### Stats
+- test-harness assertion: 139 → 147 (PASS, FAIL 0)
+
 ## [v27.11.0] — 2026-04-20
 
 ### Added
@@ -219,7 +239,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 Tags v26.0.0 through v26.9.x: foundational work — 6-gate workflow, 11 principles, initial Track set, security hardening, reviewer subagent (SOD), agent-skills integration. See `git log` for details.
 
-[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.11.0...HEAD
+[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.12.0...HEAD
+[v27.12.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.12.0
 [v27.11.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.11.0
 [v27.10.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.10.0
 [v27.9.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.9.0

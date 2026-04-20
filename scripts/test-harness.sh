@@ -711,6 +711,75 @@ else
 fi
 
 # ============================================================
+# T19. External Project 이식 패턴 (v27.12.0 — GoalTrack + Vantage)
+# ============================================================
+section "T19. External 이식 패턴"
+
+# T19.1 — PLAN.template.md 존재 (GoalTrack)
+PLAN_TEMPLATE="$ROOT/templates/docs/PLAN.template.md"
+if [ -f "$PLAN_TEMPLATE" ]; then
+  pass "PLAN.template.md 존재"
+else
+  fail "PLAN.template.md 없음"
+fi
+
+# T19.2 — PLAN 템플릿에 Phase × Milestone 의존성 표기 규약
+if [ -f "$PLAN_TEMPLATE" ] && grep -qE "Milestone.*Dependency|의존성 그래프" "$PLAN_TEMPLATE" && grep -q "Critical Path\|임계 경로" "$PLAN_TEMPLATE"; then
+  pass "PLAN: Milestone 의존성 + Critical Path 명시"
+else
+  fail "PLAN: 의존성 그래프 규약 누락"
+fi
+
+# T19.3 — change-management.md ADR Status 흐름 (Proposed → Accepted → Superseded)
+CM="$ROOT/templates/rules/change-management.md"
+if grep -q "Proposed" "$CM" && grep -q "Accepted" "$CM" && grep -q "Superseded" "$CM" && grep -q "ADR Status 흐름\|Status 흐름" "$CM"; then
+  pass "change-management: ADR Status 흐름 (Proposed/Accepted/Superseded)"
+else
+  fail "change-management: ADR Status 흐름 미명시"
+fi
+
+# T19.4 — change-management에 채택 프로세스 + ADR 대상/비대상 명시
+if grep -q "채택 프로세스" "$CM" && grep -q "ADR 대상\|어떤 결정이 ADR" "$CM"; then
+  pass "change-management: 채택 프로세스 + 대상 정의"
+else
+  fail "change-management: 채택 프로세스 누락"
+fi
+
+# T19.5 — spec-scaling SKILL.md에 PRD 계층화 (docs/PRD/ 구조)
+SS="$ROOT/templates/skills/spec-scaling/SKILL.md"
+if grep -q "docs/PRD/" "$SS" && grep -q "platform-common\|영역별 사양" "$SS"; then
+  pass "spec-scaling: PRD 계층화 (docs/PRD/) 명시"
+else
+  fail "spec-scaling: PRD 계층화 누락"
+fi
+
+# T19.6 — spec-scaling에 SPEC vs PRD 분리 가이드
+if grep -q "SPEC vs PRD\|When to Split" "$SS"; then
+  pass "spec-scaling: SPEC vs PRD 분리 가이드"
+else
+  fail "spec-scaling: SPEC vs PRD 가이드 누락"
+fi
+
+# T19.7 — eval-harness SKILL.md에 .md+.log 쌍 의무화
+EH="$ROOT/templates/skills/eval-harness/SKILL.md"
+if grep -q ".md.*.log Pair Format\|md + .log\|쌍으로 저장" "$EH"; then
+  pass "eval-harness: .md+.log 쌍 의무화"
+else
+  fail "eval-harness: .md+.log 쌍 누락"
+fi
+
+# T19.8 — eval-harness .md 의무 섹션 3개 (Capability/Regression/Test)
+SECTIONS_OK=true
+for s in "## Capability" "## Regression" "## Test"; do
+  grep -q "$s" "$EH" || SECTIONS_OK=false
+done
+if [ "$SECTIONS_OK" = true ]; then
+  pass "eval-harness: .md 의무 3섹션 (Capability/Regression/Test)"
+else
+  fail "eval-harness: 의무 섹션 누락"
+fi
+
+# ============================================================
 # Summary
 # ============================================================
 echo ""
