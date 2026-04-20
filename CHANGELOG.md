@@ -5,6 +5,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.15.0] — 2026-04-20
+
+### Added
+- **Interactive 설치 모드** — `--track` 생략하고 TTY 있으면 자동 대화식 진입. 플래그 9개로 증가한 설치 옵션을 사용자가 기억/조합할 필요 없이 질문에 답만 하면 진행.
+  - Track 선택 (번호 or 이름, 다중 가능) → Tauri/GSD/ECC/prune/ToB 옵션 → 요약 → 확인 게이트
+  - `prompt_interactive_setup()` 함수 (순수 bash `read`, gum 등 외부 의존성 0)
+  - TTY 재부착(fd 3 패턴) 덕분에 `curl|bash` 경로에서도 동작: `bash <(curl -fsSL .../install.sh)`
+  - CI/비-TTY 환경 + `--track` 없음 → 명시적 `ERROR: --track required in non-interactive mode` + exit 1
+- **README.md / README.ko.md 인터랙티브 모드 안내 추가** (Step 2 섹션)
+- **T20 — Interactive Mode 자산 검증** (test-harness): 6개 assertion — 함수 정의/TTY 검사/9 Track 노출/비대화형 에러/동적 exit 검증/4개 옵션 포함
+
+### Changed
+- T5 expected `HOOKS=7` → `8` (hito-counter.sh 추가로 auto-registered hook +1)
+
+### Stats
+- test-harness assertion: 151 → 157 (PASS, FAIL 0)
+
 ## [v27.14.0] — 2026-04-20
 
 ### Changed
@@ -277,7 +294,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 Tags v26.0.0 through v26.9.x: foundational work — 6-gate workflow, 11 principles, initial Track set, security hardening, reviewer subagent (SOD), agent-skills integration. See `git log` for details.
 
-[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.13.0...HEAD
+[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.15.0...HEAD
+[v27.15.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.15.0
+[v27.14.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.14.0
+[v27.13.1]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.13.1
 [v27.13.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.13.0
 [v27.12.1]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.12.1
 [v27.12.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.12.0

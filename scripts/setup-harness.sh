@@ -93,6 +93,114 @@ if [ -n "$PROJECT_DIR" ]; then
   PROJECT_DIR="$PROJECT_DIR_ABS"
 fi
 
+# v27.15.0 — Interactive 설치 모드
+# --track 생략 + UPDATE_MODE false + TTY 있음 → 대화식 진입
+# CI/pipe 환경 + --track 없으면 명시적 에러 (아래 validation 블록에서 처리)
+prompt_interactive_setup() {
+  local tracks_input tauri_choice gsd_choice ecc_choice prune_choice tob_choice confirm_choice
+  local valid="csr-supabase csr-fastify csr-fastapi ssr-htmx ssr-nextjs data executive tooling full"
+
+  echo ""
+  echo "  ╔════════════════════════════════════════════════╗"
+  echo "  ║  uzys-claude-harness — interactive installer  ║"
+  echo "  ╚════════════════════════════════════════════════╝"
+  echo ""
+  echo "  1) Track 선택 (공백 구분 복수 선택 가능):"
+  echo "     ① tooling       ② csr-supabase   ③ csr-fastify"
+  echo "     ④ csr-fastapi   ⑤ ssr-htmx       ⑥ ssr-nextjs"
+  echo "     ⑦ data          ⑧ executive      ⑨ full"
+  echo ""
+  while true; do
+    read -rp "     Track(s) [번호 or 이름]: " tracks_input
+    [ -z "$tracks_input" ] && { echo "     ❗ 최소 1개 필요"; continue; }
+    local picked=() tok ok=true
+    # 번호→이름 매핑
+    for tok in $tracks_input; do
+      case "$tok" in
+        1|①) picked+=(tooling) ;;
+        2|②) picked+=(csr-supabase) ;;
+        3|③) picked+=(csr-fastify) ;;
+        4|④) picked+=(csr-fastapi) ;;
+        5|⑤) picked+=(ssr-htmx) ;;
+        6|⑥) picked+=(ssr-nextjs) ;;
+        7|⑦) picked+=(data) ;;
+        8|⑧) picked+=(executive) ;;
+        9|⑨) picked+=(full) ;;
+        *)
+          if echo " $valid " | grep -qF " $tok "; then
+            picked+=("$tok")
+          else
+            echo "     ❗ 알 수 없는 Track: '$tok'"; ok=false; break
+          fi ;;
+      esac
+    done
+    if [ "$ok" = true ] && [ "${#picked[@]}" -gt 0 ]; then
+      SELECTED_TRACKS=("${picked[@]}")
+      break
+    fi
+  done
+
+  echo ""
+  echo "     ✓ 선택: ${SELECTED_TRACKS[*]}"
+  echo ""
+
+  # 옵션: Tauri (CSR/full 한정 의미)
+  if [[ " ${SELECTED_TRACKS[*]} " == *"csr-"* ]] || [[ " ${SELECTED_TRACKS[*]} " == *"full"* ]]; then
+    echo "  2) 추가 옵션:"
+    read -rp "     Tauri 데스크탑 Rule 포함? [y/N]: " tauri_choice
+    [[ "$tauri_choice" =~ ^[yY]$ ]] && WITH_TAURI=true
+  else
+    echo "  2) 추가 옵션:"
+  fi
+
+  read -rp "     GSD 오케스트레이터 포함? [y/N]: " gsd_choice
+  [[ "$gsd_choice" =~ ^[yY]$ ]] && GSD=true
+
+  read -rp "     ECC plugin 프로젝트 스코프 설치? [y/N]: " ecc_choice
+  if [[ "$ecc_choice" =~ ^[yY]$ ]]; then
+    WITH_ECC=true
+    read -rp "       ECC 설치 — 89 KEEP 외 자동 prune? [y/N]: " prune_choice
+    [[ "$prune_choice" =~ ^[yY]$ ]] && WITH_PRUNE=true
+  fi
+
+  read -rp "     Trail of Bits 보안 plugin? [y/N]: " tob_choice
+  [[ "$tob_choice" =~ ^[yY]$ ]] && WITH_TOB=true
+
+  # 요약 + 확인
+  echo ""
+  echo "  3) 설치 요약:"
+  echo "     Track(s):  ${SELECTED_TRACKS[*]}"
+  local opts=""
+  [ "$WITH_TAURI" = true ] && opts="${opts}tauri "
+  [ "$GSD" = true ] && opts="${opts}GSD "
+  [ "$WITH_ECC" = true ] && opts="${opts}ECC "
+  [ "$WITH_PRUNE" = true ] && opts="${opts}prune "
+  [ "$WITH_TOB" = true ] && opts="${opts}ToB "
+  echo "     Options:   ${opts:-(기본값만)}"
+  echo "     Target:    $PROJECT_DIR"
+  echo ""
+  read -rp "     진행하시겠습니까? [Y/n]: " confirm_choice
+  if [[ "$confirm_choice" =~ ^[nN]$ ]]; then
+    echo "  설치 취소."
+    exit 0
+  fi
+  echo ""
+}
+
+# Interactive 진입 조건: --track 없음, --update 아님, --add-track 아님, stdin이 TTY
+# 주의: 맨 위에서 fd 3으로 /dev/tty 재부착 시도했으므로 curl|bash에서도 stdin이 tty일 수 있음.
+# `-t 0` (stdin이 tty인지)로 검사 — 백그라운드/CI/pipe에서는 false.
+if [ "${#SELECTED_TRACKS[@]}" -eq 0 ] && [ "$UPDATE_MODE" = false ] && [ "$ADD_MODE" = false ]; then
+  if [ -t 0 ]; then
+    prompt_interactive_setup
+  else
+    echo "ERROR: --track required in non-interactive mode (no TTY)." >&2
+    echo "       Example: bash setup-harness.sh --track csr-fastapi" >&2
+    echo "       See --help for all options." >&2
+    exit 1
+  fi
+fi
+
 # 후방호환: TRACK은 첫 번째 Track (기존 변수 사용처 유지)
 if [ "${#SELECTED_TRACKS[@]}" -gt 0 ]; then
   TRACK="${SELECTED_TRACKS[0]}"

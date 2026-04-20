@@ -191,7 +191,7 @@ else
       if [ "$TRACK" = "executive" ]; then EXPECTED_AGENTS=5; else EXPECTED_AGENTS=8; fi
       ALLOWLIST_OK=true
       if [ "$TRACK" != "executive" ] && [ ! -f .mcp-allowlist ]; then ALLOWLIST_OK=false; fi
-      if [ "$AGENTS" = "$EXPECTED_AGENTS" ] && [ "$HOOKS" = "7" ] && [ -f .mcp.json ] && [ -f .claude/settings.json ] && [ -f CLAUDE.md ] \
+      if [ "$AGENTS" = "$EXPECTED_AGENTS" ] && [ "$HOOKS" = "8" ] && [ -f .mcp.json ] && [ -f .claude/settings.json ] && [ -f CLAUDE.md ] \
          && [ "$ALLOWLIST_OK" = true ] \
          && ! grep -q "/Users\|/private" .claude/settings.json 2>/dev/null; then
         echo "PASS|$TRACK install" > "$RESULT"
@@ -801,6 +801,67 @@ if [ "$SECTIONS_OK" = true ]; then
   pass "eval-harness: .md 의무 3섹션 (Capability/Regression/Test)"
 else
   fail "eval-harness: 의무 섹션 누락"
+fi
+
+# ============================================================
+# T20. Interactive Installer Mode (v27.15.0)
+# ============================================================
+section "T20. Interactive Mode"
+
+# T20.1 — prompt_interactive_setup 함수 정의 존재
+if grep -q "^prompt_interactive_setup()" "$ROOT/scripts/setup-harness.sh"; then
+  pass "interactive: prompt_interactive_setup 함수 정의"
+else
+  fail "interactive: 함수 미정의"
+fi
+
+# T20.2 — `-t 0` stdin TTY 검사 코드 존재
+if grep -qE "if \[ -t 0 \]" "$ROOT/scripts/setup-harness.sh"; then
+  pass "interactive: stdin TTY 검사 (-t 0)"
+else
+  fail "interactive: TTY 검사 누락"
+fi
+
+# T20.3 — 9 Track 선택지 모두 표기
+TRACKS_SHOWN=0
+for t in "tooling" "csr-supabase" "csr-fastify" "csr-fastapi" "ssr-htmx" "ssr-nextjs" "data" "executive" "full"; do
+  grep -q "$t" "$ROOT/scripts/setup-harness.sh" && TRACKS_SHOWN=$((TRACKS_SHOWN+1))
+done
+if [ "$TRACKS_SHOWN" -ge 9 ]; then
+  pass "interactive: 9 Track 선택지 모두 노출"
+else
+  fail "interactive: Track 부족 ($TRACKS_SHOWN/9)"
+fi
+
+# T20.4 — 비대화형 에러 메시지 존재
+if grep -q "required in non-interactive mode" "$ROOT/scripts/setup-harness.sh"; then
+  pass "interactive: 비대화형 에러 메시지 존재"
+else
+  fail "interactive: 비대화형 에러 메시지 누락"
+fi
+
+# T20.5 — 동적: 비대화형(no tty) + --track 없음 → non-zero exit
+T20_DIR=$(mktemp -d)
+cd "$T20_DIR" && git init -q 2>/dev/null
+bash "$ROOT/scripts/setup-harness.sh" --project-dir . </dev/null >/tmp/t20.log 2>&1
+T20_RC=$?
+if [ "$T20_RC" -ne 0 ] && grep -q "required in non-interactive mode" /tmp/t20.log; then
+  pass "interactive: 비대화형 + --track 없음 → exit $T20_RC + 에러 메시지"
+else
+  fail "interactive: 비대화형 분기 실패 (exit=$T20_RC)"
+fi
+cd "$ROOT"
+rm -rf "$T20_DIR"
+
+# T20.6 — 옵션 묶음 프롬프트 (Tauri/GSD/ECC/ToB) 모두 interactive에 포함
+OPTS_IN_PROMPT=0
+for opt in "Tauri" "GSD" "ECC" "Trail of Bits"; do
+  grep -q "$opt" "$ROOT/scripts/setup-harness.sh" && OPTS_IN_PROMPT=$((OPTS_IN_PROMPT+1))
+done
+if [ "$OPTS_IN_PROMPT" -ge 4 ]; then
+  pass "interactive: 4개 옵션(Tauri/GSD/ECC/ToB) 모두 프롬프트 포함"
+else
+  fail "interactive: 옵션 누락 ($OPTS_IN_PROMPT/4)"
 fi
 
 # ============================================================

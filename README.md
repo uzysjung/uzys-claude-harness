@@ -84,9 +84,17 @@ curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/i
   | bash -s -- --track <TRACK> --project-dir .
 ```
 
+Or **interactive** (no `--track` → asks you questions in terminal):
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)
+```
+
+Interactive mode walks you through: Track selection → Tauri / GSD / ECC / Trail of Bits options → summary → confirm. In CI or other non-TTY environments, `--track` is required (installer errors out otherwise).
+
 That single line does:
 1. Shallow-clones the harness to a temp dir
-2. Runs `setup-harness.sh --track <TRACK>` in your project
+2. Runs `setup-harness.sh` in your project (with flags or via interactive prompts)
 3. Cleans up the temp dir
 
 After install you'll see an Installation Report (`✅` row per category).
