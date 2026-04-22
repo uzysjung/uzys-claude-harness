@@ -60,22 +60,28 @@
 
 ---
 
-## Phase E — Phase 2 Readiness
+## Phase E — Phase 2 Readiness (부분 진행)
 
 - [ ] **E1** Phase 2 Entry Checklist 실행 (SPEC §5)
-  - [ ] 1. 9 Track clean install 성공률 ≥ 95%
-  - [ ] 2. test-harness 147/147
-  - [ ] 3. HITO baseline 수집 완료
-  - [ ] 4. 글로벌 미수정 확인
-  - [ ] 5. 외부 사용자 첫 설치 (Pass 또는 이월 CR)
-  - [ ] 6. Phase 4b D1/D2/D4 이월 소화
-  - [ ] 7. v27.17 dogfood CRITICAL/HIGH = 0
+  - [ ] 1. 9 Track clean install 성공률 ≥ 95% — Phase B에서 tooling/executive/full 3종 검증 (3/3 ✅). csr-*, ssr-*, data 단독 fresh 검증 남음
+  - [x] 2. test-harness PASS — 2026-04-23 실측 **149 total / Pass 144 / Fail 0 / Skip 5** ✅
+  - [ ] 3. HITO baseline 수집 완료 — Phase D 경과 필요
+  - [x] 4. 글로벌 미수정 — setup-harness.sh D16 보호(L73-84) + 본 세션 `--update` 시 에러 없음. ~/.claude/ mtime은 Claude Code 자체 업데이트 (본 프로젝트 무관) ✅
+  - [ ] 5. 외부 사용자 첫 설치 — ADR-001에서 이월 가부 결정
+  - [x] 6. Phase 4b D1/D2/D4 이월 소화 — commit b9d47ef + 3e5af9a ✅
+  - [x] 7. v27.17 dogfood CRITICAL/HIGH = 0 — H1 fix 후 최종 판정 ✅ (commit 92982c5)
 - [ ] **E2** requirements-trace.md 확장 — Part 3: v27.x Post-audit Trace
-  - [ ] v27.0~v27.17 각 feat 커밋의 Source → 4-gate → Evidence
+  - [ ] v27.0~v27.17 각 feat 커밋의 Source → 4-gate → Evidence 확정 (현재 가설 표기)
 - [ ] **E3** ADR 생성 — `docs/decisions/ADR-001-phase2-entry-criteria.md`
   - [ ] OQ1 (baseline 기준) 결정
   - [ ] OQ2 (외부 사용자 조건 이월 가부) 결정
   - [ ] OQ3 (dogfood interactive 시나리오 범위) 결정
+
+### E1 현재 판정 요약 (2026-04-23)
+
+- **충족**: 2, 4, 6, 7 (4/7)
+- **부분 충족**: 1 (3/9 Track 검증)
+- **Pending**: 3 (Phase D), 5 (ADR-001 결정)
 
 ---
 
