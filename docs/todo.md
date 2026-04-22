@@ -5,19 +5,21 @@
 
 ---
 
-## Phase A — Docs Finalization
+## Phase A — Docs Finalization ✅
 
-- [ ] **A1** README.md 보강
-  - [ ] Architecture 다이어그램에 deep-research, market-research 추가
-  - [ ] "Common tools" 섹션 (find-skills, agent-browser, playwright, chrome-devtools, claude-powerline)
-  - [ ] "Cherry-pick sync" 섹션 (`.dev-references/cherrypicks.lock`, `sync-cherrypicks.sh`)
-- [ ] **A2** USAGE.md 보강
-  - [ ] Common tools 사용 시나리오
-  - [ ] `.mcp.json` / `.claude/settings.json` 구조 + `$CLAUDE_PROJECT_DIR` 설명
-  - [ ] `sync-cherrypicks.sh` 사용법 (diff / auto-update / conflict)
-- [ ] **A3** CONTRIBUTING.md sync 절차
-  - [ ] cherry-pick drift 감지 워크플로우
-  - [ ] 외부 repo 수정 시 매니페스트 업데이트 절차
+- [x] **A1** README.md 보강 (commit b9d47ef)
+  - [x] "Common tools" 섹션 (7종 표)
+  - [x] "Updating cherry-picked content" 섹션
+- [x] **A2** USAGE.md 보강 (commit b9d47ef)
+  - [x] 공통 도구 + 사용 시나리오
+  - [x] `.mcp.json` / `.claude/settings.json` 구조
+  - [x] Cherry-pick 동기화 (`sync-cherrypicks.sh`)
+- [x] **A3** CONTRIBUTING.md sync 절차 (commit b9d47ef)
+  - [x] Sync workflow + Adding + Bumping + Do NOT
+
+### A-이월 (Phase A 범위 밖 판단)
+
+- [ ] **A4** README.ko.md 동기화 — 영문 A1 변경분 한국어 반영 (사용자 결정 대기)
 
 ---
 
