@@ -23,16 +23,15 @@
 
 ---
 
-## Phase B — Dogfood v27.17
+## Phase B — Dogfood v27.17 ✅ (재검증 후)
 
-- [ ] **B1** 기존 16 시나리오 재실행 (Phase 1~5)
-- [ ] **B2** interactive 라우터 신규 시나리오
-  - [ ] 신규 디렉토리 Install 분기
-  - [ ] 기존 설치 Update 분기
-  - [ ] Multi-track Add 분기
-- [ ] **B3** v27.16 gh-issue-workflow skill 설치 검증
-- [ ] **B4** 리포트 `docs/dogfood/cli-dogfood-2026-04-XX.md` 작성
-  - [ ] CRITICAL/HIGH = 0 확인
+- [x] **B1** 기존 16 시나리오 재실행 (Phase 1~5) — 19/19 PASS (full 실행 제외 16/17 Rule 표기 오차 → H1 fix)
+- [x] **B2** interactive 라우터 3종 시나리오 — 전부 PASS
+- [x] **B3** v27.16 gh-issue-workflow skill 설치 — 확인됨
+- [x] **B4** 리포트 `docs/dogfood/cli-dogfood-2026-04-23.md` 작성
+  - [x] H1 fix 완료 (setup-harness.sh:1202 tauri opt-in 반영)
+  - [x] H2 false positive 취소
+  - [x] 최종 CRITICAL=0 HIGH=0 (H1 수정 후)
 
 ---
 

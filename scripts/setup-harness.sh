@@ -1197,9 +1197,10 @@ case "$TRACK" in
   data) RULES_EXPECTED=9 ;;
   ssr-htmx) RULES_EXPECTED=9 ;;
   ssr-nextjs) RULES_EXPECTED=10 ;;
-  csr-supabase) RULES_EXPECTED=11 ;;
-  csr-fastify|csr-fastapi) RULES_EXPECTED=12 ;;
-  full) RULES_EXPECTED=17 ;;
+  # v27.14.0 — tauri는 --with-tauri opt-in. 기본값은 tauri 제외
+  csr-supabase) RULES_EXPECTED=$([ "$WITH_TAURI" = true ] && echo 11 || echo 10) ;;
+  csr-fastify|csr-fastapi) RULES_EXPECTED=$([ "$WITH_TAURI" = true ] && echo 12 || echo 11) ;;
+  full) RULES_EXPECTED=$([ "$WITH_TAURI" = true ] && echo 17 || echo 16) ;;
   *) RULES_EXPECTED=12 ;;
 esac
 [ "$MULTI" = true ] && RULES_EXP_DISP="multi" || RULES_EXP_DISP="$RULES_EXPECTED"
