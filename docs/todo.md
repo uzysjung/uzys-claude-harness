@@ -70,8 +70,9 @@
   - [x] 5. 외부 사용자 첫 설치 — **Pass (이월)** per ADR-001 OQ2. v28.0.0 Ship 시 Phase 2 백로그 P2-01로 등재
   - [x] 6. Phase 4b D1/D2/D4 이월 소화 — commit b9d47ef + 3e5af9a ✅
   - [x] 7. v27.17 dogfood CRITICAL/HIGH = 0 — H1 fix 후 최종 판정 ✅ (commit 92982c5)
-- [ ] **E2** requirements-trace.md 확장 — Part 3: v27.x Post-audit Trace
-  - [ ] v27.0~v27.17 각 feat 커밋의 Source → 4-gate → Evidence 확정 (현재 가설 표기)
+- [x] **E2** requirements-trace.md 확장 — Part 6: v27.x Post-audit Trace ✅ (2026-04-23)
+  - [x] v27.0~v27.17 18개 커밋 Source → 4-gate → Evidence 확정 (전부 4/4 Pass)
+  - [x] 중복 "Part 3" 헤딩 → Part 6로 교정 (기존 Part 3 Decisions와 충돌 해소)
 - [x] **E3** ADR 생성 — `docs/decisions/ADR-001-phase2-entry-criteria.md` ✅ (2026-04-23)
   - [x] OQ1 (baseline 기준) — 7일 AND 세션≥10 AND feature≥3
   - [x] OQ2 (외부 사용자 조건 이월 가부) — 이월 허용, Phase 2 백로그 P2-01 등재
