@@ -306,6 +306,23 @@ bash scripts/setup-harness.sh --help                 # 전체 옵션 표시
 | Bash/CLI/Markdown 메타 프로젝트 | `tooling` |
 | 둘 이상 동시 (예: tooling + Python) | `--track tooling --track csr-fastapi` 또는 `full` |
 
+### 공통 도구 (모든 dev Track 기본 설치)
+
+executive는 `market-research` 중심 서브셋.
+
+| 분류 | 항목 | 용도 |
+|------|------|------|
+| Plugin | `addy-agent-skills`, `Impeccable` | 6-gate 워크플로우 + 디자인 품질 |
+| Skill (cherry-pick) | `deep-research` | firecrawl + exa 멀티 소스 조사 — 전체 dev |
+| Skill (cherry-pick) | `market-research` | 경쟁/TAM 조사 — `executive` 한정 |
+| Skill (npx) | `find-skills` (vercel-labs) | 필요 시점 skill 검색/설치 |
+| CLI (global) | `agent-browser` (vercel-labs) | 브라우저 자동화 CLI |
+| CLI (global) | `playwright` | E2E + UI visual review |
+| MCP (project) | `context7`, `github`, `chrome-devtools` | 문서 조회 / GitHub / DevTools. `.mcp.json`으로 프로젝트 스코프 |
+| statusLine | `claude-powerline` | `.claude/settings.json`이 자동 구동 |
+
+전체 자산 목록 + 신뢰 등급: [docs/REFERENCE.md](./docs/REFERENCE.md).
+
 ## 11개 행동 원칙
 
 Karpathy LLM 관찰 + Anthropic Harness Design + 실전 운영 경험에서 추출:
@@ -409,6 +426,23 @@ claude
 ```
 
 이후 `claude --plugin-dir .claude/local-plugins/ecc`로 사용. 글로벌 `~/.claude/` 무영향.
+
+## Cherry-pick 업데이트
+
+Cherry-pick(ECC skill, claude-powerline 래퍼 등)은 `.dev-references/cherrypicks.lock`에서 source repo + 커밋 SHA + 파일별 해시로 추적:
+
+```bash
+# drift만 확인 (수정 안 함)
+bash scripts/sync-cherrypicks.sh
+
+# 수정되지 않은 파일의 상류 변경을 자동 반영
+bash scripts/sync-cherrypicks.sh --apply
+
+# CI 게이트 — drift 있으면 exit 1
+bash scripts/sync-cherrypicks.sh --check
+```
+
+로컬 수정된 cherry-pick은 `modified: true`로 표시되어 **절대 자동 덮어쓰지 않음** — drift만 보고.
 
 ## 보안 모델
 
