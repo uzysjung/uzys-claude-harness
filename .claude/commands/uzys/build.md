@@ -12,7 +12,10 @@ Build phase — TDD로 점진적 구현한다.
    - GREEN: 테스트를 통과하는 최소 구현
    - REFACTOR: 코드 개선 (테스트 유지)
 3. 완료된 task를 todo.md에서 체크한다.
-4. **git-policy.md 적용: 즉시 commit → push**.
+4. **git-policy.md 적용: 즉시 commit → push**. issue_tracking enabled 시 commit message에 issue 번호 포함:
+   - 진행 중: `<type>: 설명 (refs #N)`
+   - task 완전 완료: PR에서 `Closes #N` 권장 (commit 단위 close 지양)
+5. Build 중 새 bug/feature 발견 → `gh-issue-workflow` skill로 backlog 등록 (5섹션 ISSUE 템플릿). 현재 작업 흐름 깨지 않고 비동기 기록.
 
 ## Context-Aware Skill Selection
 

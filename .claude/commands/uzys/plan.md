@@ -19,13 +19,23 @@ Plan phase — 작업을 검증 가능한 작은 단위로 분해한다.
 ## Process
 
 1. SPEC.md를 읽고 전체 범위 + **복잡도** 판정 (위 표).
+1.5. **GitHub Issue 우선 fetch (issue_tracking: enabled 시)**:
+   - `gh issue list --state open --json number,title,body,labels` 호출
+   - 각 issue body에서 `방향성 (YYYY-MM-DD 확정)` 패턴 grep — 확정된 것만 후보
+   - 전제(Given) 미충족 issue 제외
+   - 우선순위 정렬 (label P0 > P1 > P2 > unlabeled)
+   - 상위 1-3개 issue → todo.md 진입 후보
 2. **Trivial이면**: todo.md만 생성하고 즉시 Build로. plan.md는 1-2줄.
 3. **Standard/Complex이면**: agent-skills의 planning-and-task-breakdown 스킬을 따라 분해:
    - Vertical slicing: 수평 레이어가 아닌 수직 기능 단위
    - 각 task에 Acceptance Criteria 정의 (Standard는 milestone 수준, Complex는 task 수준)
    - 의존성 순서 정렬
-4. Sprint Contract: 범위(포함/제외) + 완료 기준 + 제약 조건.
-5. `docs/plan.md` + `docs/todo.md` 생성.
+4. **North Star 4-gate 체크 (Complex 복잡도 + `docs/NORTH_STAR.md` 존재 시)**:
+   - 신규 기능/task가 NORTH_STAR.md §5 Decision Heuristics의 4-gate(Trend/Persona/Capability/Lean)를 모두 통과하는가?
+   - 1개 이상 fail 시 사용자에게 보고 후 결정 대기 (자동 진행 금지)
+   - NORTH_STAR.md 부재 시 skip
+5. Sprint Contract: 범위(포함/제외) + 완료 기준 + 제약 조건.
+6. `docs/plan.md` + `docs/todo.md` 생성.
 
 ## Output
 
