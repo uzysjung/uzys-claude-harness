@@ -5,6 +5,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.17.0] — 2026-04-22
+
+### Added
+- **인터랙티브 라우터 — 설치 상태 자동 감지 + Install/Update/Add 분기**:
+  - `detect_install_state()` — `.claude/.installed-tracks` 메타파일 또는 legacy `rules/*.md` 시그니처로 기존 Track 자동 추정
+  - `prompt_action_router()` — 5-메뉴 (1. 새 Track 추가 / 2. 정책 파일 업데이트 / 3. Track 제거(미지원) / 4. 재설치 / 5. 종료)
+  - 신규 설치는 기존 `prompt_interactive_setup` 흐름, 기존 설치는 라우터 메뉴 표시
+- **`.claude/.installed-tracks` 메타파일 신규** — install / add-track 시 자동 기록 (정렬 + 중복 제거 union). 다음 설치 시 100% 정확한 Track 감지
+- **README.md / README.ko.md "Step 2 — Install (interactive — recommended)" 격상** — 인터랙티브 진입점이 메인, 플래그 모드는 "CI / automation" 부록 위치
+- **T22 — Interactive Router + State Detection 자산 검증** (test-harness): 10개 assertion (라우터 함수 / 5-메뉴 / Track 제거 미지원 명시 / .installed-tracks 메타파일 / legacy 추정 / 분기 / 비대화형 regression / 기록 로직 / README 격상)
+
+### Changed
+- 사용자 entry point가 사실상 한 줄로 통일: `bash <(curl -fsSL .../install.sh)` — 신규/업데이트/추가가 자동 분기
+- 플래그 모드 (`--track X`, `--update`, `--add-track`) 그대로 작동 — CI/automation 호환
+
+### 미지원 (의식적 제외)
+- **Track 제거 (Remove)** — 메뉴엔 표시되지만 "v27.17 미지원, 수동 .claude/ 정리". 어떤 파일이 어느 Track 소유인지 100% 매핑 불가하여 데이터 손실 위험. 향후 별도 기능으로 검토.
+
+### Stats
+- test-harness assertion: 167 → 177 (PASS, FAIL 0)
+
 ## [v27.16.0] — 2026-04-22
 
 ### Added
@@ -310,7 +331,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 Tags v26.0.0 through v26.9.x: foundational work — 6-gate workflow, 11 principles, initial Track set, security hardening, reviewer subagent (SOD), agent-skills integration. See `git log` for details.
 
-[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.16.0...HEAD
+[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.17.0...HEAD
+[v27.17.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.17.0
 [v27.16.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.16.0
 [v27.15.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.15.0
 [v27.14.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.14.0

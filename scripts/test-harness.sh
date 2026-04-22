@@ -955,6 +955,91 @@ else
 fi
 
 # ============================================================
+# T22. Interactive Router + State Detection (v27.17.0)
+# ============================================================
+section "T22. Interactive Router + State Detection"
+
+# T22.1 — detect_install_state 함수 정의
+if grep -q "^detect_install_state()" "$ROOT/scripts/setup-harness.sh"; then
+  pass "router: detect_install_state 함수 정의"
+else
+  fail "router: detect_install_state 미정의"
+fi
+
+# T22.2 — prompt_action_router 함수 정의
+if grep -q "^prompt_action_router()" "$ROOT/scripts/setup-harness.sh"; then
+  pass "router: prompt_action_router 함수 정의"
+else
+  fail "router: prompt_action_router 미정의"
+fi
+
+# T22.3 — 5개 메뉴 옵션 모두 존재
+MENU_OK=true
+for m in "1) 새 Track 추가" "2) 기존 정책 파일 업데이트" "3) Track 제거" "4) 신규 설치" "5) 종료"; do
+  grep -q "$m" "$ROOT/scripts/setup-harness.sh" || MENU_OK=false
+done
+if [ "$MENU_OK" = true ]; then
+  pass "router: 5-메뉴 옵션 모두 표시"
+else
+  fail "router: 5-메뉴 누락"
+fi
+
+# T22.4 — Track 제거 미지원 명시
+if grep -q "Track 제거.*v27.17 미지원\|Track 제거.*미지원" "$ROOT/scripts/setup-harness.sh"; then
+  pass "router: Track 제거 미지원 명시"
+else
+  fail "router: Track 제거 명시 누락"
+fi
+
+# T22.5 — .installed-tracks 메타파일 자동 기록
+if grep -q ".installed-tracks" "$ROOT/scripts/setup-harness.sh"; then
+  pass "router: .installed-tracks 메타파일 사용 (자동 기록)"
+else
+  fail "router: .installed-tracks 메타파일 미사용"
+fi
+
+# T22.6 — Legacy 추정 (rules/htmx.md 등으로 Track 추정)
+if grep -q "rules/htmx.md\|guesses=" "$ROOT/scripts/setup-harness.sh"; then
+  pass "router: legacy Track 추정 (rules/ 시그니처)"
+else
+  fail "router: legacy 추정 누락"
+fi
+
+# T22.7 — 신규 vs 기존 분기 (INSTALL_STATE)
+if grep -q 'INSTALL_STATE.*=.*"new"\|INSTALL_STATE.*=.*"existing"' "$ROOT/scripts/setup-harness.sh"; then
+  pass "router: INSTALL_STATE 분기 (new/existing)"
+else
+  fail "router: INSTALL_STATE 분기 누락"
+fi
+
+# T22.8 — 동적: clean dir + TTY 없음 → 여전히 --track required 에러
+T22_DIR=$(mktemp -d)
+cd "$T22_DIR" && git init -q 2>/dev/null
+bash "$ROOT/scripts/setup-harness.sh" --project-dir . </dev/null >/tmp/t22.log 2>&1
+T22_RC=$?
+if [ "$T22_RC" -ne 0 ] && grep -q "required in non-interactive mode" /tmp/t22.log; then
+  pass "router: 비대화형 + 신규 → --track 에러 유지 (regression 방지)"
+else
+  fail "router: 비대화형 분기 깨짐 (exit=$T22_RC)"
+fi
+cd "$ROOT"; rm -rf "$T22_DIR"
+
+# T22.9 — .installed-tracks 자동 기록 로직 존재 (정적 — 디스크 부족 환경에서도 안정)
+# 동적 install 검증은 T5 (9 track 병렬)에서 이미 수행
+if grep -qE 'printf.*"%s.*SELECTED_TRACKS.*>.*installed-tracks|sort -u.*installed-tracks' "$ROOT/scripts/setup-harness.sh"; then
+  pass "router: .installed-tracks 자동 기록 로직 (install + add-track union)"
+else
+  fail "router: .installed-tracks 기록 로직 누락"
+fi
+
+# T22.10 — README/ko.md에 인터랙티브 우선 격상 (5-메뉴 언급)
+if grep -q "Add a new Track\|새 Track 추가\|5-action menu\|5-메뉴" "$ROOT/README.md" "$ROOT/README.ko.md" 2>/dev/null; then
+  pass "README: 인터랙티브 5-메뉴 안내 격상"
+else
+  fail "README: 인터랙티브 5-메뉴 누락"
+fi
+
+# ============================================================
 # Summary
 # ============================================================
 echo ""

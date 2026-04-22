@@ -74,28 +74,39 @@ Built for senior engineers / multi-role users (CEO/CTO/CISO/data scientist) who 
 | Bash / CLI / markdown meta-projects | `tooling` |
 | Two or more (e.g., tooling + Python) | `--track tooling --track csr-fastapi` (multi) or `full` |
 
-### Step 2 — Install
-
-Replace `<TRACK>` with your choice from above (e.g., `csr-fastapi`).
+### Step 2 — Install (interactive — recommended)
 
 ```bash
 # in your project directory:
+bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)
+```
+
+The installer auto-detects your current state:
+
+- **First time** → walks you through: Track selection → Tauri / GSD / ECC / Trail of Bits options → summary → confirm
+- **Existing install detected** → shows a 5-action menu:
+  1. Add a new Track
+  2. Update policy files (auto-backup)
+  3. Remove Track *(unsupported in v27 — manually edit `.claude/`)*
+  4. Reinstall (backs up current `.claude/` first)
+  5. Exit
+
+#### Flag mode (CI / automation)
+
+For CI/CD or scripted environments, all flags still work — installer skips interactive when `--track` is provided:
+
+```bash
 curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
   | bash -s -- --track <TRACK> --project-dir .
 ```
 
-Or **interactive** (no `--track` → asks you questions in terminal):
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)
-```
-
-Interactive mode walks you through: Track selection → Tauri / GSD / ECC / Trail of Bits options → summary → confirm. In CI or other non-TTY environments, `--track` is required (installer errors out otherwise).
+In non-TTY environments without `--track`, installer errors out with `--track required in non-interactive mode`.
 
 That single line does:
 1. Shallow-clones the harness to a temp dir
-2. Runs `setup-harness.sh` in your project (with flags or via interactive prompts)
+2. Runs `setup-harness.sh` (interactive or via flags)
 3. Cleans up the temp dir
+4. Records installed Tracks to `.claude/.installed-tracks` (used for next install detection)
 
 After install you'll see an Installation Report (`✅` row per category).
 

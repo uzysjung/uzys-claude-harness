@@ -187,12 +187,115 @@ prompt_interactive_setup() {
   echo ""
 }
 
+# v27.17.0 — 설치 상태 자동 감지
+# 1순위: .claude/.installed-tracks 메타파일 (v27.17부터 install/add-track이 자동 기록)
+# 2순위 (legacy): .claude/rules/*.md 내용 기반 추정 (v27.16 이전 사용자)
+detect_install_state() {
+  INSTALL_STATE="new"
+  DETECTED_TRACKS=""
+  DETECTED_VERSION="unknown"
+  DETECTED_SKILLS=0
+  DETECTED_RULES=0
+  DETECTED_HOOKS=0
+
+  if [ -d "$PROJECT_DIR/.claude" ]; then
+    INSTALL_STATE="existing"
+    DETECTED_SKILLS=$(find "$PROJECT_DIR/.claude/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+    DETECTED_RULES=$(ls "$PROJECT_DIR/.claude/rules"/*.md 2>/dev/null | wc -l | tr -d ' ')
+    DETECTED_HOOKS=$(ls "$PROJECT_DIR/.claude/hooks"/*.sh 2>/dev/null | wc -l | tr -d ' ')
+
+    # Track 감지: 메타파일 우선
+    if [ -f "$PROJECT_DIR/.claude/.installed-tracks" ]; then
+      DETECTED_TRACKS=$(tr '\n' ' ' < "$PROJECT_DIR/.claude/.installed-tracks" | sed 's/  */ /g; s/^ //; s/ $//')
+    else
+      # Legacy 추정: rules/*.md 시그니처
+      local guesses=""
+      [ -f "$PROJECT_DIR/.claude/rules/htmx.md" ] && guesses="$guesses ssr-htmx"
+      [ -f "$PROJECT_DIR/.claude/rules/nextjs.md" ] && guesses="$guesses ssr-nextjs"
+      [ -f "$PROJECT_DIR/.claude/rules/pyside6.md" ] || [ -f "$PROJECT_DIR/.claude/rules/data-analysis.md" ] && guesses="$guesses data"
+      [ -f "$PROJECT_DIR/.claude/rules/cli-development.md" ] && guesses="$guesses tooling"
+      # CSR 분기는 .mcp.json 으로 보강
+      if [ -f "$PROJECT_DIR/.mcp.json" ]; then
+        if jq -e '.mcpServers["supabase-mcp-server"]' "$PROJECT_DIR/.mcp.json" >/dev/null 2>&1; then
+          guesses="$guesses csr-supabase"
+        elif jq -e '.mcpServers["railway-mcp-server"]' "$PROJECT_DIR/.mcp.json" >/dev/null 2>&1 && [ -f "$PROJECT_DIR/.claude/rules/database.md" ]; then
+          guesses="$guesses csr-fastify-or-csr-fastapi"
+        fi
+      fi
+      DETECTED_TRACKS=$(echo "$guesses" | sed 's/^ //; s/  */ /g')
+      [ -z "$DETECTED_TRACKS" ] && DETECTED_TRACKS="(추정 불가 — .claude/.installed-tracks 없음, rules/도 시그니처 부족)"
+    fi
+
+    # 버전: CLAUDE.md 또는 별도 파일에서 추출. 현재 명확한 위치 없음 → "unknown"
+    [ -f "$PROJECT_DIR/.claude/CLAUDE.md" ] && DETECTED_VERSION="installed (버전 메타 미기록)"
+  fi
+}
+
+# v27.17.0 — 5-menu 라우터 (기존 설치 감지 시)
+prompt_action_router() {
+  local choice
+  echo ""
+  echo "  현재 상태 확인..."
+  echo "    ✓ .claude/ 존재 (기존 설치)"
+  echo "    ✓ Track:    $DETECTED_TRACKS"
+  echo "    ✓ Skills:   $DETECTED_SKILLS개 / Rules: $DETECTED_RULES개 / Hooks: $DETECTED_HOOKS개"
+  echo "    ✓ Harness:  $DETECTED_VERSION"
+  echo ""
+  echo "  작업 선택:"
+  echo "    1) 새 Track 추가 (--add-track)"
+  echo "    2) 기존 정책 파일 업데이트 (--update, 백업 자동)"
+  echo "    3) Track 제거                — 미지원 (수동 .claude/ 정리)"
+  echo "    4) 신규 설치 (현재 .claude/ 백업 후 처음부터)"
+  echo "    5) 종료"
+  echo ""
+  while true; do
+    read -rp "    선택 [1-5]: " choice
+    case "$choice" in
+      1)
+        ADD_MODE=true
+        prompt_interactive_setup
+        return ;;
+      2)
+        UPDATE_MODE=true
+        echo "    ▸ Update 모드 진입 (백업 자동 생성)"
+        return ;;
+      3)
+        echo "    ❗ Track 제거는 v27.17 미지원 — 수동 .claude/ 편집 후 다시 실행"
+        echo "      (메뉴로 돌아갑니다)"
+        echo "" ;;
+      4)
+        echo "    ⚠️  현재 .claude/를 .claude.backup-$(date +%Y%m%d-%H%M%S)/ 로 백업 후 처음부터 설치합니다."
+        read -rp "      확인하시겠습니까? [y/N]: " confirm
+        if [[ "$confirm" =~ ^[yY]$ ]]; then
+          mv "$PROJECT_DIR/.claude" "$PROJECT_DIR/.claude.backup-$(date +%Y%m%d-%H%M%S)" 2>/dev/null
+          echo "    ✓ 백업 완료. 신규 설치 흐름으로 진입."
+          prompt_interactive_setup
+          return
+        else
+          echo "    취소. 메뉴로 돌아갑니다."
+          echo ""
+        fi ;;
+      5)
+        echo "    종료."
+        exit 0 ;;
+      *)
+        echo "    ❗ 1-5 중 선택" ;;
+    esac
+  done
+}
+
 # Interactive 진입 조건: --track 없음, --update 아님, --add-track 아님, stdin이 TTY
 # 주의: 맨 위에서 fd 3으로 /dev/tty 재부착 시도했으므로 curl|bash에서도 stdin이 tty일 수 있음.
 # `-t 0` (stdin이 tty인지)로 검사 — 백그라운드/CI/pipe에서는 false.
 if [ "${#SELECTED_TRACKS[@]}" -eq 0 ] && [ "$UPDATE_MODE" = false ] && [ "$ADD_MODE" = false ]; then
   if [ -t 0 ]; then
-    prompt_interactive_setup
+    # v27.17.0 — 상태 감지 후 분기: 신규는 직접 setup, 기존은 5-menu 라우터
+    detect_install_state
+    if [ "$INSTALL_STATE" = "new" ]; then
+      prompt_interactive_setup
+    else
+      prompt_action_router
+    fi
   else
     echo "ERROR: --track required in non-interactive mode (no TTY)." >&2
     echo "       Example: bash setup-harness.sh --track csr-fastapi" >&2
@@ -1053,6 +1156,20 @@ else
   echo -e "${YELLOW}========================================${NC}"
   echo -e "${YELLOW}  Setup Complete with $ERRORS warning(s)${NC}"
   echo -e "${YELLOW}========================================${NC}"
+fi
+
+# v27.17.0 — 설치된 Track을 메타파일에 기록 (다음 install 시 자동 감지용)
+# add-track 모드: 기존 목록에 union으로 추가 (중복 제거)
+# 신규 install / 재설치: 현재 SELECTED_TRACKS로 덮어쓰기
+if [ "${#SELECTED_TRACKS[@]}" -gt 0 ] && [ -d "$PROJ" ]; then
+  if [ "$ADD_MODE" = true ] && [ -f "$PROJ/.installed-tracks" ]; then
+    # union: 기존 + 신규 (중복 제거, 정렬)
+    cat "$PROJ/.installed-tracks" <(printf "%s\n" "${SELECTED_TRACKS[@]}") 2>/dev/null \
+      | sort -u | grep -v '^$' > "$PROJ/.installed-tracks.tmp" \
+      && mv "$PROJ/.installed-tracks.tmp" "$PROJ/.installed-tracks"
+  else
+    printf "%s\n" "${SELECTED_TRACKS[@]}" > "$PROJ/.installed-tracks"
+  fi
 fi
 
 # === 설치 결과 검증 테이블 ===

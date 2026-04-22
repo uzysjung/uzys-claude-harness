@@ -60,3 +60,29 @@ def test_calculates_similarity():
 1. 테스트 격리 확인 (공유 상태 없는지)
 2. mock이 실제 동작과 일치하는지 확인
 3. 구현을 수정하라, 테스트를 수정하지 마라 (테스트가 틀린 경우 제외)
+[0;36m[1mT12. Install Catalog Consistency[0m
+    [0;32m✓[0m plugin: addy-agent-skills
+    [0;32m✓[0m plugin: railway-plugin
+    [0;32m✓[0m plugin: railway-skills
+    [0;32m✓[0m plugin: supabase-agent-skills
+    [0;32m✓[0m plugin: anthropic-agent-skills
+    [0;32m✓[0m plugin: c-level-skills
+    [0;32m✓[0m plugin: finance-skills
+    [0;32m✓[0m skill: impeccable
+    [0;32m✓[0m skill: playwright-skill
+    [0;32m✓[0m skill: find-skills
+    [0;32m✓[0m skill: react-best-practices
+    [0;32m✓[0m skill: shadcn/ui
+    [0;32m✓[0m skill: web-design-guidelines
+    [0;32m✓[0m skill: orchestkit
+    [0;32m✓[0m skill: next-skills
+    [0;32m✓[0m mcp: context7
+    [0;32m✓[0m mcp: github
+    [0;32m✓[0m mcp: chrome-devtools
+    [0;32m✓[0m mcp-conditional: railway
+    [0;32m✓[0m mcp-conditional: supabase
+    [0;32m✓[0m command: uzys:auto
+    [0;32m✓[0m install.sh
+    [0;32m✓[0m gate-check: auto 예외
+    [0;32m✓[0m prune-ecc.sh
+    ## TAMPERED

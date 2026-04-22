@@ -74,28 +74,39 @@ CTO/COO 출신 눈높이의 시니어 엔지니어 / 멀티 역할 사용자(CEO
 | Bash/CLI/Markdown 메타 프로젝트 | `tooling` |
 | 둘 이상 동시 (예: tooling + Python) | `--track tooling --track csr-fastapi` (다중) 또는 `full` |
 
-### Step 2 — 설치 (플래그 모드 또는 인터랙티브 모드)
-
-`<TRACK>` 자리에 위 표에서 고른 값을 넣는다 (예: `csr-fastapi`).
+### Step 2 — 설치 (인터랙티브 권장)
 
 ```bash
 # 프로젝트 디렉토리에서:
+bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)
+```
+
+인스톨러가 현재 상태를 자동 감지:
+
+- **처음 설치** → 단계별 안내: Track 선택 → Tauri / GSD / ECC / Trail of Bits 옵션 → 요약 → 확인
+- **기존 설치 감지** → 5-메뉴 표시:
+  1. 새 Track 추가
+  2. 정책 파일 업데이트 (백업 자동)
+  3. Track 제거 *(v27 미지원 — `.claude/` 수동 편집)*
+  4. 재설치 (현재 `.claude/` 백업 후 처음부터)
+  5. 종료
+
+#### 플래그 모드 (CI / 자동화)
+
+CI/CD나 스크립트 환경은 기존 플래그 그대로 작동 — `--track` 명시하면 인터랙티브 skip:
+
+```bash
 curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
   | bash -s -- --track <TRACK> --project-dir .
 ```
 
-또는 **인터랙티브 모드** (`--track` 생략하면 터미널에서 하나씩 물어봄):
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)
-```
-
-인터랙티브 모드 진행: Track 선택 → Tauri / GSD / ECC / Trail of Bits 옵션 → 요약 → 확인. CI/비-TTY 환경에서는 `--track` 필수 (미지정 시 에러로 종료).
+비-TTY 환경 + `--track` 누락 시 `--track required in non-interactive mode` 에러로 종료.
 
 이 한 줄이 하는 일:
 1. 하네스를 임시 디렉토리에 shallow-clone
-2. 프로젝트에서 `setup-harness.sh` 실행 (플래그 or 인터랙티브 프롬프트)
+2. `setup-harness.sh` 실행 (인터랙티브 or 플래그)
 3. 임시 디렉토리 정리
+4. 설치된 Track을 `.claude/.installed-tracks`에 기록 (다음 설치 시 자동 감지용)
 
 설치 후 카테고리별 `✅` Installation Report가 출력된다.
 
