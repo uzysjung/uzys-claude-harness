@@ -278,7 +278,22 @@ bash scripts/setup-harness.sh --help                 # show full options
 | `tooling` | Bash + Markdown + CLI tools (meta projects) | Tool Developer | + cli-development rules |
 | `full` | Union of everything | All | All MCPs + all plugins |
 
-Common to all dev tracks: `addy-agent-skills`, `Impeccable`, `Playwright`, `find-skills`, ADR skill, `context7` MCP, `github` MCP, `chrome-devtools` MCP. Full asset list: [docs/REFERENCE.md](./docs/REFERENCE.md).
+### Common tools (all dev tracks)
+
+Installed regardless of track (executive gets a subset):
+
+| Category | Item | Purpose |
+|----------|------|---------|
+| Plugin | `addy-agent-skills`, `Impeccable` | 6-gate workflow backbone + design quality |
+| Skill (cherry-pick) | `deep-research` | Multi-source research (firecrawl + exa) — all dev tracks |
+| Skill (cherry-pick) | `market-research` | Competitive / TAM research — `executive` only |
+| Skill (npx) | `find-skills` (vercel-labs) | On-demand skill discovery |
+| CLI (global) | `agent-browser` (vercel-labs) | Browser automation CLI |
+| CLI (global) | `playwright` | E2E + UI visual review |
+| MCP (project) | `context7`, `github`, `chrome-devtools` | Docs fetch / GitHub / DevTools. Project-scoped via `.mcp.json` |
+| Status line | `claude-powerline` | `statusLine` in `.claude/settings.json` |
+
+Full asset list with trust tiers: [docs/REFERENCE.md](./docs/REFERENCE.md).
 
 ## How it works
 
@@ -407,6 +422,23 @@ After `scripts/setup-harness.sh` completes you get a verification table:
 ```
 
 CI runs `bash scripts/test-harness.sh --quick` (≈5s, 85 tests) on every PR.
+
+## Updating cherry-picked content
+
+Cherry-picks (ECC skills, status line wrapper, etc.) are tracked in `.dev-references/cherrypicks.lock` by source repo + commit SHA + per-file hash.
+
+```bash
+# Check drift only (no writes)
+bash scripts/sync-cherrypicks.sh
+
+# Auto-apply upstream changes for unmodified files
+bash scripts/sync-cherrypicks.sh --apply
+
+# CI gate — exit 1 if drift detected
+bash scripts/sync-cherrypicks.sh --check
+```
+
+Locally modified cherry-picks are marked `modified: true` and **never** overwritten — drift only reported.
 
 ## Security model
 

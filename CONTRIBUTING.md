@@ -87,6 +87,63 @@ Commands live in `templates/commands/uzys/*.md`.
 3. Add to `scripts/setup-harness.sh` install loop
 4. Add gate-check unit test in T11 (workflow E2E smoke)
 
+## Updating cherry-picked content
+
+Skills, hooks, or agents pulled from upstream repos (ECC, claude-powerline, etc.) are tracked in `.dev-references/cherrypicks.lock`. **Do not** hand-edit cherry-picked files unless you intend to fork them locally.
+
+### Sync workflow
+
+```bash
+# 1. Detect drift (read-only)
+bash scripts/sync-cherrypicks.sh
+
+# 2. Auto-apply upstream changes for unmodified files
+bash scripts/sync-cherrypicks.sh --apply
+
+# 3. CI gate — exit 1 if any drift remains
+bash scripts/sync-cherrypicks.sh --check
+```
+
+### Adding a new cherry-pick
+
+1. Register the source repo in `cherrypicks.lock` under `sources.*`:
+   ```json
+   {
+     "url": "https://github.com/org/repo",
+     "local_path": ".dev-references/repo",
+     "commit": "<pinned SHA>"
+   }
+   ```
+2. Clone into `.dev-references/<name>` (gitignored).
+3. Add each file to `cherrypicks[]`:
+   ```json
+   {
+     "source": "<name>",
+     "src": "path/in/upstream",
+     "dst": "templates/skills/.../file.md",
+     "src_hash": "<sha256 of source file>",
+     "modified": false
+   }
+   ```
+4. Copy file to `dst`, run `bash scripts/sync-cherrypicks.sh` — should report "in sync".
+5. If local tweaks are required, set `modified: true` and note reason in commit.
+
+### Bumping pinned commits
+
+When upstream ships something you want:
+
+1. `cd .dev-references/<name> && git fetch && git checkout <new-sha>`
+2. Update `sources.<name>.commit` in `cherrypicks.lock`
+3. `bash scripts/sync-cherrypicks.sh` — review diff per file
+4. `--apply` for unmodified files; manually merge `modified: true` cases
+5. Update `src_hash` values to match new upstream content
+
+### Do NOT
+
+- Silently modify a cherry-pick without flipping `modified: true`
+- Commit a file whose `src_hash` mismatches the actual content (`--check` fails CI)
+- Bump `commit` SHA without running sync first
+
 ## Commit conventions
 
 Conventional Commits format:
