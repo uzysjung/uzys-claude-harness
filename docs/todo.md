@@ -63,7 +63,7 @@
 ## Phase E — Phase 2 Readiness (부분 진행)
 
 - [ ] **E1** Phase 2 Entry Checklist 실행 (SPEC §5)
-  - [ ] 1. 9 Track clean install 성공률 ≥ 95% — Phase B에서 tooling/executive/full 3종 검증 (3/3 ✅). csr-*, ssr-*, data 단독 fresh 검증 남음
+  - [x] 1. 9 Track clean install 성공률 ≥ 95% — **9/9 PASS (100%)** ✅ `docs/evals/track-install-2026-04-23.md` (Phase B 3종 + 2026-04-23 세션 6종)
   - [x] 2. test-harness PASS — 2026-04-23 실측 **149 total / Pass 144 / Fail 0 / Skip 5** ✅
   - [ ] 3. HITO baseline 수집 완료 — Phase D 경과 필요
   - [x] 4. 글로벌 미수정 — setup-harness.sh D16 보호(L73-84) + 본 세션 `--update` 시 에러 없음. ~/.claude/ mtime은 Claude Code 자체 업데이트 (본 프로젝트 무관) ✅
@@ -78,10 +78,9 @@
   - [x] OQ2 (외부 사용자 조건 이월 가부) — 이월 허용, Phase 2 백로그 P2-01 등재
   - [x] OQ3 (dogfood interactive 시나리오 범위) — 3개(Install/Update/Add) 확정
 
-### E1 현재 판정 요약 (2026-04-23, ADR-001 반영)
+### E1 현재 판정 요약 (2026-04-23, Track 9/9 검증 완료)
 
-- **충족**: 2, 4, 5 (이월), 6, 7 (5/7)
-- **부분 충족**: 1 (3/9 Track 검증)
+- **충족**: 1 (9/9 PASS), 2, 4, 5 (이월), 6, 7 (**6/7**)
 - **Pending**: 3 (Phase D 7일 경과 필요 — ADR-001 OQ1 기준: 7일 AND 세션≥10 AND feature≥3)
 
 ---
