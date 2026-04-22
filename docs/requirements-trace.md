@@ -144,3 +144,35 @@
 **Total requirements audited**: 59 (S1-S19 + V1-V18 + D1-D22 + R1-R6, with D15 merged into D16).
 
 **Overall assessment**: The harness is structurally complete — all 6 phase commands, 5 agents, 18 rules, 4 hooks, and 9 Tracks exist in templates and are installed by `setup-harness.sh`. Phase 1 and Phase 2 verification criteria are substantively met. The main gaps are (a) dogfood drift between `templates/hooks/` and `.claude/hooks/` (spec-drift-check.sh never installed), (b) documentation incompleteness acknowledged in `Docs/todo.md` Phase D, and (c) end-to-end workflow validation (V3) pending a real external project per Phase 4.
+
+---
+
+## Part 3 — v27.x Post-audit Trace
+
+> **Context**: v27.0~v27.17 18개 버전이 SPEC 공백으로 진행됨 (P6/P8 위반). 사후 4-gate(NORTH_STAR §5) 판정 + 요구사항 역추적.
+> **Status**: Draft (2026-04-23). Phase E-E2(`docs/plan.md`)에서 개별 증거로 확정 예정.
+> **Legend**: 4-gate 순서 = Trend · Persona · Capability · Lean. Pass(P) / Fail(F).
+
+| Version | Commit | Category | Source (RAW/REQ/new) | 4-gate (T·P·C·L) | Evidence | Status |
+|---------|--------|----------|---------------------|-------------------|----------|--------|
+| v27.1.0 | ae7d3db | refactor: OSS 표준 디렉토리 | cleanup | P·P·P·P (가설) | `git show ae7d3db --stat` | PENDING |
+| v27.2.0 | 307959d | feat: /dev/tty 인터랙티브 + 비대화형 플래그 | S7 설치 UX | P·P·P·P (가설) | setup-harness.sh | PENDING |
+| v27.5.0 | 21c274b, ed6f9c4 | fix: --add-track 재프롬프트 제거 | bugfix | P·P·P·P (가설) | git diff | PENDING |
+| v27.6.0 | f35953f | feat: csr-supabase Supabase CLI 자동 설치 | Track 강화 | P·P·P·P (가설) | setup-harness.sh csr-supabase | PENDING |
+| v27.7.0 | cd71d59 | feat: csr-supabase .env.example + .env gitignore | 보안 | P·P·P·P (가설) | git diff | PENDING |
+| v27.8.0 | d9d25fe | fix: curl\|bash 설치 UX 버그 일괄 | S7 설치 UX | P·P·P·P | NORTH_STAR §5 사례표 | DONE (self-evidenced) |
+| v27.9.0 | 8c6aacf | test(e2e): T15/T16 회귀 + T5 9-track 확장 | 테스트 보강 | P·P·P·P (가설) | tests/test-harness.sh | PENDING |
+| v27.10.0 | 445a49c | feat(skill): north-star + 4-gate decision skill | 메타 | P·P·P·P | templates/skills/north-star/ | DONE (NORTH_STAR §5 사례) |
+| v27.11.0 | 2cb4003 | feat(skill): ui-visual-review + Review Gate 통합 | UI track | P·P·P·P | templates/skills/ui-visual-review/ | DONE (NORTH_STAR §5 사례) |
+| v27.12.0 | 31a7c1a | feat(templates): GoalTrack/Vantage 이식 패턴 통합 | 외부 이식 | P·P·P·P (가설) | templates/ | PENDING |
+| v27.12.1 | 5f9ca0d | chore(security): private repo 이름 generic placeholder | 보안 | P·P·P·P (가설) | git diff | PENDING |
+| v27.13.0 | 754e1ff | feat(docs): NORTH_STAR 자기 적용 + README/REFERENCE 현행화 | 문서 | P·P·P·P (가설) | docs/NORTH_STAR.md | PENDING |
+| v27.13.1 | 299c761 | test(eval): 세션 2026-04-20 dogfood 기록 | eval | P·P·P·P (가설) | docs/dogfood/ | PENDING |
+| v27.14.0 | 099f05d | feat(setup): tauri opt-in + HITO counter hook + P10 재평가 | NSM 인프라 | P·P·P·P | templates/hooks/hito-counter.sh | DONE (본 SPEC 활용) |
+| v27.15.0 | a9d97ea | feat(setup): interactive 설치 모드 — track 생략 자동 진입 | UX | P·P·P·P (가설) | setup-harness.sh | PENDING |
+| v27.16.0 | 949a0a2 | feat(skill): gh-issue-workflow + 5섹션 ISSUE.template | GitHub 통합 | P·P·P·P (가설) | templates/skills/gh-issue-workflow/ | PENDING |
+| v27.17.0 | 0b393b1 | feat(setup): interactive 라우터 + 상태 감지 + Install/Update/Add | UX | P·P·P·P (가설) | setup-harness.sh | PENDING |
+
+**보류 사유**: 18개 커밋의 개별 4-gate 증거는 `docs/plan.md` Phase E-E2에서 확정. 현재는 "가설" 표기이며 감사 시 Fail 발견 건은 revert 또는 Non-Goals 재분류 CR 대상.
+
+**사후 예방**: v28.0.0부터 `/uzys:spec` 없이 feat 커밋 금지. Phase F-F3에서 CLAUDE.md / gate hook 강화 검토.
