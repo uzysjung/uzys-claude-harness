@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.16.0] — 2026-04-22
+
+### Added
+- **`gh-issue-workflow` skill 신규** — GitHub Issue를 사용자↔AI agent 비동기 backlog + 의사결정 채널로 정형화. dyld-vantage 프로젝트의 실제 운용 패턴(`#52~#55`) 일반화. opt-in (`docs/SPEC.md`에 `issue_tracking: enabled` 명시 시 활성).
+- **`ISSUE.template.md` 5섹션 강제**: 배경 / **전제 (Given)** / 방향성 (OPEN | YYYY-MM-DD 확정) / 적용 대상 / AC (When → Then) / 후속 작업. BDD 매핑.
+- **3-축 label 체계** + 자동 토글 가이드:
+  - type: `bug` / `feature` / `refactor` / `docs` / `infra`
+  - 상태: `decision-pending` / `ready` / `in-progress` / `blocked`
+  - 우선순위 (선택): `P0` / `P1` / `P2`
+- **GitHub Projects (V2) 연계** (opt-in): `docs/SPEC.md`에 `github_project: <URL>` 명시 시 자동 add + status field 갱신
+- `/uzys:spec` D' 블록 + `/uzys:plan` Process 1.5 + `/uzys:build` Process 4-5 + `/uzys:ship` Issue Closure — 4단계 모두 통합
+- **T21 — gh-issue-workflow 자산 검증** (test-harness): 10개 assertion (skill/template/BDD/방향성/opt-in/4단계 통합/setup-harness 등록/anti-pattern/3-축 label/Projects 연계)
+
+### Stats
+- test-harness assertion: 157 → 167 (PASS, FAIL 0)
+
 ## [v27.15.0] — 2026-04-20
 
 ### Added
@@ -294,7 +310,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 Tags v26.0.0 through v26.9.x: foundational work — 6-gate workflow, 11 principles, initial Track set, security hardening, reviewer subagent (SOD), agent-skills integration. See `git log` for details.
 
-[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.15.0...HEAD
+[Unreleased]: https://github.com/uzysjung/uzys-claude-harness/compare/v27.16.0...HEAD
+[v27.16.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.16.0
 [v27.15.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.15.0
 [v27.14.0]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.14.0
 [v27.13.1]: https://github.com/uzysjung/uzys-claude-harness/releases/tag/v27.13.1

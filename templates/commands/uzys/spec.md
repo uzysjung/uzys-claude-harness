@@ -39,6 +39,16 @@ UI 포함 Track(csr-*/ssr-*/full)이면 SPEC 전에 다음 확인:
 
 디자인 컨텍스트 없이 UI 코드 작성 금지. Generic AI 미학 산출물 방지.
 
+### D'. GitHub Issue Tracking (선택)
+
+`git remote -v`로 GitHub remote 확인 가능 + 사용자가 issue를 backlog/소통 채널로 쓰고 싶으면:
+
+- `docs/SPEC.md`에 `issue_tracking: enabled` 라인 명시 (opt-in)
+- 활성화 시 `gh-issue-workflow` skill이 `/uzys:plan`, `/uzys:build`, `/uzys:ship`에서 자동 결합
+- ISSUE 본문은 `templates/skills/gh-issue-workflow/ISSUE.template.md`의 5섹션(배경/전제/방향성/AC/후속) 강제
+
+기본은 비활성. SPEC에 명시 없으면 모든 단계에서 skip.
+
 ### D. North Star (선택, 대형 프로젝트 권장)
 
 `docs/NORTH_STAR.md` 부재 + 다음 중 1개 이상 해당 시 작성 권장:

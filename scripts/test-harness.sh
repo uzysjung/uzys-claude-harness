@@ -865,6 +865,96 @@ else
 fi
 
 # ============================================================
+# T21. gh-issue-workflow Skill (v27.16.0)
+# ============================================================
+section "T21. GitHub Issue Workflow Skill"
+
+GHI_SKILL="$ROOT/templates/skills/gh-issue-workflow/SKILL.md"
+GHI_TEMPLATE="$ROOT/templates/skills/gh-issue-workflow/ISSUE.template.md"
+
+# T21.1 — SKILL.md 존재 + frontmatter
+if [ -f "$GHI_SKILL" ] && grep -q "^name: gh-issue-workflow" "$GHI_SKILL" && grep -q "^description:" "$GHI_SKILL"; then
+  pass "gh-issue-workflow: SKILL.md + frontmatter"
+else
+  fail "gh-issue-workflow: SKILL.md 또는 frontmatter 누락"
+fi
+
+# T21.2 — ISSUE.template.md 5섹션
+if [ -f "$GHI_TEMPLATE" ]; then
+  SECTIONS_OK=true
+  for s in "## 배경" "## 전제" "## 방향성" "## 적용 대상" "## 후속 작업"; do
+    grep -q "$s" "$GHI_TEMPLATE" || SECTIONS_OK=false
+  done
+  if [ "$SECTIONS_OK" = true ]; then
+    pass "gh-issue-workflow: ISSUE.template 5섹션 (배경/전제/방향성/AC/후속)"
+  else
+    fail "gh-issue-workflow: ISSUE.template 섹션 부족"
+  fi
+else
+  fail "gh-issue-workflow: ISSUE.template.md 없음"
+fi
+
+# T21.3 — BDD 매핑 명시 (Given/When/Then)
+if [ -f "$GHI_SKILL" ] && grep -q "Given.*When.*Then\|BDD" "$GHI_SKILL"; then
+  pass "gh-issue-workflow: BDD 매핑(Given/When/Then) 명시"
+else
+  fail "gh-issue-workflow: BDD 매핑 누락"
+fi
+
+# T21.4 — 방향성 OPEN/확정 상태 정의
+if [ -f "$GHI_SKILL" ] && grep -q "OPEN" "$GHI_SKILL" && grep -qE "확정|YYYY-MM-DD" "$GHI_SKILL"; then
+  pass "gh-issue-workflow: 방향성 상태(OPEN/확정) 정의"
+else
+  fail "gh-issue-workflow: 방향성 상태 누락"
+fi
+
+# T21.5 — Pre-condition (opt-in 패턴) 명시
+if [ -f "$GHI_SKILL" ] && grep -q "issue_tracking: enabled\|opt-in" "$GHI_SKILL"; then
+  pass "gh-issue-workflow: opt-in (issue_tracking: enabled) 명시"
+else
+  fail "gh-issue-workflow: opt-in 패턴 누락"
+fi
+
+# T21.6 — /uzys:spec, plan, build, ship 통합 라인
+INTEGRATIONS=0
+for f in spec plan build ship; do
+  grep -qE "issue_tracking|gh-issue-workflow|Closes #|Refs #|gh issue list" "$ROOT/templates/commands/uzys/${f}.md" 2>/dev/null && INTEGRATIONS=$((INTEGRATIONS+1))
+done
+if [ "$INTEGRATIONS" -ge 4 ]; then
+  pass "/uzys:* 4단계 모두 issue workflow 통합 ($INTEGRATIONS/4)"
+else
+  fail "/uzys:* issue workflow 통합 부족 ($INTEGRATIONS/4)"
+fi
+
+# T21.7 — setup-harness가 skill 복사 등록
+if grep -q "safe_copy_dir.*skills/gh-issue-workflow" "$ROOT/scripts/setup-harness.sh"; then
+  pass "setup-harness: gh-issue-workflow skill 복사 등록"
+else
+  fail "setup-harness: gh-issue-workflow skill 복사 누락"
+fi
+
+# T21.8 — Anti-pattern: 1줄 issue body / 방향성 미명시 / PR Closes 누락 명시
+if [ -f "$GHI_SKILL" ] && grep -q "Anti-Patterns\|Anti-patterns" "$GHI_SKILL"; then
+  pass "gh-issue-workflow: anti-pattern 섹션 존재"
+else
+  fail "gh-issue-workflow: anti-pattern 누락"
+fi
+
+# T21.9 — 3-축 label 체계 명시 (type/상태/우선순위)
+if [ -f "$GHI_SKILL" ] && grep -q "3-축\|3 axes\|3-axis" "$GHI_SKILL" && grep -q "decision-pending" "$GHI_SKILL" && grep -q "in-progress" "$GHI_SKILL"; then
+  pass "gh-issue-workflow: 3-축 label 체계 (type/상태/우선순위) + 자동 토글 가이드"
+else
+  fail "gh-issue-workflow: label 체계 누락 또는 부족"
+fi
+
+# T21.10 — GitHub Projects (V2) 연계 섹션
+if [ -f "$GHI_SKILL" ] && grep -q "GitHub Projects\|github_project:" "$GHI_SKILL" && grep -q "item-add" "$GHI_SKILL"; then
+  pass "gh-issue-workflow: GitHub Projects(V2) 연계 (opt-in)"
+else
+  fail "gh-issue-workflow: Projects 연계 누락"
+fi
+
+# ============================================================
 # Summary
 # ============================================================
 echo ""

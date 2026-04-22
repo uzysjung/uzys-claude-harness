@@ -627,6 +627,8 @@ safe_copy_dir "$TEMPLATES/skills/strategic-compact" "$PROJ/skills/strategic-comp
 safe_copy "$TEMPLATES/skills/spec-scaling/SKILL.md" "$PROJ/skills/spec-scaling/SKILL.md"
 # v27.10.0 — north-star: 전 track 적용 (6개월+ 프로젝트 권장, 1회성은 skip 가능)
 safe_copy_dir "$TEMPLATES/skills/north-star" "$PROJ/skills/north-star"
+# v27.16.0 — gh-issue-workflow: GitHub remote 있을 때만 의미. SPEC opt-in (issue_tracking: enabled)
+safe_copy_dir "$TEMPLATES/skills/gh-issue-workflow" "$PROJ/skills/gh-issue-workflow"
 # 공통 cherry-pick 스킬 (Phase 4b A3, A4)
 safe_copy_dir "$TEMPLATES/skills/deep-research" "$PROJ/skills/deep-research"
 # market-research는 executive Track 한정
