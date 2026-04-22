@@ -63,25 +63,25 @@
 ## Phase E — Phase 2 Readiness (부분 진행)
 
 - [ ] **E1** Phase 2 Entry Checklist 실행 (SPEC §5)
-  - [ ] 1. 9 Track clean install 성공률 ≥ 95% — Phase B에서 tooling/executive/full 3종 검증 (3/3 ✅). csr-*, ssr-*, data 단독 fresh 검증 남음
+  - [x] 1. 9 Track clean install 성공률 ≥ 95% — **9/9 PASS (100%)** ✅ `docs/evals/track-install-2026-04-23.md` (Phase B 3종 + 2026-04-23 세션 6종)
   - [x] 2. test-harness PASS — 2026-04-23 실측 **149 total / Pass 144 / Fail 0 / Skip 5** ✅
   - [ ] 3. HITO baseline 수집 완료 — Phase D 경과 필요
   - [x] 4. 글로벌 미수정 — setup-harness.sh D16 보호(L73-84) + 본 세션 `--update` 시 에러 없음. ~/.claude/ mtime은 Claude Code 자체 업데이트 (본 프로젝트 무관) ✅
-  - [ ] 5. 외부 사용자 첫 설치 — ADR-001에서 이월 가부 결정
+  - [x] 5. 외부 사용자 첫 설치 — **Pass (이월)** per ADR-001 OQ2. v28.0.0 Ship 시 Phase 2 백로그 P2-01로 등재
   - [x] 6. Phase 4b D1/D2/D4 이월 소화 — commit b9d47ef + 3e5af9a ✅
   - [x] 7. v27.17 dogfood CRITICAL/HIGH = 0 — H1 fix 후 최종 판정 ✅ (commit 92982c5)
-- [ ] **E2** requirements-trace.md 확장 — Part 3: v27.x Post-audit Trace
-  - [ ] v27.0~v27.17 각 feat 커밋의 Source → 4-gate → Evidence 확정 (현재 가설 표기)
-- [ ] **E3** ADR 생성 — `docs/decisions/ADR-001-phase2-entry-criteria.md`
-  - [ ] OQ1 (baseline 기준) 결정
-  - [ ] OQ2 (외부 사용자 조건 이월 가부) 결정
-  - [ ] OQ3 (dogfood interactive 시나리오 범위) 결정
+- [x] **E2** requirements-trace.md 확장 — Part 6: v27.x Post-audit Trace ✅ (2026-04-23)
+  - [x] v27.0~v27.17 18개 커밋 Source → 4-gate → Evidence 확정 (전부 4/4 Pass)
+  - [x] 중복 "Part 3" 헤딩 → Part 6로 교정 (기존 Part 3 Decisions와 충돌 해소)
+- [x] **E3** ADR 생성 — `docs/decisions/ADR-001-phase2-entry-criteria.md` ✅ (2026-04-23)
+  - [x] OQ1 (baseline 기준) — 7일 AND 세션≥10 AND feature≥3
+  - [x] OQ2 (외부 사용자 조건 이월 가부) — 이월 허용, Phase 2 백로그 P2-01 등재
+  - [x] OQ3 (dogfood interactive 시나리오 범위) — 3개(Install/Update/Add) 확정
 
-### E1 현재 판정 요약 (2026-04-23)
+### E1 현재 판정 요약 (2026-04-23, Track 9/9 검증 완료)
 
-- **충족**: 2, 4, 6, 7 (4/7)
-- **부분 충족**: 1 (3/9 Track 검증)
-- **Pending**: 3 (Phase D), 5 (ADR-001 결정)
+- **충족**: 1 (9/9 PASS), 2, 4, 5 (이월), 6, 7 (**6/7**)
+- **Pending**: 3 (Phase D 7일 경과 필요 — ADR-001 OQ1 기준: 7일 AND 세션≥10 AND feature≥3)
 
 ---
 

@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.18.0] — 2026-04-23
+
+### Added
+- **ADR-001 — Phase 2 진입 조건 확정**: `docs/decisions/ADR-001-phase2-entry-criteria.md` 생성. OQ1-3 결정:
+  - HITO baseline 종료 기준: 7일 AND 세션 ≥ 10 AND feature ≥ 3 (AND)
+  - 외부 사용자 첫 설치: 이월 허용 — Phase 2 백로그 P2-01 등재
+  - dogfood interactive 시나리오: 3개(Install/Update/Add) 확정
+- **requirements-trace Part 6 신설** — v27.0~v27.17 18개 커밋 사후 4-gate 감사. 전부 4/4 Pass (Trend·Persona·Capability·Lean), revert/Non-Goals 재분류 대상 없음.
+- **Track fresh install 검증 9/9 PASS** — `docs/evals/track-install-2026-04-23.md`. tooling/executive/full (Phase B) + csr-supabase/csr-fastify/csr-fastapi/ssr-htmx/ssr-nextjs/data (본 세션). 성공률 100% → NSM 2차 지표 ≥ 95% 충족.
+
+### Changed
+- `docs/requirements-trace.md` 중복 "Part 3" 헤딩을 Part 6으로 교정 (기존 Part 3 Decisions와 충돌 해소)
+- `docs/todo.md` E1 판정 4/7 → **6/7 Pass + 1 Pending** (AC4 #1/#5 추가 Pass, 남은 Pending은 AC3 HITO 경과 대기)
+
+### Notes
+- **v28.0.0 태그 유보**: SPEC `docs/SPEC.md` §2 완료 조건 AC1-AC5 중 AC3 (HITO 7일 baseline) 미충족. Phase D 경과 후 별도 릴리즈.
+- 본 릴리즈는 Phase E readiness 이정표 중간 태그.
+
 ## [v27.17.0] — 2026-04-22
 
 ### Added
