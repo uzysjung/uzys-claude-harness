@@ -213,6 +213,37 @@ bash scripts/sync-cherrypicks.sh --check
 - `modified: false` + 상류 변경 → `--apply`로 자동 동기화
 - `modified: true` → 수동 merge 후 hash 갱신 (`src_hash` 수동 수정 또는 `--apply` 강제)
 
+## HITO 측정 (NORTH_STAR NSM)
+
+`templates/hooks/hito-counter.sh`가 `UserPromptSubmit`마다 `.claude/evals/hito-YYYY-MM-DD.log`에 타임스탬프 한 줄 추가. 프롬프트 내용은 기록하지 않음 (프라이버시).
+
+### 집계
+
+```bash
+# 일별 + 요약
+bash scripts/hito-aggregate.sh
+
+# 특정 일자 이후
+bash scripts/hito-aggregate.sh --since 2026-04-20
+
+# 요약만 (CI/report용)
+bash scripts/hito-aggregate.sh --summary
+```
+
+출력: 일별 프롬프트 수 + 총합 + 최근 7일 이동평균.
+
+### NSM 목표 대비 해석
+
+- **단위**: feature 1개 완주(`/uzys:spec` → `/uzys:ship`)에 들어간 **명시적 사용자 개입 횟수**
+- **목표** (NORTH_STAR §2): **≤ 3 per feature** (SPEC 정의 1 + Major CR 평균 1 + Ship 승인 1)
+- **자동 집계의 한계**: 스크립트는 "프롬프트 수"까지만 집계. "feature 단위 HITO"는 수동 매핑 필요 — 세션 일자별로 다룬 feature 목록을 기록 후 나눠서 계산
+- **분류 가이드**:
+  - 명시적 지시 (intent 지시): HITO +1
+  - 단순 승인/확인 ("예", "진행"): HITO +1
+  - 정보 질문 ("이게 뭐야?"): HITO 계산 제외 (수동)
+
+7일+ 연속 데이터 확보 시 `docs/evals/hito-baseline-YYYY-MM-DD.md` 리포트 작성 → Phase 2 진입 조건 3 (NORTH_STAR §4) 충족.
+
 ## Security & Quality Hooks (Phase 5.1/5.2)
 
 v26.4.0+부터 추가된 5개 hook은 `.claude/settings.json`을 통해 자동 등록됩니다. 각 hook의 역할과 토글 방법:

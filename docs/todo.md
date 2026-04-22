@@ -36,16 +36,17 @@
 
 ---
 
-## Phase C — HITO Infrastructure
+## Phase C — HITO Infrastructure ✅
 
-- [ ] **C1** `scripts/hito-aggregate.sh` 작성
-  - [ ] `.claude/evals/hito-*.log` glob + wc -l
-  - [ ] 일일 카운트 + 주간 이동 평균
-  - [ ] bash 3.2 호환 / jq 폴백
-- [ ] **C2** HITO 측정 가이드 (USAGE.md 섹션 또는 `docs/HITO.md`)
-  - [ ] NSM 정의 인용 + NORTH_STAR 링크
-  - [ ] 해석 방법 (explicit vs 승인 vs 확인)
-- [ ] **C3** 3케이스 테스트 (빈 / 1일 / 복수일)
+- [x] **C1** `scripts/hito-aggregate.sh` 작성
+  - [x] `.claude/evals/hito-*.log` glob + wc -l
+  - [x] 일일 카운트 + 7일 이동평균
+  - [x] bash 3.2 호환 (mapfile 회피, shellcheck disable 주석)
+  - [x] `--dir` / `--since` / `--summary` 옵션
+- [x] **C2** USAGE.md "HITO 측정" 섹션 추가
+  - [x] NSM 정의 + NORTH_STAR 링크
+  - [x] 해석 가이드 (explicit / 승인 / 질문 분류)
+- [x] **C3** 4케이스 테스트 통과 (빈 / 1일 / 복수일 / --since 필터)
 
 ---
 
