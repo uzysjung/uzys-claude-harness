@@ -1,175 +1,201 @@
-# ADR-002: Codex CLI Hook 시스템 갭 대응 전략
+# ADR-002: Codex CLI Hook 호환 전략 (Revised)
 
-- **Status**: Proposed (2026-04-24) — Phase E에서 Accepted 전환 예정
-- **Date**: 2026-04-24
-- **PR**: #3
-- **Supersedes**: 없음
-- **Related**: `docs/specs/codex-compat.md` §3.4 OQ5, `docs/research/codex-compat-matrix-2026-04-24.md` §3
+- **Status**: Proposed (2026-04-24, revised) — Phase E에서 Accepted 전환 예정
+- **Date**: 2026-04-24 (초안), 2026-04-24 (revision)
+- **PR**: #3 (초안 merge), #(TBD) (revision)
+- **Supersedes**: 없음 (self-revision; 초안 v1은 동일 파일 내 §Appendix-초안 기록)
+- **Related**: `docs/specs/codex-compat.md` §3.4 OQ1/OQ5, `docs/research/codex-compat-matrix-2026-04-24.md` §3
+
+## Revision 사유
+
+초안(v1) 작성 시 Context7 리서치는 Codex **0.29/0.75** 문서 기준이었다. 로컬 설치된 Codex CLI **0.124.0** 실측 결과, 초안의 핵심 전제("Codex는 `[notify]` 하나만 지원")가 **틀린 것으로 확인**. Codex 0.124.0은 Claude Code와 거의 1:1 호환되는 풀 hook 시스템을 `codex_hooks` feature(stable, enabled 기본)로 제공한다.
+
+v2 본문은 실측 기반으로 전면 재작성. v1 내용은 §Appendix A에 보존.
 
 ## Context
 
-Claude Code는 5종 hook(SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop)을 결정론적으로 강제 실행한다. 본 하네스는 이 중 4종을 사용:
+### 팩트 (실측 + 공식 문서)
 
-| Hook | 파일 | 목적 |
-|------|------|------|
-| SessionStart | `.claude/hooks/session-start.sh` | `git pull --rebase`, SPEC 재참조 안내 |
-| PreToolUse (Skill matcher) | `.claude/hooks/gate-check.sh` | Phase 순서 강제, exit 2로 차단 |
-| PreToolUse (Write matcher) | `.claude/hooks/protect-files.sh` | `.env`, lock, credentials 차단 |
-| PostToolUse (Edit matcher) | `.claude/hooks/uncommitted-check.sh` | 미커밋 파일 경고 |
-| UserPromptSubmit | `.claude/hooks/hito-counter.sh` | HITO(Human-In-The-Loop Interrupts) 카운트 |
+1. **Codex 0.124.0 `codex_hooks` feature = stable, enabled 기본** (`codex features list`).
+2. Hook 설정 위치 2단:
+   - 글로벌: `~/.codex/config.toml`
+   - 프로젝트: `./.codex/config.toml` (upward search) — 사용자 `config.toml`에 `trust_level` 명시 필요 (`untrusted`는 기본)
+3. Plugin 번들 시 3단: `<plugin>/hooks.json` (plugin manifest의 `"hooks": "./hooks.json"` 필드 참조)
+4. **이벤트 종류** (stellarlinkco/codex fork `docs/hooks.md`):
+   - **Blockable (exit 2 차단 가능)**: `user_prompt_submit`, `pre_tool_use`, `permission_request`, `stop`, `subagent_stop`, `teammate_idle`, `task_completed`, `config_change`
+   - **Non-blockable**: `session_start`, `session_end`, `post_tool_use`, `post_tool_use_failure`, `notification`, `subagent_start`, `worktree_create`, `worktree_remove`, `pre_compact`
+5. **stdin/stdout JSON 프로토콜** — Claude Code와 거의 동일:
+   - stdin 공통: `session_id, transcript_path, cwd, permission_mode, hook_event_name(PascalCase)`
+   - stdin 이벤트별: `tool_name, tool_input, tool_use_id, prompt, source, model, ...`
+   - stdout: `{systemMessage, additionalContext, updatedInput, decision, reason, continue}`
+6. **Exit code 규약 동일**: `0`=성공, `2`=blockable 차단(stderr→reason), 기타=non-blocking error.
 
-OpenAI Codex CLI는 이 중 `[notify]`(agent 완료 후) 1종만 직접 지원. 나머지 4종은 네이티브 대응이 없다. `docs/specs/codex-compat.md` AC5가 본 ADR 생성을 요구.
+### 치명적 제약 (upstream 이슈)
+
+- **Issue #16732** — `pre_tool_use` / `post_tool_use`가 **Bash 툴에만 발화**. ApplyPatchHandler(파일 쓰기)에는 fire 안 함 (2026-04 시점 bug).
+- **Issue #17532** — 프로젝트 스코프 `./.codex/config.toml` 훅이 인터랙티브 세션에서 로드 안 되는 bug. 비대화형(`codex exec`)은 정상.
 
 ## Decision
 
-**Hook 1:1 재현을 포기하고, 각 Hook의 목적을 Codex 네이티브 기능 또는 LLM-지시 + shell wrapper로 우회한다.** 해소가 아니라 갭 **명시화 + 수용 가능한 대체 수단 문서화**다.
+**Hook 갭은 사실상 없음. 포맷 변환 + 2가지 제약 명시 + upstream bug 회피 전략**으로 전환한다.
 
-### Hook별 대응
+### D1. 설정 포맷 변환 규약 (Claude → Codex)
 
-| Claude Hook | Codex 대응 | 결정론성 | 비고 |
-|-------------|-----------|---------|------|
-| SessionStart (`session-start.sh`) | `AGENTS.md` 본문 + 사용자 수동 `git pull` | **LLM-DEP** | 세션 시작 시 사용자가 pull. AGENTS.md에 "SPEC.md first (Persistent Anchor)" 명시로 LLM 재참조 유도 |
-| PreToolUse (`gate-check.sh`) | 각 `uzys-*` skill 본문의 phase 가드 | **LLM-DEP** | 예: `uzys-build/SKILL.md` 상단에 "직전 phase는 plan. todo.md에 Plan 완료 체크 없으면 중단" 문장. LLM이 읽고 준수 |
-| PreToolUse (`protect-files.sh`) | Codex `approval_policy` + sandbox policy | **결정론적** | Codex 네이티브 — `.env` 등을 `approval_policy = "on-request"`로 걸면 사용자 승인 필요. `sandbox_mode = "workspace-write"`로 영역 제한 |
-| PostToolUse (`uncommitted-check.sh`) | `[notify]` command | **결정론적** (완료 후만) | Codex agent 완료 시 shell script 실행. 중간 검증 불가, 완료 후 "미커밋 파일 X개" 알림 가능 |
-| UserPromptSubmit (`hito-counter.sh`) | Shell wrapper (`codex` 명령을 래핑하는 zsh/bash function) 또는 stdout 파싱 | **외부-결정론적** | 사용자 shell 환경에 함수 추가: `codex() { command codex "$@" \| tee -a ~/.codex/hito-$(date +%F).log }`. 세션 prompt 수를 간접 측정 |
+| Claude | Codex |
+|--------|-------|
+| `.claude/settings.json` `hooks` 블록 | `~/.codex/config.toml` + 프로젝트 `./.codex/config.toml` |
+| Plugin 번들 시 plugin의 `hooks.json` | 동일 — plugin manifest `"hooks": "./hooks.json"` |
+| JSON | TOML (또는 plugin hooks.json JSON 유지) |
 
-### 우회 구현 세부
+Transform 예시 — Claude `settings.json`:
+```json
+{ "hooks": { "PreToolUse": [{ "matcher": "Skill",
+    "hooks": [{"type":"command","command":"$CLAUDE_PROJECT_DIR/.claude/hooks/gate-check.sh"}] }] } }
+```
+→ Codex `./.codex/config.toml`:
+```toml
+[[hooks.pre_tool_use]]
+name = "gate-check"
+command = ["${CODEX_PROJECT_DIR}/.codex/hooks/gate-check.sh"]
+type = "command"
+matcher = "Skill"
+timeout = 5
+async = false
+```
 
-#### D1. `protect-files.sh` → Codex 네이티브 sandbox
+### D2. Event name 매핑 (PascalCase ↔ snake_case)
 
-`~/.codex/config.toml` 기본값을 다음과 같이 설정:
+| Claude hook name | Codex event key | 비고 |
+|------------------|-----------------|------|
+| `SessionStart` | `session_start` | stdin `hook_event_name`은 PascalCase 공통 |
+| `UserPromptSubmit` | `user_prompt_submit` | blockable 동일 |
+| `PreToolUse` | `pre_tool_use` | **Bash 한정 발화 주의 (Issue #16732)** |
+| `PostToolUse` | `post_tool_use` / `post_tool_use_failure` | 분할됨 (failure 전용) |
+| `Stop` | `stop` | blockable 동일 |
+| 없음 (Claude에 없음) | `permission_request`, `pre_compact`, `teammate_idle`, `task_completed`, `worktree_*` | Codex 추가 이벤트 |
 
+변환 스크립트(`scripts/claude-to-codex.sh`)가 event name 자동 변환. `hook_event_name` 값이 stdin payload에서 PascalCase로 유지되므로 hook 스크립트 본체는 **동일 코드 재사용 가능** (Claude Code 기존 hook shell 스크립트가 Codex에서도 작동).
+
+### D3. ApplyPatch 예외 — Sandbox로 이관 (Issue #16732 회피)
+
+Claude Code `protect-files.sh` (PreToolUse matcher="Write")는 Codex `pre_tool_use`로 변환 시 **ApplyPatchHandler에 발화 안 함**. Bash tool만 보호됨.
+
+**결정**: 파일 쓰기 보호를 hook이 아니라 **Codex 네이티브 sandbox + approval_policy**로 이관. 더 강력한 보호.
+
+`~/.codex/config.toml` 기본값:
 ```toml
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"
 
 [sandbox_workspace_write]
 network_access = true
+# .env, credentials 등 민감 경로는 writable_roots에서 제외하여 차단
 ```
 
-추가로 민감 경로는 `AGENTS.md`에 명시:
-```
-## Protected Files
-- `.env*`, `**/credentials.json`, `*.lock` — DO NOT EDIT
-```
-
-LLM이 이 지시를 준수 + Codex가 approval 요구로 이중 방어.
-
-#### D2. `uncommitted-check.sh` → `[notify]`
-
-`~/.codex/config.toml`:
-```toml
-[notify]
-command = "/Users/uzysjung/.codex/hooks/notify-uncommitted.sh"
+추가로 `AGENTS.md`에 민감 경로 명시 (LLM 보조 방어):
+```markdown
+## Protected Files (DO NOT EDIT)
+- `.env*`, `**/credentials.json`, `*.lock`
 ```
 
-`notify-uncommitted.sh` (예시):
-```bash
-#!/usr/bin/env bash
-# agent 완료 후 호출. CWD는 세션 시작 시 디렉토리.
-set -e
-cd "${1:-$PWD}" 2>/dev/null || exit 0
-if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
-  echo "⚠ 미커밋 파일 있음:" >&2
-  git status --short >&2
-fi
-exit 0
-```
+**ApplyPatch 제약이 upstream 수정되면**(Issue #16732 close), hook 기반 보호로 복귀 검토. 그 전까지는 sandbox가 SSOT.
 
-#### D3. `hito-counter.sh` → Shell wrapper
+### D4. 프로젝트 스코프 trust entry 자동화
 
-Claude Code의 UserPromptSubmit은 **모든 프롬프트**에서 실행되어 결정론적. Codex는 이 훅이 없음.
+`./.codex/config.toml` 은 사용자 `~/.codex/config.toml`에 trust 등록이 없으면 무시됨 (기본 `untrusted`). `setup-harness.sh --cli=codex --project-dir X` 실행 시:
 
-대안 1 — Shell function (권장):
-```bash
-# ~/.zshrc 또는 ~/.bashrc에 추가 (사용자 수동 설치)
-codex() {
-  local date=$(date +%F)
-  local log="$HOME/.codex/evals/hito-$date.log"
-  mkdir -p "$(dirname "$log")"
-  echo "$(date -Iseconds) prompt=$*" >> "$log"
-  command codex "$@"
+1. 프로젝트 `.codex/config.toml` 생성
+2. `~/.codex/config.toml`에 trust 블록 **사용자 확인 후** append:
+   ```toml
+   [projects."/abs/path/to/X"]
+   trust_level = "trusted"
+   ```
+3. 확인 거부 시 프로젝트 훅 무시 (사용자에게 경고 + 수동 등록 방법 안내)
+
+**D16 정신 유지** — 글로벌 `~/.codex/` 수정은 명시적 opt-in. 자동 반영 금지.
+
+**Issue #17532 (인터랙티브 세션 bug)** — 영향: 현재 버전에서 프로젝트 hook이 `codex` 대화형에서 안 먹힐 수 있음. **`codex exec` 비대화형은 정상**. Phase F dogfood 시 실측 확인 + upstream 패치 확인.
+
+### D5. stdin/stdout JSON 스키마 재사용
+
+Claude Code용 `.claude/hooks/*.sh` 스크립트는 stdin에서 `session_id`, `cwd`, `tool_name`, `tool_input`, `hook_event_name` 등 공통 필드를 읽는다. Codex도 동일 필드를 PascalCase `hook_event_name`으로 제공하므로 **스크립트 본체 재사용 가능**.
+
+단, Claude 고유 필드(`permission_mode` 등)의 값 도메인 차이 가능. Phase C transform 스크립트가 차이 문서화 + 필요 시 wrapper 추가.
+
+### D6. Plugin 번들 옵션 (선택)
+
+"uzys-harness plugin" 패키지화. `.codex-plugin/plugin.json`:
+```json
+{
+  "name": "uzys-harness",
+  "version": "v27.19.0",
+  "skills": "./skills/",
+  "hooks": "./hooks.json",
+  "mcpServers": "./.mcp.json"
 }
 ```
 
-대안 2 — `[notify]` 안에서 세션 prompt 수 추정 (덜 정확).
+`hooks.json`(plugin scope)은 TOML 아닌 JSON. plugin-creator 샘플 포맷 참조. Plugin 배포 경로는 `~/.agents/plugins/` 또는 marketplace.
 
-본 ADR은 **대안 1 채택**. `setup-harness.sh --cli=codex` 실행 시 사용자에게 shell function 설치 여부를 묻고, 수락 시 rc 파일에 append. **글로벌 환경 변경**이므로 D16과 유사한 confirm 필수.
-
-#### D4. `session-start.sh` → AGENTS.md 본문
-
-결정론 포기. 다음 문구를 `AGENTS.md` 상단에 추가:
-
-```markdown
-## Session Start
-
-매 세션 시작 시 아래를 수행하라:
-1. `git pull --rebase` 실행
-2. `docs/SPEC.md` 및 `docs/specs/*.md` 재참조 (Persistent Anchor)
-3. `docs/todo.md` 현재 Phase 확인
-```
-
-LLM이 해석 + 사용자가 보조.
-
-#### D5. `gate-check.sh` → Skill 내부 가드
-
-`uzys-spec/SKILL.md`, `uzys-plan/SKILL.md` 등 각 skill 본문 상단에 guard 섹션 추가:
-
-```markdown
-## Pre-flight
-
-이 skill을 호출하기 전, 아래 조건 확인:
-- 직전 phase(예: uzys-plan이면 uzys-spec)의 산출물이 `docs/`에 존재
-- `docs/todo.md`에 Phase X 완료 체크 없으면 **호출 거부하고 사용자에게 알림**
-```
-
-LLM이 읽고 준수. 결정론적 차단은 불가하나 워크플로우 일관성은 유지.
+**본 SPEC 범위**: plugin 번들 **포맷 이해만**. 실제 plugin 배포는 Non-Goals (F9 README 언급 선). Phase B에서 config.toml 경로를 1차 채택.
 
 ## Consequences
 
 ### Positive
 
-- **Codex에서 6-gate 워크플로우 작동 가능** — 완벽 재현 아니어도 대부분 기능 커버.
-- **결정론적 부분은 Codex 네이티브로 이양** — `protect-files` 기능은 오히려 sandbox로 더 강력해짐.
-- **Claude Code SSOT 유지** — 본 ADR은 Codex 파생물만 영향. Claude Code 현행 hook은 변경 없음.
+- **Claude Code와 거의 동등한 결정론적 hook 커버리지** — gate-check, hito-counter, session-start, uncommitted-check 모두 1:1 이식 가능.
+- **Shell 스크립트 재사용** — stdin JSON 스키마 호환으로 `.claude/hooks/*.sh` 본체 대부분 그대로.
+- **Sandbox 강화 부수 효과** — ApplyPatch protect-files를 sandbox로 이관하면서 Bash + 파일 쓰기 **모든 경로** 보호. Claude Code 대비 **강한 방어**.
+- **Phase E 스코프 축소** — hook 우회 구현 → 변환 규약 검증만.
 
 ### Negative
 
-- **HITO 측정 정확도 하락** — shell wrapper는 사용자 shell 밖(다른 터미널, GUI 등)에서 호출 시 누락. Claude Code 대비 과소 측정 가능성.
-  - 완화: Codex + Claude Code HITO 로그를 별도 네임스페이스(`~/.claude/evals/hito-*.log` vs `~/.codex/evals/hito-*.log`)로 분리 집계. Phase D(HITO baseline) 해석 시 CLI별 구분.
-- **Phase 순서 강제가 약화됨** — LLM이 skill 가드를 무시하면 차단 없음.
-  - 완화: `uzys-ship/SKILL.md`에 "최종 게이트 — 사용자에게 명시적 Pass 요구" 추가. 결정론 대신 인간 게이트 강화.
-- **Shell function 설치 = 글로벌 환경 수정** — D16 정신에 어긋나는 면. 사용자 confirm + opt-out 옵션 필요.
-  - 완화: `setup-harness.sh --cli=codex` 진행 시 "shell function 설치?(y/N)" 명시 프롬프트. 거절해도 나머지 설치 완료. 설치 결정은 `~/.codex/.setup-log`에 기록.
+- **Bash 한정 pre/post_tool_use (Issue #16732)** — 초기엔 ApplyPatch 기반 감사 로깅/락 불가. sandbox가 1차 방어, upstream 수정 대기.
+- **프로젝트 스코프 trust 필요** — 사용자 옵트인 플로우가 설치 UX에 1단 추가.
+- **인터랙티브 세션 hook bug (Issue #17532)** — 현 버전 영향 가능. Phase F 실측으로 판정.
 
 ### Neutral
 
-- `[notify]`는 Codex가 agent 완료 후만 호출 — 중간 진단은 불가하나 본래 `uncommitted-check`도 PostToolUse라 기능 대등.
+- Event name 변환은 mechanical — 유지 부담 거의 없음.
 
 ## Alternatives
 
-### A. OpenCode로 2차 타깃 조정
+### A. v1 초안 유지 — 갭 수용 + LLM 지시
 
-OpenCode는 풍부한 plugin API(`tool.execute.before`, `shell.env`, `chat.message`)를 제공. Hook 1:1 재현 가능.
+**기각 사유**: 실측 사실과 배치됨. 결정론 보호를 포기할 이유 없음.
 
-**기각 사유**: 사용자 1차 타깃은 Codex. OpenCode는 2차 이월. 풍부한 hook이 필요하면 본 SPEC 완료 후 OpenCode용 별도 SPEC에서 해결.
+### B. Plugin 번들 1차 채택
 
-### B. 독자 hook 데몬 구현
+Plugin scope로 배포하면 `~/.codex/config.toml` 수정 불필요.
 
-별도 백그라운드 프로세스가 Codex stdout/stderr를 파싱해 유사 hook 실행.
+**기각 사유**: plugin marketplace/배포 파이프라인은 본 SPEC 범위 밖. Phase B config.toml 1차 후 plugin 번들은 F9에서 선택지.
 
-**기각 사유**: 복잡도 대비 가치 낮음. P2(Simplicity First) 위배. 유지 비용 ↑↑. 본 SPEC Non-Goals 명시.
+### C. Bash wrapper로 ApplyPatch 간접 가로채기
 
-### C. Hook 포기, 순수 LLM 지시만
+ApplyPatchHandler가 내부적으로 어떤 bash 호출을 하는지 파악해서 pre_tool_use matcher로 잡기.
 
-AGENTS.md + skill 본문 지시 전용. shell wrapper도 불설치.
-
-**기각 사유**: HITO 측정 완전 상실. NSM 2차 지표 이탈. 최소한의 외부 계측은 유지.
+**기각 사유**: fragile. Codex upstream 변경에 쉽게 깨짐. Issue #16732 upstream 수정 대기가 정답.
 
 ## Follow-up Actions
 
-1. Phase B 구조 설계 시 본 ADR 5종 대응을 `templates/codex/config.toml` 기본값 + `templates/codex/hooks/notify-uncommitted.sh` + `templates/codex/shell-wrapper.sh`로 템플릿화.
-2. Phase C transform 스크립트에 `hito-counter.sh → shell-wrapper.sh` 변환 로직 포함.
-3. Phase E 완료 시 본 ADR Status: Proposed → Accepted.
-4. Phase F dogfood에서 5종 대응 모두 실측 확인. 미달 항목 발견 시 ADR revision.
+1. Phase B에서 본 ADR 대응 `templates/codex/config.toml` + `templates/codex/hooks/*.sh` 기본 템플릿 작성.
+2. Phase C transform 스크립트:
+   - `.claude/settings.json hooks` → `./.codex/config.toml [[hooks.*]]`
+   - Event name PascalCase → snake_case
+   - 스크립트 본체(`gate-check.sh` 등) 경로 재맵핑만.
+3. Phase D `setup-harness.sh --cli=codex` 에 trust 등록 확인 프롬프트 추가 (D4).
+4. Phase F dogfood 시 실측 확인:
+   - Issue #17532 영향 재확인 (현재 버전에서 해결?)
+   - `pre_tool_use` matcher="Skill" 이 실제 발화하는지
+   - `sandbox_mode` 보호가 의도대로 작동하는지
+5. Phase E 완료 시 본 ADR Status: Proposed → Accepted.
+
+---
+
+## Appendix A — 초안(v1) 전제 기록 (실측 전)
+
+> v1은 Context7의 Codex 0.29/0.75 문서 기준 작성. 아래는 폐기된 전제다.
+>
+> - **폐기 전제**: "Codex는 `[notify]`(agent 완료) 하나만 지원."
+> - **폐기 결정**: D1 protect-files → sandbox / D2 uncommitted → `[notify]` / D3 hito → shell wrapper / D4 session-start → AGENTS.md LLM-DEP / D5 gate-check → skill 본문 LLM-DEP.
+> - **폐기 사유**: Codex 0.124.0 `codex_hooks=stable` 실측. 위 폐기 결정 중 D1(sandbox)만 v2에서 D3로 승계됨. 나머지는 hook 네이티브 지원으로 결정론 복귀.
