@@ -26,7 +26,7 @@ NORTH_STAR §5 4-gate + CLAUDE.md P2(Simplicity First) 우선.
 - **AC2**: 9 Track 중 최소 **tooling + csr-fastapi 2종** Codex 설치 검증. 성공률 100% (2/2).
 - **AC3**: 6 skill (`uzys-spec`, `uzys-plan`, `uzys-build`, `uzys-test`, `uzys-review`, `uzys-ship`) Codex에서 slash 호출 가능 + SKILL.md 동일 포맷 재사용.
 - **AC4**: MCP 서버 최소 2종(context7, github) Codex `config.toml` `[mcp_servers.X]`에 생성 + 실제 접속 smoke test 통과.
-- **AC5**: Hook 갭 문서화 + 우회 전략 명시 — `docs/decisions/ADR-002-codex-hook-gap.md`.
+- **AC5**: Hook 포맷 변환 규약 확정 + 2가지 제약 문서화 (Issue #16732 ApplyPatch 미발화, Issue #17532 인터랙티브 세션 bug) — `docs/decisions/ADR-002-codex-hook-gap.md` v2. ApplyPatch protect 경로는 `sandbox_mode` + `approval_policy`로 이관 검증.
 - **AC6**: Claude Code 현행 동작 regression 0 — `tests/test-harness.sh` 149 total 유지 (Pass 144 / Fail 0 / Skip 5).
 
 ### 판정 절차
@@ -68,14 +68,21 @@ NORTH_STAR §5 4-gate + CLAUDE.md P2(Simplicity First) 우선.
 - `~/.claude/` 글로벌 (D16 보호)
 - Claude Code 기존 `/uzys:*` slash prefix (본 SPEC에서 변경 금지)
 
-### 3.4 판단 보류 (Open Questions)
+### 3.4 판단 보류 (Open Questions) — 2026-04-24 실측 업데이트
 
-- **OQ1**: Codex `child_agents_md` feature flag 기본 활성 여부 불확실. 비활성 기본이면 설치 후 안내 필요. → Phase B에서 실측 확인.
-- **OQ2**: `~/.codex/` vs 프로젝트 `.codex/` 스코프 경계. Claude Code D16처럼 Codex도 글로벌을 건드리지 않는 규약 필요. → Phase B에서 결정.
-- **OQ3**: Slash prefix `uzys-` 대신 `uzys:` 를 Codex가 수용하는지 (문서상 namespace 없음 명시). 비수용 시 rename 불가피 — `/uzys-spec` 등.
-- **OQ4**: Codex skills 저장 경로 — `~/.codex/skills/` vs `~/.agents/skills/` (everything-codex 관례는 후자). 본 SPEC은 **`~/.codex/skills/`** (공식 `$CODEX_HOME/skills`) 채택 후보. Phase B 확인.
-- **OQ5**: Hook 우회 범위 — HITO counter만 shell wrapper로 살리고, gate-check/spec-drift-check/uncommitted-check는 skill 내부 사전 점검으로 흡수. ADR-002에서 확정.
-- **OQ6**: `context: fork` 격리 — Codex subagent가 Claude Code 수준 SOD 제공 보장 문서 미확인. 보장 불가 시 reviewer 사용 시 인간 게이트 강화 필요.
+| OQ | 상태 | 결정/근거 |
+|----|------|-----------|
+| **OQ1** `child_agents_md` 기본 활성 | **Closed — 비활성** | `codex features list` 실측. `under development, disabled`. 본 SPEC은 계층 merge 없이 `~/.codex/AGENTS.md` 글로벌 + 프로젝트 `AGENTS.md` 2단만 가정 |
+| **OQ2** 글로벌 vs 프로젝트 스코프 | **Closed — 2단 공식 규약** | 글로벌 `~/.codex/config.toml` + 프로젝트 `./.codex/config.toml` (upward search). 프로젝트는 글로벌에 `[projects."..."] trust_level="trusted"` 등록 필요. `setup-harness.sh --cli=codex`가 확인 프롬프트로 등록 (ADR-002 D4) |
+| **OQ3** slash prefix | **Closed — `uzys-*`** | Codex slash namespace 없음. `/uzys-spec, /uzys-plan, ...` 형태 |
+| **OQ4** skills 저장 경로 | **Closed — `~/.codex/skills/`** | 공식 `$CODEX_HOME/skills` 관례. plugin 번들 시 `<plugin>/skills/`로 이동 (F9 선택지) |
+| **OQ5** Hook 우회 범위 | **Resolved — 우회 불필요** | Codex 0.124.0 `codex_hooks=stable` 실측. 포맷 변환(TOML ↔ JSON)만 필요. ADR-002 v2 참조. ApplyPatch 예외만 sandbox로 이관 (Issue #16732) |
+| **OQ6** subagent SOD | **Closed — 가능** | `multi_agent=stable, enabled`. `spawn_agent / wait_agent / close_agent` 공식 지원. Claude `context: fork` 대응 |
+
+**신규 OQ (Phase F 이후 결정)**:
+
+- **OQ7**: Issue #17532 (인터랙티브 세션에서 프로젝트 hook 무시) 현재 버전 영향 여부 → Phase F 실측
+- **OQ8**: Plugin 번들 배포(uzys-harness as Codex plugin) 채택 여부 → F9에서 사용자 결정
 
 ## 4. Phase 분해
 
