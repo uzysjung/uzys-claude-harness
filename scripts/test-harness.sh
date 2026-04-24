@@ -1042,6 +1042,114 @@ fi
 # ============================================================
 # Summary
 # ============================================================
+# ============================================================
+# T23. Codex CLI 호환 (v27.19.0 — Phase D)
+# ============================================================
+section "T23. Codex CLI Compat (--cli=codex)"
+
+# T23.1 — CLI_MODE 변수 + --cli 플래그 정의
+if grep -q "^CLI_MODE=" "$ROOT/scripts/setup-harness.sh" && \
+   grep -q -- '--cli)' "$ROOT/scripts/setup-harness.sh"; then
+  pass "setup-harness: --cli 플래그 + CLI_MODE 변수"
+else
+  fail "setup-harness: --cli 플래그 누락"
+fi
+
+# T23.2 — 인터랙티브 prompt CLI 선택 추가
+if grep -q "대상 CLI" "$ROOT/scripts/setup-harness.sh" && \
+   grep -q 'CLI_MODE="codex"' "$ROOT/scripts/setup-harness.sh"; then
+  pass "interactive: CLI 선택 prompt"
+else
+  fail "interactive: CLI 선택 prompt 누락"
+fi
+
+# T23.3 — claude-to-codex.sh 존재 + 실행 가능
+if [ -x "$ROOT/scripts/claude-to-codex.sh" ]; then
+  pass "scripts/claude-to-codex.sh 실행 가능"
+else
+  fail "scripts/claude-to-codex.sh 누락/+x 없음"
+fi
+
+# T23.4 — templates/codex/ 스캐폴드
+MISSING_TPLS=""
+for f in README.md AGENTS.md.template config.toml.template hooks/README.md \
+         skills/uzys-spec/SKILL.md skills/uzys-plan/SKILL.md skills/uzys-build/SKILL.md \
+         skills/uzys-test/SKILL.md skills/uzys-review/SKILL.md skills/uzys-ship/SKILL.md; do
+  [ ! -f "$ROOT/templates/codex/$f" ] && MISSING_TPLS="$MISSING_TPLS $f"
+done
+if [ -z "$MISSING_TPLS" ]; then
+  pass "templates/codex/ 10개 파일 (스캐폴드)"
+else
+  fail "templates/codex/ 누락:$MISSING_TPLS"
+fi
+
+# T23.5 — SPEC + ADR v2
+if [ -f "$ROOT/docs/specs/codex-compat.md" ] && \
+   [ -f "$ROOT/docs/decisions/ADR-002-codex-hook-gap.md" ] && \
+   grep -q "Revised" "$ROOT/docs/decisions/ADR-002-codex-hook-gap.md"; then
+  pass "docs: codex-compat.md + ADR-002 v2"
+else
+  fail "docs: codex-compat.md 또는 ADR-002 v2 누락"
+fi
+
+# T23.6 — E2E 무인 설치
+T23_DIR="$(mktemp -d -t test-codex-XXXXXX)"
+if bash "$ROOT/scripts/setup-harness.sh" --track tooling --cli codex \
+     --project-dir "$T23_DIR" </dev/null >"$T23_DIR/install.log" 2>&1; then
+  if [ -f "$T23_DIR/AGENTS.md" ] && \
+     [ -f "$T23_DIR/.codex/config.toml" ] && \
+     [ -f "$T23_DIR/.codex/hooks/session-start.sh" ] && \
+     [ -f "$T23_DIR/.codex/hooks/hito-counter.sh" ] && \
+     [ -f "$T23_DIR/.codex/hooks/gate-check.sh" ] && \
+     [ -f "$T23_DIR/.codex-skills/uzys-spec/SKILL.md" ] && \
+     [ -f "$T23_DIR/.codex-skills/uzys-ship/SKILL.md" ]; then
+    pass "E2E: --cli=codex 무인 설치 → 7 파일 생성 확인"
+  else
+    fail "E2E: --cli=codex 설치 후 필수 파일 누락"
+  fi
+else
+  fail "E2E: --cli=codex 설치 exit!=0"
+fi
+rm -rf "$T23_DIR"
+
+# T23.7 — opt-in 2단 확인 (static assertion)
+if grep -q "Opt-in 1: 글로벌 ~/.codex/skills/" "$ROOT/scripts/setup-harness.sh" && \
+   grep -q "Opt-in 2: 프로젝트 trust entry" "$ROOT/scripts/setup-harness.sh"; then
+  pass "opt-in: skills + trust 2단 prompt"
+else
+  fail "opt-in: skills/trust prompt 누락"
+fi
+
+# T23.8 — Slash rename AGENTS.md 검증
+T23_8_DIR="$(mktemp -d -t test-codex-slash-XXXXXX)"
+if bash "$ROOT/scripts/claude-to-codex.sh" "$T23_8_DIR" >/dev/null 2>&1 && \
+   [ -f "$T23_8_DIR/AGENTS.md" ]; then
+  SH=$(grep -c "/uzys-" "$T23_8_DIR/AGENTS.md" 2>/dev/null); SH=${SH:-0}
+  SC=$(grep -c "/uzys:" "$T23_8_DIR/AGENTS.md" 2>/dev/null); SC=${SC:-0}
+  if [ "$SH" -gt 0 ] && [ "$SC" -eq 0 ]; then
+    pass "slash rename: AGENTS.md /uzys-= $SH건, /uzys: 잔존 0"
+  else
+    fail "slash rename: /uzys-=$SH, /uzys:=$SC (기대: >0, 0)"
+  fi
+else
+  fail "slash rename: claude-to-codex.sh 실행 실패"
+fi
+rm -rf "$T23_8_DIR"
+
+# T23.9 — Hook env rename (CLAUDE_PROJECT_DIR → CODEX_PROJECT_DIR)
+T23_9_DIR="$(mktemp -d -t test-codex-hook-XXXXXX)"
+if bash "$ROOT/scripts/claude-to-codex.sh" "$T23_9_DIR" >/dev/null 2>&1; then
+  CR=$(grep -l "CLAUDE_PROJECT_DIR" "$T23_9_DIR/.codex/hooks/"*.sh 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$CR" = "0" ]; then
+    pass "hook env rename: CLAUDE_PROJECT_DIR 잔존 0건"
+  else
+    fail "hook env rename: $CR 파일에 CLAUDE_PROJECT_DIR 잔존"
+  fi
+else
+  fail "hook env rename: transform 실행 실패"
+fi
+rm -rf "$T23_9_DIR"
+
 echo ""
 echo -e "${BOLD}========== Summary ==========${NC}"
 echo -e "  ${GREEN}Pass: $PASS${NC}"
