@@ -1,6 +1,6 @@
 # SPEC: Codex CLI 풀 하네스 복제 (1차)
 
-> **Status**: Draft (2026-04-24)
+> **Status**: Accepted (2026-04-24) — 사용자 승인 완료
 > **Scope**: Multi-CLI — 1차 Codex (OpenAI Codex CLI). 2차 OpenCode는 Non-Goals에 명시 후 후속 SPEC.
 > **Relation**: 본 SPEC은 `docs/SPEC.md` (Phase 1 Finalization)와 **독립 스펙**. spec-scaling 룰 적용 — `docs/specs/` 하위.
 
@@ -110,16 +110,17 @@ NORTH_STAR §5 4-gate + CLAUDE.md P2(Simplicity First) 우선.
 
 각 Phase 완료 시 CLAUDE.md P11 Self-Audit 5항목 실행. 결과 `docs/evals/codex-phase-<X>-YYYY-MM-DD.md`에 기록.
 
-## 7. Open Decision — Sprint Contract 확정 요청
+## 7. Sprint Contract 승인 기록
 
-본 SPEC은 Draft. 아래 항목 사용자 결정 후 Accepted 전환:
+2026-04-24 사용자 승인. Status: Draft → **Accepted**.
 
-1. Sprint Contract (§1 Objective + §2 AC + §3.2 Non-Goals) 동의?
-2. Phase 분해 (§4) 동의?
-3. OQ1~OQ6 중 Phase B 이전에 **지금 결정**할 항목이 있는가? (OQ3 slash prefix 정책은 특히 영향 큼)
-4. `setup-harness.sh --cli=codex` 플래그 기본값 `claude` 유지 — 기존 사용자 regression 0 동의?
+승인 시점 결정사항:
+- OQ3 slash prefix: **`uzys-spec` 형식 채택** (Codex namespace 미지원 대응)
+- OQ4 skill 저장 경로: **`~/.codex/skills/`** (공식 `$CODEX_HOME/skills` 관례)
+- `setup-harness.sh --cli=claude` **기본값 유지**, `--cli=codex` 옵션 추가 — 기존 사용자 regression 0
+- 남은 OQ1/OQ2/OQ5/OQ6 → Phase B 실측 + ADR-002로 확정
 
-동의 시 본 SPEC Status: Draft → Accepted로 전환 + Phase A 착수.
+Phase A 착수.
 
 ---
 
