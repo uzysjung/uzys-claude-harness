@@ -34,6 +34,7 @@ WITH_ECC=false      # v27.2.0 — 비대화형 ECC 설치
 WITH_PRUNE=false    # v27.2.0 — 비대화형 ECC prune (--with-prune은 --with-ecc 자동 활성)
 WITH_TOB=false      # v27.2.0 — 비대화형 Trail of Bits 설치
 WITH_TAURI=false    # v27.14.0 — opt-in tauri.md Rule (desktop 확장 시만)
+CLI_MODE="claude"   # v27.19.0 — claude | codex | both (Codex 호환 설치 경로)
 PROJECT_DIR="$(pwd)"
 
 while [[ $# -gt 0 ]]; do
@@ -50,6 +51,13 @@ while [[ $# -gt 0 ]]; do
     --with-prune) WITH_PRUNE=true; WITH_ECC=true; shift ;;
     --with-tob) WITH_TOB=true; shift ;;
     --with-tauri) WITH_TAURI=true; shift ;;
+    --cli)
+      [ -z "${2:-}" ] && { echo "ERROR: --cli requires value (claude|codex|both)" >&2; exit 1; }
+      case "$2" in
+        claude|codex|both) CLI_MODE="$2" ;;
+        *) echo "ERROR: --cli must be one of claude|codex|both (got: $2)" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
     --project-dir) PROJECT_DIR="$2"; shift 2 ;;
     -h|--help) cat <<HELP
 Usage: $0 [--track <track>]... [--add-track <track>]... [--update] [--gsd] [--project-dir <path>] [--with-ecc] [--with-prune] [--with-tob]
@@ -64,6 +72,8 @@ Usage: $0 [--track <track>]... [--add-track <track>]... [--update] [--gsd] [--pr
 --with-prune  ECC 설치 + 89 KEEP 외 자동 prune (--with-ecc 자동 포함)
 --with-tob    Trail of Bits security plugin 자동 설치
 --with-tauri  tauri.md Rule 포함 (CSR track 데스크탑 확장 시)
+--cli         대상 CLI: claude(기본) | codex | both
+              codex/both 시 scripts/claude-to-codex.sh 호출로 AGENTS.md + .codex/ 생성
 HELP
       exit 0 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
@@ -166,6 +176,18 @@ prompt_interactive_setup() {
   read -rp "     Trail of Bits 보안 plugin? [y/N]: " tob_choice
   [[ "$tob_choice" =~ ^[yY]$ ]] && WITH_TOB=true
 
+  # v27.19.0 — CLI 선택 (Claude / Codex / Both)
+  echo ""
+  echo "  2c) 대상 CLI:"
+  echo "     ① Claude Code [기본]   ② Codex   ③ Both"
+  read -rp "     CLI [Enter=Claude, 1/2/3 or claude/codex/both]: " cli_choice
+  case "$cli_choice" in
+    ""|1|claude|Claude) CLI_MODE="claude" ;;
+    2|codex|Codex) CLI_MODE="codex" ;;
+    3|both|Both) CLI_MODE="both" ;;
+    *) echo "     ❗ 알 수 없는 선택: '$cli_choice' — 기본값 claude 사용"; CLI_MODE="claude" ;;
+  esac
+
   # 요약 + 확인
   echo ""
   echo "  3) 설치 요약:"
@@ -177,6 +199,7 @@ prompt_interactive_setup() {
   [ "$WITH_PRUNE" = true ] && opts="${opts}prune "
   [ "$WITH_TOB" = true ] && opts="${opts}ToB "
   echo "     Options:   ${opts:-(기본값만)}"
+  echo "     CLI:       $CLI_MODE"
   echo "     Target:    $PROJECT_DIR"
   echo ""
   read -rp "     진행하시겠습니까? [Y/n]: " confirm_choice
@@ -1346,9 +1369,85 @@ if [ "$WITH_ECC" = true ] || { [ "$ADD_MODE" = false ] && { [ -t 0 ] || [ -e /de
   fi
 fi
 
+
+# ============================================================
+# v27.19.0 — Codex 호환 설치 (CLI_MODE=codex|both)
+# ============================================================
+# ADR-002 v2 D4 준수: 글로벌 ~/.codex/ 수정은 사용자 opt-in 확인 후에만
+if [ "$CLI_MODE" = "codex" ] || [ "$CLI_MODE" = "both" ]; then
+  echo ""
+  echo -e "${BOLD}═══ Codex CLI 자산 생성 ═══${NC}"
+
+  codex_transform="$SCRIPT_DIR/claude-to-codex.sh"
+  if [ ! -f "$codex_transform" ]; then
+    echo -e "${RED}ERROR: $codex_transform 없음 — Codex 변환 스크립트 누락${NC}" >&2
+    echo -e "${RED}       (Phase C 아직 설치 안 됐을 수 있음)${NC}" >&2
+  else
+    # 실행 (verbose 모드로 진행 상황 표시)
+    bash "$codex_transform" "$PROJECT_DIR" -v 2>&1 | sed 's/^/    /'
+
+    # Opt-in 1: 글로벌 ~/.codex/skills/ 에 uzys-* 설치
+    SKILLS_CHOICE=""
+    if [ -t 0 ]; then
+      read -rp "  ~/.codex/skills/ 에 uzys-* 6종 설치? [y/N]: " SKILLS_CHOICE
+    else
+      read -rp "  ~/.codex/skills/ 에 uzys-* 6종 설치? [y/N]: " SKILLS_CHOICE < /dev/tty 2>/dev/null || SKILLS_CHOICE=""
+    fi
+    if [[ "$SKILLS_CHOICE" =~ ^[yY]$ ]]; then
+      mkdir -p "$HOME/.codex/skills"
+      cp -R "$PROJECT_DIR/.codex-skills/uzys-"* "$HOME/.codex/skills/" 2>/dev/null
+      echo -e "    ${GREEN}✓${NC} ~/.codex/skills/ 에 uzys-* 6종 설치"
+    else
+      echo "    ~/.codex/skills/ 설치 스킵 (나중에 수동 복사 가능)"
+    fi
+
+    # Opt-in 2: 프로젝트 trust entry 등록 (~/.codex/config.toml)
+    TRUST_CHOICE=""
+    if [ -t 0 ]; then
+      read -rp "  ~/.codex/config.toml 에 프로젝트 trust entry 추가? [y/N]: " TRUST_CHOICE
+    else
+      read -rp "  ~/.codex/config.toml 에 프로젝트 trust entry 추가? [y/N]: " TRUST_CHOICE < /dev/tty 2>/dev/null || TRUST_CHOICE=""
+    fi
+    if [[ "$TRUST_CHOICE" =~ ^[yY]$ ]]; then
+      codex_user_cfg="$HOME/.codex/config.toml"
+      mkdir -p "$HOME/.codex"
+      touch "$codex_user_cfg"
+      project_key="[projects.\"$PROJECT_DIR\"]"
+      if grep -qF "$project_key" "$codex_user_cfg"; then
+        echo "    trust entry 이미 존재 — 생략"
+      else
+        {
+          echo ""
+          echo "$project_key"
+          echo 'trust_level = "trusted"'
+        } >> "$codex_user_cfg"
+        echo -e "    ${GREEN}✓${NC} ~/.codex/config.toml 에 trust entry 추가"
+      fi
+    else
+      echo "    trust entry 등록 스킵 — 프로젝트 hook이 로드되지 않을 수 있음"
+      echo "    (수동: ~/.codex/config.toml 에 [projects.\"$PROJECT_DIR\"] trust_level=\"trusted\" 추가)"
+    fi
+
+    echo -e "  ${GREEN}✓${NC} Codex 자산 생성 완료:"
+    echo "    - AGENTS.md"
+    echo "    - .codex/config.toml"
+    echo "    - .codex/hooks/{session-start,hito-counter,gate-check}.sh"
+    echo "    - .codex-skills/uzys-*/SKILL.md (audit)"
+  fi
+fi
+
 echo ""
 echo -e "${BOLD}Next steps:${NC}"
-echo -e "  1. Start Claude Code: ${CYAN}claude${NC}"
-echo -e "  2. Begin workflow:    ${CYAN}/uzys:spec${NC}"
-echo -e "  3. Auto workflow:     ${CYAN}/uzys:auto${NC} (spec 완료 후)"
+if [ "$CLI_MODE" = "codex" ] || [ "$CLI_MODE" = "both" ]; then
+  echo -e "  ${BOLD}Codex:${NC}"
+  echo -e "  1. Start Codex:       ${CYAN}codex${NC}"
+  echo -e "  2. Slash command:     ${CYAN}/uzys-spec${NC}  (→ /uzys-plan → /uzys-build → /uzys-test → /uzys-review → /uzys-ship)"
+  echo ""
+fi
+if [ "$CLI_MODE" != "codex" ]; then
+  echo -e "  ${BOLD}Claude Code:${NC}"
+  echo -e "  1. Start Claude Code: ${CYAN}claude${NC}"
+  echo -e "  2. Begin workflow:    ${CYAN}/uzys:spec${NC}"
+  echo -e "  3. Auto workflow:     ${CYAN}/uzys:auto${NC} (spec 완료 후)"
+fi
 echo ""
