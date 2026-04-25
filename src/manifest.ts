@@ -196,6 +196,28 @@ export function buildManifest(spec: AssetSpec): AssetEntry[] {
     type: "dir",
     applies: onTracks("executive|full"),
   });
+  for (const sd of ["investor-materials", "investor-outreach"]) {
+    m.push({
+      source: `skills/${sd}`,
+      target: `.claude/skills/${sd}`,
+      type: "dir",
+      applies: onTracks("executive|full"),
+    });
+  }
+  m.push({
+    source: "skills/nextjs-turbopack",
+    target: ".claude/skills/nextjs-turbopack",
+    type: "dir",
+    applies: onTracks("ssr-nextjs|full"),
+  });
+  for (const sd of ["python-patterns", "python-testing"]) {
+    m.push({
+      source: `skills/${sd}`,
+      target: `.claude/skills/${sd}`,
+      type: "dir",
+      applies: onTracks("data|csr-fastapi|full"),
+    });
+  }
   for (const sd of DEV_SKILL_DIRS) {
     m.push({
       source: `skills/${sd}`,
