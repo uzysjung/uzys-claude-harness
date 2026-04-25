@@ -69,13 +69,13 @@
 
 ## Phase G — 문서화 + 청소
 
-- [ ] **G1** README.md "OpenCode CLI support" 섹션
-- [ ] **G2** README.ko.md 동일 동기화
-- [ ] **G3** USAGE.md OpenCode 시나리오 (Install / Add Track / Plugin debug)
-- [ ] **G4** stale `setup-harness.sh` 청소 (en 9곳 + ko 10곳)
-- [ ] **G5** CHANGELOG v0.3.0(잠정) 섹션
+- [x] **G1** README.md "OpenCode CLI support" 섹션 (Codex 섹션 직후, ~80줄: 설치 / 자산 / Hook 매핑 표 / Slash / 한계 / 참고)
+- [x] **G2** README.ko.md "OpenCode CLI 지원" 섹션 (영문 G1과 동일 구조)
+- [x] **G3** USAGE.md "OpenCode 시나리오" 섹션 (Install 단독 / All 동시 / Plugin 디버깅 3 시나리오)
+- [x] **G4** stale 청소 — README.md 9곳 + README.ko.md 10곳 + USAGE.md 7곳 = **26곳** 모두 `claude-harness install` 또는 generic으로 치환. claude-to-codex.sh 2곳 → `src/codex/transform.ts`
+- [x] **G5** CHANGELOG v0.3.0 섹션 — Phase A~G 요약 + Hook 매핑 + CLI 옵션 + Test/Coverage + DO NOT CHANGE
 
-**Phase G 게이트**: 시각 검토 + Phase 1 Self-Audit.
+**Phase G 게이트**: 시각 검토 + 사용자 검토 대기. CI 248 PASS, stale 0건 확인.
 
 ---
 
