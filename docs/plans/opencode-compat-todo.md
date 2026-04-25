@@ -38,11 +38,11 @@
 
 ## Phase D — Setup integration
 
-- [ ] **D1** TS CLI `--cli=opencode` + `--cli=all` 추가
-- [ ] **D2** 인터랙티브 모드 OpenCode 분기
-- [ ] **D3** Install pipeline 통합 테스트 (tests/opencode-install.test.ts)
+- [x] **D1** TS CLI `--cli` 옵션 확장 — types.ts CLI_MODES `["claude","codex","opencode","both","all"]`. installer.ts에 OpenCode transform 분기 + InstallReport에 `opencode` 필드 추가. install.ts CLI 옵션 help + display 갱신
+- [x] **D2** 인터랙티브 모드 — prompts.ts selectCli에 "OpenCode (anomalyco)" + "All (Claude+Codex+OpenCode)" 옵션 추가 (interactive.ts는 selectCli 호출만 하므로 자동 반영)
+- [x] **D3** Install pipeline 통합 테스트 — `tests/opencode/install.test.ts` (4 test): tooling+opencode, tooling+all, claude (no OpenCode), both (no OpenCode)
 
-**Phase D 게이트**: AC1 임시 검증.
+**Phase D 게이트**: AC1 임시 검증 ✅. tests 218 → 226 (+8), CI PASS.
 
 ---
 

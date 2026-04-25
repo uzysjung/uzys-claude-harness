@@ -72,7 +72,9 @@ export const defaultPrompts: Prompts = {
       options: [
         { value: "claude" as const, label: "Claude Code (default)" },
         { value: "codex" as const, label: "Codex (OpenAI)" },
-        { value: "both" as const, label: "Both" },
+        { value: "opencode" as const, label: "OpenCode (anomalyco)" },
+        { value: "both" as const, label: "Claude + Codex" },
+        { value: "all" as const, label: "All (Claude + Codex + OpenCode)" },
       ],
       initialValue: initial ?? "claude",
     });
