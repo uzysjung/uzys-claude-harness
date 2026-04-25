@@ -422,6 +422,54 @@ npx -y github:uzysjung/uzys-claude-harness
 # 4. 디자인/프레임워크 rules는 설치 안 됨 (tauri/htmx/nextjs/shadcn 등)
 ```
 
+### Project Management (PM / Scrum / Jira) — v0.5.0
+
+```bash
+# 1. 프로젝트 초기화 (인터랙티브에서 project-management 선택)
+npx -y github:uzysjung/uzys-claude-harness
+
+# 2. 활성화되는 자산:
+#    - rules: git-policy, change-management, gates-taxonomy (executive-style — dev rules 미적용)
+#    - 외부 자산 (alirezarezvani/claude-skills marketplace):
+#      * pm-skills (6 — senior PM, scrum master, Jira/Confluence/Atlassian admin, template creator)
+#      * product-skills (15 — RICE, PRD, agile PO, UX research, SaaS scaffolder ...)
+
+# 3. 자연어로 요청 (6-gate 미적용)
+claude
+"이번 스프린트 retro 정리"          # → scrum master skill
+"이 feature RICE 점수 매겨줘"       # → product-skills RICE
+"PRD 초안 만들어줘"                # → product-skills PRD generator
+
+# 안내 — pm-skills와 product-skills 양쪽 도구가 모두 설치됨:
+#   - pm-skills: Jira/Confluence 운영 중심
+#   - product-skills: RICE/PRD/agile 기획 중심
+# 상황에 맞춰 선택. 양쪽 호출도 가능 (예: PRD 작성 → Jira 티켓 분해)
+```
+
+### Growth Marketing (SEO / CRO / Content / Demand-gen) — v0.5.0
+
+```bash
+# 1. 프로젝트 초기화 (인터랙티브에서 growth-marketing 선택)
+npx -y github:uzysjung/uzys-claude-harness
+
+# 2. 활성화되는 자산:
+#    - rules: git-policy, change-management, gates-taxonomy (executive-style)
+#    - 외부 자산 (alirezarezvani/claude-skills marketplace):
+#      * marketing-skills (44 — content/SEO/CRO/channels/growth/intelligence/sales/twitter)
+#      * business-growth-skills (4 — customer success, sales eng, RevOps, contract — executive 트랙과 공유)
+#      * content-creator (SEO content + brand voice + frameworks)
+#      * demand-gen (multi-channel demand gen + paid + partnership)
+#      * research-summarizer (시장 조사 요약)
+
+# 3. 자연어로 요청
+claude
+"이 페르소나용 SEO 블로그 5개 작성"   # → content-creator
+"Q3 demand gen 플레이북"            # → demand-gen
+"경쟁사 X 시장 조사 요약"            # → research-summarizer
+"twitter thread 작성"               # → marketing-skills (twitter)
+"CRO 가설 + AB 테스트 설계"         # → marketing-skills (CRO)
+```
+
 ## OpenCode 시나리오
 
 ### Install (단독 OpenCode)
@@ -560,7 +608,7 @@ A: 네임스페이스 없이 직접 호출. `/polish`, `/critique`, `/audit`, `/
 | `claude plugin install` 실패 | 네트워크 또는 marketplace 변경 | v26.11.2 retry 래퍼가 1회 재시도. 재실행 시 idempotent. 계속 실패 시 marketplace URL 확인 |
 | `BLOCKED: Define 단계가 완료되지 않았습니다` | 게이트 순서 위반 (`/uzys:plan` 호출 시 SPEC 없음) | `/uzys:spec` 먼저. 또는 `.claude/gate-status.json` 확인 |
 | `[Fact-Forcing Gate]` 차단 | gateguard hook이 destructive 명령 차단 | 사실 4개 (호출자/함수/데이터 파일/사용자 instruction) 제시 후 재시도 |
-| `ERROR: Unknown track 'X'` | v26.11.2부터 Track 이름 검증 | Valid: csr-supabase / csr-fastify / csr-fastapi / ssr-htmx / ssr-nextjs / data / executive / tooling / full |
+| `ERROR: Unknown track 'X'` | v26.11.2부터 Track 이름 검증 | Valid: csr-supabase / csr-fastify / csr-fastapi / ssr-htmx / ssr-nextjs / data / executive / tooling / full / project-management / growth-marketing |
 | `ERROR: --project-dir은 글로벌 ~/.claude/...` | D16 보호 (글로벌 영역 차단) | `--project-dir` 없이 또는 프로젝트 디렉토리 절대 경로 사용 |
 | `scripts/prune-ecc.sh` dry-run만 실행되고 끝남 | `--apply` 누락 (기본 dry-run) | `bash scripts/prune-ecc.sh --apply --force` 추가 |
 | `claude --plugin-dir` 매번 입력 부담 | shell alias 미설정 | `~/.zshrc`에 `alias claude-ecc='claude --plugin-dir .claude/local-plugins/ecc'` |

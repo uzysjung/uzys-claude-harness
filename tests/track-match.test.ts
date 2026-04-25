@@ -32,6 +32,9 @@ describe("hasDevTrack", () => {
     [["data"], true],
     [["full"], true],
     [["executive"], false],
+    // v0.5.0 — executive-style baselines (regression guard, MEDIUM-2 reviewer feedback).
+    [["project-management"], false],
+    [["growth-marketing"], false],
   ] as const)("hasDevTrack(%j) = %s", (tracks, expected) => {
     expect(hasDevTrack(tracks as readonly Track[])).toBe(expected);
   });
@@ -45,6 +48,9 @@ describe("hasUiTrack", () => {
     [["csr-supabase"], true],
     [["ssr-nextjs"], true],
     [["full"], true],
+    // v0.5.0 — non-UI executive-style tracks.
+    [["project-management"], false],
+    [["growth-marketing"], false],
   ] as const)("hasUiTrack(%j) = %s", (tracks, expected) => {
     expect(hasUiTrack(tracks as readonly Track[])).toBe(expected);
   });

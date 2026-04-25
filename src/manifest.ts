@@ -55,6 +55,9 @@ const TRACK_RULES: Record<Track, string[]> = {
     "data-analysis",
     "cli-development",
   ],
+  // v0.5.0 — executive-style baselines (no dev rules; common rules only).
+  "project-management": [],
+  "growth-marketing": [],
 };
 
 /** Resolve the unique set of rule names to install for the given spec. */

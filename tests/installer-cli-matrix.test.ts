@@ -1,7 +1,9 @@
 /**
- * 45 시나리오 매트릭스 — 9 Track × 5 CLI mode E2E install.
+ * 55 시나리오 매트릭스 — 11 Track × 5 CLI mode E2E install (v0.5.0).
  *
- * SPEC: docs/specs/cli-rewrite-completeness.md F12, AC6
+ * SPEC: docs/specs/new-tracks-pm-growth.md AC4 (이전 docs/specs/cli-rewrite-completeness.md F12, AC6).
+ *
+ * v0.5.0: 9 Track × 5 = 45 → 11 Track × 5 = 55 (+ project-management, growth-marketing).
  *
  * 검증 항목 (per scenario):
  *   1. runInstall 예외 없음 (exit 0)
@@ -61,7 +63,7 @@ function expectedFor(cli: CliMode): ExpectedArtifacts {
   }
 }
 
-describe("9 Track × 5 CLI mode matrix (45 scenarios) — E2E install", () => {
+describe("11 Track × 5 CLI mode matrix (55 scenarios) — E2E install", () => {
   let projectDir: string;
 
   beforeEach(() => {
@@ -123,8 +125,10 @@ describe("Matrix invariants — cross-cutting", () => {
     rmSync(projectDir, { recursive: true, force: true });
   });
 
-  it("count check: TRACKS.length=9 × CLI_MODES.length=5 = 45 scenarios", () => {
-    expect(TRACKS.length * CLI_MODES.length).toBe(45);
+  it("count check: TRACKS.length=11 × CLI_MODES.length=5 = 55 scenarios (v0.5.0)", () => {
+    expect(TRACKS.length).toBe(11);
+    expect(CLI_MODES.length).toBe(5);
+    expect(TRACKS.length * CLI_MODES.length).toBe(55);
   });
 
   it("csr-supabase + claude: .env.example generated (csr-supabase Track 한정)", () => {

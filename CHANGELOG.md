@@ -5,6 +5,48 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.5.0] — 2026-04-26
+
+### Added — 신규 Track 2개 + karpathy-coder
+
+11 Track으로 확장. Persona 커버리지 확대 + dev Track 공통 enforcement 도구 시드.
+
+#### 신규 Track 2개
+- **`project-management`** (Persona: PM / Scrum Master / Jira/Confluence 관리자) — executive-style baseline
+  - 외부 자산: `pm-skills` (6 — senior PM, scrum master, Jira/Confluence/Atlassian admin, template creator), `product-skills` (15 — RICE, PRD, agile PO, UX research, SaaS scaffolder ...)
+- **`growth-marketing`** (Persona: Growth/Marketing Lead / Content Strategist) — executive-style baseline
+  - 외부 자산: `marketing-skills` (44 — content/SEO/CRO/channels/growth/intelligence/sales/twitter), `business-growth-skills` (재사용), `content-creator`, `demand-gen`, `research-summarizer`
+
+#### 신규 외부 자산 1건 (모든 dev Track 공통)
+- **`karpathy-coder`** — CLAUDE.md P1-P4 선언적 원칙의 enforcement layer
+  - 4 Python tool (stdlib only): `complexity_checker.py`, `diff_surgeon.py`, `assumption_linter.py`, `goal_verifier.py`
+  - sub-agent: `karpathy-reviewer`
+  - slash command: `/karpathy-check`
+  - pre-commit hook: `karpathy-gate.sh` (사용자 와이어링 책임 — 자동 활성화 미지원, OQ1 v0.6+)
+
+#### 외부 자산 변경 (1건)
+- `business-growth-skills` condition 확장 — `[executive, full]` → `[executive, full, growth-marketing]`. 기존 executive/full 회귀 0 (unit test 검증).
+
+#### Internal
+- `shouldInstallAsset` `has-dev-track` 분기를 `track-match.hasDevTrack`과 SSOT 통일. 이전 `t !== "executive"` 단순 매칭은 신규 PM/Growth Track을 dev로 잘못 분류했음.
+- `tests/installer-9-track.test.ts` → `installer-11-track.test.ts` rename + 11 케이스.
+- 매트릭스 9×5=45 → 11×5=55 + invariant 6 = **61 PASS**.
+- 신규 Track 매핑 + OQ2 합집합 회귀 + karpathy-coder PM/Growth 제외 검증 9 unit tests 추가.
+
+#### 검증
+- vitest **437 tests PASS** (이전 413 + 신규 24).
+- coverage: stmt 96.91% / branch 88.59% / funcs 96.03% / lines 96.91% — threshold 90/88/90/90 모두 PASS.
+- alirezarezvani/claude-skills marketplace에 신규 7 plugin id 등록 확인 (`gh api` 검증).
+- 라이브 dogfood — D16 보호 + 사용자 승인 필요로 본 릴리스에서는 보류 (OQ4 v0.6+).
+
+#### Driver
+사용자 결정 (`docs/dev/session-2026-04-25-tracks-handoff.md` §1) — Persona 확장 (PM/Growth Marketing) + karpathy-coder 검증 도구 통합 (4-gate 4/4 Pass).
+
+#### Reference
+- SPEC `docs/specs/new-tracks-pm-growth.md` (Accepted)
+- Plan `docs/plans/new-tracks-pm-growth-plan.md`
+- Dogfood `docs/dogfood/cli-dogfood-2026-04-26-v0.5.0.md`
+
 ## [v0.4.0] — 2026-04-25
 
 ### Fixed — CLI Rewrite Completeness (bash setup-harness.sh 등가성 100% 복원)

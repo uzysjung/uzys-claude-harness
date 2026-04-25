@@ -31,6 +31,8 @@ const TRACK_LABELS: Record<Track, string> = {
   data: "data — Python data / DuckDB / PySide6",
   executive: "executive — proposals / DD / pitch (no agent-skills)",
   full: "full — all dev capabilities",
+  "project-management": "project-management — PM / Scrum / Jira / Confluence",
+  "growth-marketing": "growth-marketing — Growth / Marketing / Content",
 };
 
 const OPTION_DEFS: ReadonlyArray<{ key: keyof OptionFlags; label: string; hint: string }> = [
