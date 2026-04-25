@@ -3,6 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import { type CodexOptInReport, runCodexOptIn } from "./codex/opt-in.js";
 import { type CodexTransformReport, runCodexTransform } from "./codex/transform.js";
 import { addGitignoreEnv, writeEnvExample, writeMcpAllowlist } from "./env-files.js";
+import { EXTERNAL_ASSETS, filterApplicableAssets } from "./external-assets.js";
 import {
   type ExternalInstallReport,
   type ExternalInstallerDeps,
@@ -52,6 +53,42 @@ export interface InstallContext {
         deps: ExternalInstallerDeps,
       ) => ExternalInstallReport)
     | null;
+  /**
+   * Progress callback fired between stages so renderers can stream output
+   * (avoids "Phase 1 header → 5 minutes silence" UX problem).
+   */
+  onProgress?: (event: ProgressEvent) => void;
+  /** External installer streaming hooks (forwarded to runExternalInstall). */
+  externalDeps?: Pick<ExternalInstallerDeps, "onAssetStart" | "onAssetResult">;
+}
+
+/** Progress event types fired during runInstall. */
+export type ProgressEvent =
+  /** Baseline (manifest copy + mcp + envFiles + Codex/OpenCode transforms) finished. External not yet started. */
+  | { type: "baseline-complete"; baseline: BaselineReport }
+  /** External install phase about to begin. */
+  | { type: "external-start"; assetCount: number }
+  /** External install phase finished (with report). */
+  | { type: "external-complete"; report: ExternalInstallReport };
+
+/** Baseline phase result (everything except external assets). */
+export interface BaselineReport {
+  filesCopied: number;
+  dirsCopied: number;
+  skipped: number;
+  backup: string | null;
+  installedTracks: string[];
+  mcpServers: string[];
+  codex: CodexTransformReport | null;
+  codexOptIn: CodexOptInReport | null;
+  opencode: OpencodeTransformReport | null;
+  updateMode: UpdateModeReport | null;
+  mode: InstallMode;
+  envFiles: {
+    envExampleCreated: boolean;
+    gitignoreEnvAdded: boolean;
+    mcpAllowlist: string[] | null;
+  };
 }
 
 export interface InstallReport {
@@ -116,7 +153,7 @@ export function runInstall(ctx: InstallContext): InstallReport {
   // Update mode 단축 — 정책 파일만 갱신하고 종료 (manifest copy / external 모두 skip)
   if (mode === "update") {
     const updateReport = runUpdateMode(projectDir, templatesDir);
-    return {
+    const baseline: BaselineReport = {
       filesCopied: 0,
       dirsCopied: 0,
       skipped: 0,
@@ -126,7 +163,6 @@ export function runInstall(ctx: InstallContext): InstallReport {
       codex: null,
       codexOptIn: null,
       opencode: null,
-      external: null,
       updateMode: updateReport,
       mode,
       envFiles: {
@@ -135,6 +171,8 @@ export function runInstall(ctx: InstallContext): InstallReport {
         mcpAllowlist: null,
       },
     };
+    ctx.onProgress?.({ type: "baseline-complete", baseline });
+    return { ...baseline, external: null };
   }
 
   ensureProjectSkeleton(projectDir);
@@ -205,23 +243,7 @@ export function runInstall(ctx: InstallContext): InstallReport {
     opencode = runOpencodeTransform({ harnessRoot, projectDir });
   }
 
-  // External assets (claude plugin / npm -g / npx skills) — runs when not explicitly disabled.
-  // Default = real runExternalInstall. Tests inject mock or `null` to skip.
-  // log/warn are silenced here — executeSpec renders the report rows after-the-fact (no interleave).
-  let external: ExternalInstallReport | null = null;
-  if (ctx.runExternal !== null) {
-    const runExt = ctx.runExternal ?? runExternalInstall;
-    external = runExt(
-      { tracks: spec.tracks, options: spec.options },
-      {
-        harnessRoot,
-        log: () => {},
-        warn: () => {},
-      },
-    );
-  }
-
-  return {
+  const baseline: BaselineReport = {
     filesCopied,
     dirsCopied,
     skipped,
@@ -231,11 +253,41 @@ export function runInstall(ctx: InstallContext): InstallReport {
     codex,
     codexOptIn,
     opencode,
-    external,
     updateMode: null,
     mode,
     envFiles,
   };
+
+  // ━━━ Baseline complete — emit progress event so renderer can show Phase 1 rows ━━━
+  ctx.onProgress?.({ type: "baseline-complete", baseline });
+
+  // ━━━ External assets (claude plugin / npm -g / npx skills) ━━━
+  // Default = real runExternalInstall. Tests inject mock or `null` to skip.
+  // log/warn은 silent (renderer가 onAssetStart/Result로 스트리밍).
+  let external: ExternalInstallReport | null = null;
+  if (ctx.runExternal !== null) {
+    const runExt = ctx.runExternal ?? runExternalInstall;
+    const externalDeps: ExternalInstallerDeps = {
+      harnessRoot,
+      log: () => {},
+      warn: () => {},
+    };
+    if (ctx.externalDeps?.onAssetStart) {
+      externalDeps.onAssetStart = ctx.externalDeps.onAssetStart;
+    }
+    if (ctx.externalDeps?.onAssetResult) {
+      externalDeps.onAssetResult = ctx.externalDeps.onAssetResult;
+    }
+    const applicableCount = filterApplicableAssets(EXTERNAL_ASSETS, {
+      tracks: spec.tracks,
+      options: spec.options,
+    }).length;
+    ctx.onProgress?.({ type: "external-start", assetCount: applicableCount });
+    external = runExt({ tracks: spec.tracks, options: spec.options }, externalDeps);
+    ctx.onProgress?.({ type: "external-complete", report: external });
+  }
+
+  return { ...baseline, external };
 }
 
 function composeAndWriteMcp(

@@ -23,10 +23,20 @@ export interface ExternalInstallerDeps {
   harnessRoot?: string;
   /** asset 매트릭스 override (테스트용, 기본 EXTERNAL_ASSETS 전체). */
   assets?: ReadonlyArray<ExternalAsset>;
-  /** 진행 상황 로그 stream (기본 console.log). */
+  /** 진행 상황 로그 stream (기본 console.log). 일반 로그용. */
   log?: (msg: string) => void;
   /** 경고 메시지 stream (기본 console.error). */
   warn?: (msg: string) => void;
+  /**
+   * 자산 설치 시작 직전 호출 (streaming UI용).
+   * Renderer가 "→ asset (installing...)" 라인 출력에 사용.
+   */
+  onAssetStart?: (asset: ExternalAsset) => void;
+  /**
+   * 자산 설치 완료 후 호출 (streaming UI용).
+   * Renderer가 "✓/⊘ asset    meta" 라인 출력에 사용.
+   */
+  onAssetResult?: (result: AssetInstallResult) => void;
 }
 
 interface SpawnOpts {
@@ -72,8 +82,10 @@ export function runExternalInstall(
   const attempted: AssetInstallResult[] = [];
 
   for (const asset of applicable) {
+    deps.onAssetStart?.(asset);
     log(`  → ${asset.description}`);
     const result = installOne(asset, { spawn, harnessRoot });
+    deps.onAssetResult?.(result);
 
     if (!result.ok) {
       const failureMode = asset.failureMode ?? "warn-skip";

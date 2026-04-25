@@ -1,7 +1,43 @@
 import { describe, expect, it, vi } from "vitest";
 import { executeSpec, installAction, specFromOptions } from "../src/commands/install.js";
-import type { InstallReport } from "../src/installer.js";
+import type { BaselineReport, InstallReport } from "../src/installer.js";
 import type { InstallSpec, Track } from "../src/types.js";
+
+/**
+ * Build a mock runPipeline that fires onProgress events from the supplied
+ * report (so Phase 1 + Phase 2 streaming renders correctly in tests).
+ */
+function pipelineFor(report: InstallReport) {
+  return vi.fn((_spec, _root, _mode, callbacks) => {
+    const baseline: BaselineReport = {
+      filesCopied: report.filesCopied,
+      dirsCopied: report.dirsCopied,
+      skipped: report.skipped,
+      backup: report.backup,
+      installedTracks: report.installedTracks,
+      mcpServers: report.mcpServers,
+      codex: report.codex,
+      codexOptIn: report.codexOptIn,
+      opencode: report.opencode,
+      updateMode: report.updateMode,
+      mode: report.mode,
+      envFiles: report.envFiles,
+    };
+    callbacks?.onProgress?.({ type: "baseline-complete", baseline });
+    if (report.external && report.external.attempted.length > 0) {
+      callbacks?.onProgress?.({
+        type: "external-start",
+        assetCount: report.external.attempted.length,
+      });
+      for (const r of report.external.attempted) {
+        callbacks?.externalDeps?.onAssetStart?.(r.asset);
+        callbacks?.externalDeps?.onAssetResult?.(r);
+      }
+      callbacks?.onProgress?.({ type: "external-complete", report: report.external });
+    }
+    return report;
+  });
+}
 
 const fakeReport: InstallReport = {
   filesCopied: 5,
@@ -73,7 +109,7 @@ describe("installAction", () => {
     const log = vi.fn();
     const err = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn((_spec: InstallSpec, _root: string) => fakeReport);
+    const runPipeline = pipelineFor(fakeReport);
     installAction(
       { cli: "codex", track: ["tooling"], projectDir: "/tmp/p" },
       { log, err, exit, runPipeline, resolveHarnessRoot: () => "/h" },
@@ -135,7 +171,7 @@ describe("installAction", () => {
   it("logs backup path when pipeline returns one", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => ({ ...fakeReport, backup: "/backup/.claude.bak" }));
+    const runPipeline = pipelineFor({ ...fakeReport, backup: "/backup/.claude.bak" });
     installAction(
       { cli: "claude", track: ["tooling"] },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
@@ -147,7 +183,7 @@ describe("installAction", () => {
   it("logs '(none)' for MCP servers when list is empty", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => ({ ...fakeReport, mcpServers: [] }));
+    const runPipeline = pipelineFor({ ...fakeReport, mcpServers: [] });
     installAction(
       { cli: "claude", track: ["tooling"] },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
@@ -176,7 +212,7 @@ describe("executeSpec", () => {
     const log = vi.fn();
     const err = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => fakeReport);
+    const runPipeline = pipelineFor(fakeReport);
     executeSpec(baseSpec, { log, err, exit, runPipeline, resolveHarnessRoot: () => "/h" });
     expect(err).not.toHaveBeenCalled();
     expect(exit).not.toHaveBeenCalled();
@@ -187,7 +223,7 @@ describe("executeSpec", () => {
   it("renders Codex line when report.codex is present", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => ({
+    const runPipeline = pipelineFor({
       ...fakeReport,
       codex: {
         agentsMdPath: "/p/AGENTS.md",
@@ -195,7 +231,7 @@ describe("executeSpec", () => {
         hookFiles: ["/p/.codex/hooks/a.sh", "/p/.codex/hooks/b.sh"],
         skillFiles: ["/p/.codex-skills/uzys-spec/SKILL.md"],
       },
-    }));
+    });
     executeSpec(
       { ...baseSpec, cli: "codex" },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
@@ -206,7 +242,7 @@ describe("executeSpec", () => {
   it("renders OpenCode line when report.opencode is present", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => ({
+    const runPipeline = pipelineFor({
       ...fakeReport,
       opencode: {
         agentsMdPath: "/p/AGENTS.md",
@@ -214,7 +250,7 @@ describe("executeSpec", () => {
         commandFiles: Array.from({ length: 6 }, (_, i) => `/p/.opencode/commands/uzys-${i}.md`),
         pluginPath: "/p/.opencode/plugins/uzys-harness.ts",
       },
-    }));
+    });
     executeSpec(
       { ...baseSpec, cli: "opencode" },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
@@ -225,7 +261,7 @@ describe("executeSpec", () => {
   it("logs warn when skipped > 0", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => ({ ...fakeReport, skipped: 3 }));
+    const runPipeline = pipelineFor({ ...fakeReport, skipped: 3 });
     executeSpec(baseSpec, { log, exit, runPipeline, resolveHarnessRoot: () => "/h" });
     // skipped row is rendered with `assetRow("skip", ...)` → contains the count
     expect(log).toHaveBeenCalledWith(expect.stringContaining("skipped"));
@@ -234,7 +270,7 @@ describe("executeSpec", () => {
   it("logs Backup info when report.backup present", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => ({ ...fakeReport, backup: "/p/.claude.backup-123" }));
+    const runPipeline = pipelineFor({ ...fakeReport, backup: "/p/.claude.backup-123" });
     executeSpec(baseSpec, { log, exit, runPipeline, resolveHarnessRoot: () => "/h" });
     expect(log).toHaveBeenCalledWith(expect.stringContaining("/p/.claude.backup-123"));
   });
@@ -242,7 +278,7 @@ describe("executeSpec", () => {
   it("renders 'Claude · Codex · OpenCode' line for cli=all", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => ({
+    const runPipeline = pipelineFor({
       ...fakeReport,
       codex: {
         agentsMdPath: "/p/AGENTS.md",
@@ -256,7 +292,7 @@ describe("executeSpec", () => {
         commandFiles: [],
         pluginPath: "/p/.opencode/plugins/uzys-harness.ts",
       },
-    }));
+    });
     executeSpec(
       { ...baseSpec, cli: "all" },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
@@ -267,7 +303,7 @@ describe("executeSpec", () => {
   it("renders 'Claude · Codex' line for cli=both (Codex only)", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => ({
+    const runPipeline = pipelineFor({
       ...fakeReport,
       codex: {
         agentsMdPath: "/p/AGENTS.md",
@@ -275,7 +311,7 @@ describe("executeSpec", () => {
         hookFiles: [],
         skillFiles: [],
       },
-    }));
+    });
     executeSpec(
       { ...baseSpec, cli: "both" },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
@@ -286,7 +322,7 @@ describe("executeSpec", () => {
   it("renders 'Claude · OpenCode' line when only opencode present", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => ({
+    const runPipeline = pipelineFor({
       ...fakeReport,
       opencode: {
         agentsMdPath: "/p/AGENTS.md",
@@ -294,7 +330,7 @@ describe("executeSpec", () => {
         commandFiles: [],
         pluginPath: "/p/.opencode/plugins/uzys-harness.ts",
       },
-    }));
+    });
     executeSpec(
       { ...baseSpec, cli: "opencode" },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
@@ -305,7 +341,7 @@ describe("executeSpec", () => {
   it("shortens long /private/tmp paths in TARGET row", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => fakeReport);
+    const runPipeline = pipelineFor(fakeReport);
     executeSpec(
       {
         ...baseSpec,
@@ -324,7 +360,7 @@ describe("executeSpec", () => {
   it("shortens HOME-relative paths in TARGET row", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => fakeReport);
+    const runPipeline = pipelineFor(fakeReport);
     const home = process.env.HOME ?? "/Users/test";
     process.env.HOME = home;
     executeSpec(
@@ -343,7 +379,7 @@ describe("executeSpec", () => {
   it("formatOptions reflects enabled flags", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => fakeReport);
+    const runPipeline = pipelineFor(fakeReport);
     executeSpec(
       {
         ...baseSpec,
@@ -371,7 +407,7 @@ describe("executeSpec", () => {
   it("renders Phase 2 (External Assets) when report.external has attempted entries", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline: (s: InstallSpec, h: string) => InstallReport = () => ({
+    const runPipeline = pipelineFor({
       ...fakeReport,
       external: {
         attempted: [
@@ -454,7 +490,7 @@ describe("executeSpec", () => {
   it("renders Phase 3 (instead of 2) for codex when external assets phase is rendered", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline: (s: InstallSpec, h: string) => InstallReport = () => ({
+    const runPipeline = pipelineFor({
       ...fakeReport,
       external: {
         attempted: [
@@ -490,14 +526,14 @@ describe("executeSpec", () => {
   it("renders .env.example + .gitignore + .mcp-allowlist rows when envFiles flags set", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => ({
+    const runPipeline = pipelineFor({
       ...fakeReport,
       envFiles: {
         envExampleCreated: true,
         gitignoreEnvAdded: true,
         mcpAllowlist: ["context7", "github", "supabase"],
       },
-    }));
+    });
     executeSpec(baseSpec, { log, exit, runPipeline, resolveHarnessRoot: () => "/h" });
     expect(log).toHaveBeenCalledWith(expect.stringContaining(".env.example"));
     expect(log).toHaveBeenCalledWith(expect.stringContaining(".gitignore"));
@@ -508,11 +544,7 @@ describe("executeSpec", () => {
   it("renders Update Mode summary when report.updateMode is present", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline: (
-      s: InstallSpec,
-      h: string,
-      m?: import("../src/installer.js").InstallMode,
-    ) => InstallReport = () => ({
+    const runPipeline = pipelineFor({
       ...fakeReport,
       backup: "/p/.claude.backup-2026",
       mode: "update",
@@ -542,7 +574,7 @@ describe("executeSpec", () => {
   it("renders 'add' / 'reinstall' header label for those modes", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => fakeReport);
+    const runPipeline = pipelineFor(fakeReport);
     executeSpec(baseSpec, {
       log,
       exit,
@@ -565,7 +597,7 @@ describe("executeSpec", () => {
   it("renders Codex opt-in rows when codexOptIn report has skills + trust", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => ({
+    const runPipeline = pipelineFor({
       ...fakeReport,
       codex: {
         agentsMdPath: "/p/AGENTS.md",
@@ -577,7 +609,7 @@ describe("executeSpec", () => {
         skillsInstalled: { enabled: true, count: 6, targetDir: "/Users/x/.codex/skills" },
         trustEntry: { enabled: true, status: "registered" as const },
       },
-    }));
+    });
     executeSpec(
       { ...baseSpec, cli: "codex" },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
@@ -591,7 +623,7 @@ describe("executeSpec", () => {
   it("renders 'already present' for trust entry when previously registered", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => ({
+    const runPipeline = pipelineFor({
       ...fakeReport,
       codex: {
         agentsMdPath: "/p/AGENTS.md",
@@ -603,7 +635,7 @@ describe("executeSpec", () => {
         skillsInstalled: { enabled: false, count: 0, targetDir: "/Users/x/.codex/skills" },
         trustEntry: { enabled: true, status: "already-present" as const },
       },
-    }));
+    });
     executeSpec(
       { ...baseSpec, cli: "codex" },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
@@ -614,7 +646,7 @@ describe("executeSpec", () => {
   it("renders trust entry error as skip row", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => ({
+    const runPipeline = pipelineFor({
       ...fakeReport,
       codex: {
         agentsMdPath: "/p/AGENTS.md",
@@ -626,7 +658,7 @@ describe("executeSpec", () => {
         skillsInstalled: { enabled: false, count: 0, targetDir: "/Users/x/.codex/skills" },
         trustEntry: { enabled: true, status: "error" as const, message: "permission denied" },
       },
-    }));
+    });
     executeSpec(
       { ...baseSpec, cli: "codex" },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
@@ -637,7 +669,7 @@ describe("executeSpec", () => {
   it("shortens long non-HOME non-/private paths to '…/last3' fallback", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => fakeReport);
+    const runPipeline = pipelineFor(fakeReport);
     // Force HOME mismatch: use /opt/very/long/non-home/project-name-that-is-over-fifty-chars
     const longPath = "/opt/some/very/long/path/way/over/fifty/chars/total/here/indeed";
     process.env.HOME = "/Users/never-matches";
@@ -655,7 +687,7 @@ describe("executeSpec", () => {
   it("uses path as-is when ≤ 50 chars", () => {
     const log = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    const runPipeline = vi.fn(() => fakeReport);
+    const runPipeline = pipelineFor(fakeReport);
     const shortPath = "/short/p";
     executeSpec(
       { ...baseSpec, projectDir: shortPath },

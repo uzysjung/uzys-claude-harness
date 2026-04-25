@@ -73,6 +73,15 @@ export function specFromOptions(options: InstallOptions): RunInstallResult {
   };
 }
 
+/** Callbacks for progressive rendering during runInstall (avoids "Phase 1 silence" UX). */
+export interface PipelineCallbacks {
+  onProgress?: (event: import("../installer.js").ProgressEvent) => void;
+  externalDeps?: {
+    onAssetStart?: (asset: import("../external-assets.js").ExternalAsset) => void;
+    onAssetResult?: (result: import("../external-installer.js").AssetInstallResult) => void;
+  };
+}
+
 export interface InstallActionDeps {
   log?: (msg: string) => void;
   err?: (msg: string) => void;
@@ -82,6 +91,7 @@ export interface InstallActionDeps {
     spec: InstallSpec,
     harnessRoot: string,
     mode?: import("../installer.js").InstallMode,
+    callbacks?: PipelineCallbacks,
   ) => InstallReport;
   /** Override the harness root resolver (defaults to a path relative to this file). */
   resolveHarnessRoot?: () => string;
@@ -127,6 +137,7 @@ export interface ExecuteSpecDeps {
     spec: InstallSpec,
     harnessRoot: string,
     mode?: import("../installer.js").InstallMode,
+    callbacks?: PipelineCallbacks,
   ) => InstallReport;
   resolveHarnessRoot?: () => string;
   /** Router action mode (forwarded to runInstall). Default "fresh". */
@@ -167,9 +178,32 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
   log(phaseHeader(1, deps.mode === "update" ? "Update Mode" : "Templates"));
   log("");
 
+  // Streaming progress: baseline 완료 시 즉시 Phase 1 rows 출력, external은 per-asset 스트리밍.
+  let phase2HeaderPrinted = false;
+  const callbacks: PipelineCallbacks = {
+    onProgress: (event) => {
+      if (event.type === "baseline-complete") {
+        renderPhase1Rows(log, event.baseline);
+      } else if (event.type === "external-start" && event.assetCount > 0) {
+        log(phaseHeader(2, "External Assets"));
+        log("");
+        phase2HeaderPrinted = true;
+      }
+    },
+    externalDeps: {
+      onAssetStart: (asset) => {
+        log(`  ${c.dim("→")} ${c.dim(asset.description)} ${c.dim("...")}`);
+      },
+      onAssetResult: (result) => {
+        const meta = result.ok ? formatAssetMeta(result.asset) : (result.message ?? "failed");
+        log(assetRow(result.ok ? "success" : "skip", result.asset.id, meta));
+      },
+    },
+  };
+
   let report: InstallReport;
   try {
-    report = runPipeline(spec, resolveHarnessRoot(), deps.mode);
+    report = runPipeline(spec, resolveHarnessRoot(), deps.mode, callbacks);
   } catch (e: unknown) {
     const detail = e instanceof Error ? e.message : String(e);
     log("");
@@ -178,31 +212,8 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
     return;
   }
 
-  // Update mode 출력 분기 — manifest copy / external 모두 skip
+  // Update mode 단축 출력 — manifest copy / external 모두 skip
   if (report.updateMode) {
-    if (report.backup) {
-      log(assetRow("success", "backup", shortenPath(report.backup)));
-    }
-    for (const [dir, count] of Object.entries(report.updateMode.updated)) {
-      if (count > 0) log(assetRow("success", dir, `${count} files updated`));
-    }
-    for (const [dir, removed] of Object.entries(report.updateMode.pruned)) {
-      if (removed.length > 0) {
-        log(assetRow("skip", `${dir} orphan prune`, `${removed.length} removed`));
-      }
-    }
-    if (report.updateMode.claudeMdUpdated) {
-      log(assetRow("success", ".claude/CLAUDE.md", "refreshed from template"));
-    }
-    if (report.updateMode.staleHookRefs.length > 0) {
-      log(
-        assetRow(
-          "skip",
-          "settings.json stale hook refs",
-          `${report.updateMode.staleHookRefs.length} removed`,
-        ),
-      );
-    }
     log("");
     log(sectionHeader("Summary"));
     log("");
@@ -216,41 +227,8 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
     return;
   }
 
-  log(assetRow("success", "rules + hooks + commands + agents", `${report.filesCopied} files`));
-  log(assetRow("success", "skeleton + project-claude/<track>.md", `${report.dirsCopied} dirs`));
-  if (report.skipped > 0) {
-    log(assetRow("skip", "manifest entries (applies → false)", `${report.skipped} skipped`));
-  }
-  if (report.backup) {
-    log(assetRow("success", "backup", shortenPath(report.backup)));
-  }
-  const mcpList = report.mcpServers.join(", ") || "(none)";
-  log(assetRow("success", ".mcp.json", mcpList));
-  if (report.envFiles.mcpAllowlist) {
-    log(
-      assetRow(
-        "success",
-        ".mcp-allowlist",
-        `${report.envFiles.mcpAllowlist.length} servers (D35 opt-in gate)`,
-      ),
-    );
-  }
-  if (report.envFiles.envExampleCreated) {
-    log(assetRow("success", ".env.example", "Supabase 토큰 가이드"));
-  }
-  if (report.envFiles.gitignoreEnvAdded) {
-    log(assetRow("success", ".gitignore", "+ .env"));
-  }
-  log("");
-
-  // ━━━ Phase 2 — External Assets (skills / plugins / npm-global) ━━━
-  if (report.external && report.external.attempted.length > 0) {
-    log(phaseHeader(2, "External Assets"));
-    log("");
-    for (const r of report.external.attempted) {
-      const meta = r.ok ? formatAssetMeta(r.asset) : (r.message ?? "failed");
-      log(assetRow(r.ok ? "success" : "skip", r.asset.id, meta));
-    }
+  // Phase 2 trailing newline (if header was printed)
+  if (phase2HeaderPrinted) {
     log("");
   }
 
@@ -355,6 +333,71 @@ function formatAssetMeta(asset: import("../external-assets.js").ExternalAsset): 
   }
 }
 
+/**
+ * Phase 1 rows 출력. baseline-complete progress event에서 호출 — 외부 자산 설치
+ * 시작 전 즉시 화면에 표시되어야 한다 (멈춰 보임 방지).
+ */
+function renderPhase1Rows(
+  log: (msg: string) => void,
+  baseline: import("../installer.js").BaselineReport,
+): void {
+  // Update mode rows
+  if (baseline.updateMode) {
+    if (baseline.backup) {
+      log(assetRow("success", "backup", shortenPath(baseline.backup)));
+    }
+    for (const [dir, count] of Object.entries(baseline.updateMode.updated)) {
+      if (count > 0) log(assetRow("success", dir, `${count} files updated`));
+    }
+    for (const [dir, removed] of Object.entries(baseline.updateMode.pruned)) {
+      if (removed.length > 0) {
+        log(assetRow("skip", `${dir} orphan prune`, `${removed.length} removed`));
+      }
+    }
+    if (baseline.updateMode.claudeMdUpdated) {
+      log(assetRow("success", ".claude/CLAUDE.md", "refreshed from template"));
+    }
+    if (baseline.updateMode.staleHookRefs.length > 0) {
+      log(
+        assetRow(
+          "skip",
+          "settings.json stale hook refs",
+          `${baseline.updateMode.staleHookRefs.length} removed`,
+        ),
+      );
+    }
+    return;
+  }
+
+  // Fresh / add / reinstall — Phase 1 rows
+  log(assetRow("success", "rules + hooks + commands + agents", `${baseline.filesCopied} files`));
+  log(assetRow("success", "skeleton + project-claude/<track>.md", `${baseline.dirsCopied} dirs`));
+  if (baseline.skipped > 0) {
+    log(assetRow("skip", "manifest entries (applies → false)", `${baseline.skipped} skipped`));
+  }
+  if (baseline.backup) {
+    log(assetRow("success", "backup", shortenPath(baseline.backup)));
+  }
+  const mcpList = baseline.mcpServers.join(", ") || "(none)";
+  log(assetRow("success", ".mcp.json", mcpList));
+  if (baseline.envFiles.mcpAllowlist) {
+    log(
+      assetRow(
+        "success",
+        ".mcp-allowlist",
+        `${baseline.envFiles.mcpAllowlist.length} servers (D35 opt-in gate)`,
+      ),
+    );
+  }
+  if (baseline.envFiles.envExampleCreated) {
+    log(assetRow("success", ".env.example", "Supabase 토큰 가이드"));
+  }
+  if (baseline.envFiles.gitignoreEnvAdded) {
+    log(assetRow("success", ".gitignore", "+ .env"));
+  }
+  log("");
+}
+
 function formatOptions(spec: InstallSpec): string {
   const flags: string[] = [];
   if (spec.options.withTauri) flags.push("tauri");
@@ -411,6 +454,7 @@ function defaultRunPipeline(
   spec: InstallSpec,
   harnessRoot: string,
   mode?: import("../installer.js").InstallMode,
+  callbacks?: PipelineCallbacks,
 ): InstallReport {
   const ctx: import("../installer.js").InstallContext = {
     harnessRoot,
@@ -418,6 +462,8 @@ function defaultRunPipeline(
     spec,
   };
   if (mode) ctx.mode = mode;
+  if (callbacks?.onProgress) ctx.onProgress = callbacks.onProgress;
+  if (callbacks?.externalDeps) ctx.externalDeps = callbacks.externalDeps;
   return runInstallPipeline(ctx);
 }
 
