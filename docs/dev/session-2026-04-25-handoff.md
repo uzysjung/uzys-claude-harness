@@ -68,7 +68,44 @@ bash scripts/hito-aggregate.sh --summary
 # - /uzys:review → /uzys:ship → v28.0.0 태그
 ```
 
-### 2.3 Codex 1차 후속 (별도 SPEC 또는 follow-up)
+### 2.3 CLI 재작성 (`docs/specs/cli-rewrite.md`) — Phase A 착수 대기
+
+**Status**: Accepted (2026-04-25). PR #11 머지 → Phase A 착수.
+
+**Trigger**: `scripts/setup-harness.sh` 1453줄 + 인터랙티브 prompt 입력 대기 시각적 불명 + `/dev/tty: Device not configured` stderr 노이즈.
+
+**핵심 결정** (ADR-003):
+- TypeScript on Node 20+ strict
+- `@clack/prompts` 인터랙티브
+- `tsup` 단일 번들
+- **Vitest 커버리지 ≥ 90%** (lines + branches + functions, 사용자 지시 2026-04-25)
+- GitHub Releases 1차 → npm 후속
+- bash 3종 (`install.sh`, `setup-harness.sh`, `test-harness.sh`) cutover 폐기
+
+**Phase 분해** (총 6~8일):
+- A 초기화 + 골격 (1일)
+- B clack prompt + state 감지 (1일)
+- C 설치 단계 핵심 (1.5일)
+- D Codex 호환 통합 (0.5~1일)
+- E 테스트 스위트 90% 커버리지 (1.5일)
+- F 빌드 + 분배 + 폐기 (0.5~1일)
+- G dogfood + Ship (0.5일)
+
+**다음 세션 진입**:
+```bash
+# 1. PR #11 (SPEC + ADR-003) 머지 확인
+gh pr view 11 --json state
+
+# 2. Phase A 시작 — TS 프로젝트 초기화
+git checkout -b feat/cli-rewrite-phase-a
+mkdir -p src tests
+# package.json, tsconfig.json, biome.json, vitest.config.ts 생성
+# 30분 spike: commander vs cac, tsup vs esbuild
+```
+
+**병행 관계**: Phase 1 Finalization AC3 HITO baseline은 wall-clock 대기라 본 작업과 직렬 충돌 없음. 본 CLI 재작성 작업이 HITO 측정 자체를 끊지 않음 (Claude Code 사용 그대로).
+
+### 2.4 Codex 1차 후속 (별도 SPEC 또는 follow-up)
 
 - **OQ7 — Issue #17532 라이브 인터랙티브 세션 hook 검증**
   - 현 dogfood는 비대화형(`codex exec`) 컨텍스트 기준

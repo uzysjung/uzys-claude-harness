@@ -48,11 +48,13 @@
 - 외부 의존성 번들링 (`--noExternal`) — 사용자 측 `npm install` 부담 0
 - 대안: `esbuild` 직접 (구성 더 많이 필요), `bun build` (Bun 의존)
 
-### D5. 테스트 — `Vitest`
+### D5. 테스트 — `Vitest`, 커버리지 ≥ 90%
 
 - 단위 테스트: arg 파서, state detection, MCP TOML 변환 등 순수 함수
 - 통합 테스트: 실 임시 디렉토리(`fs.mkdtempSync`)에 install → 파일 존재 검증
 - prompt 모킹: clack의 `__interceptors` 또는 stdin/stdout 스트림 wrap
+- **커버리지 게이트**: lines + branches + functions 모두 **≥ 90%** (사용자 지시, 2026-04-25). v8 provider + 커버리지 미달 시 CI exit 1 + Ship 차단
+- `vitest.config.ts` `coverage.thresholds.lines/branches/functions = 90`
 
 ### D6. 분배 — GitHub Releases 1차 (npm publish 후속)
 
