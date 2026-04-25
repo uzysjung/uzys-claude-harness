@@ -8,6 +8,7 @@
  * 실패는 "warn-skip" — 종료 시 누락 자산 보고 (OQ1 결정).
  */
 
+import { hasDevTrack } from "./track-match.js";
 import type { OptionFlags, Track } from "./types.js";
 
 export type ExternalAssetMethod =
@@ -287,7 +288,8 @@ export const EXTERNAL_ASSETS: ReadonlyArray<ExternalAsset> = [
   {
     id: "business-growth-skills",
     description: "business-growth-skills (4 — customer success, sales eng, revops, contract)",
-    condition: { kind: "any-track", tracks: ["executive", "full"] },
+    // v0.5.0 — growth-marketing Track에서도 재사용. 합집합 조건.
+    condition: { kind: "any-track", tracks: ["executive", "full", "growth-marketing"] },
     method: {
       kind: "plugin",
       marketplace: "alirezarezvani/claude-skills",
@@ -302,6 +304,104 @@ export const EXTERNAL_ASSETS: ReadonlyArray<ExternalAsset> = [
       kind: "plugin",
       marketplace: "alirezarezvani/claude-skills",
       pluginId: "finance-skills@claude-code-skills",
+    },
+  },
+
+  // === Project Management Track (v0.5.0) ===
+  // SPEC docs/specs/new-tracks-pm-growth.md §3.5 — pm-skills 4/4.
+  {
+    id: "pm-skills",
+    description:
+      "pm-skills (6 — senior PM, scrum master, Jira/Confluence/Atlassian admin, template creator)",
+    condition: { kind: "any-track", tracks: ["project-management"] },
+    method: {
+      kind: "plugin",
+      marketplace: "alirezarezvani/claude-skills",
+      pluginId: "pm-skills@claude-code-skills",
+    },
+  },
+  // SPEC §3.5 — product-skills: has-dev-track + project-management 합집합.
+  // 8 dev Track + 1 project-management = 9 Track entries (executive/growth-marketing 제외).
+  {
+    id: "product-skills",
+    description: "product-skills (15 — RICE, PRD, agile PO, UX research, SaaS scaffolder ...)",
+    condition: {
+      kind: "any-track",
+      tracks: [
+        "csr-supabase",
+        "csr-fastify",
+        "csr-fastapi",
+        "ssr-htmx",
+        "ssr-nextjs",
+        "data",
+        "tooling",
+        "full",
+        "project-management",
+      ],
+    },
+    method: {
+      kind: "plugin",
+      marketplace: "alirezarezvani/claude-skills",
+      pluginId: "product-skills@claude-code-skills",
+    },
+  },
+
+  // === Growth Marketing Track (v0.5.0) ===
+  // SPEC docs/specs/new-tracks-pm-growth.md §3.5 — 4 entries 모두 4/4.
+  {
+    id: "marketing-skills",
+    description:
+      "marketing-skills (44 — content/SEO/CRO/channels/growth/intelligence/sales/twitter)",
+    condition: { kind: "any-track", tracks: ["growth-marketing"] },
+    method: {
+      kind: "plugin",
+      marketplace: "alirezarezvani/claude-skills",
+      pluginId: "marketing-skills@claude-code-skills",
+    },
+  },
+  {
+    id: "content-creator",
+    description: "content-creator (SEO content + brand voice + frameworks)",
+    condition: { kind: "any-track", tracks: ["growth-marketing"] },
+    method: {
+      kind: "plugin",
+      marketplace: "alirezarezvani/claude-skills",
+      pluginId: "content-creator@claude-code-skills",
+    },
+  },
+  {
+    id: "demand-gen",
+    description: "demand-gen (multi-channel demand gen + paid media + partnership)",
+    condition: { kind: "any-track", tracks: ["growth-marketing"] },
+    method: {
+      kind: "plugin",
+      marketplace: "alirezarezvani/claude-skills",
+      pluginId: "demand-gen@claude-code-skills",
+    },
+  },
+  {
+    id: "research-summarizer",
+    description: "research-summarizer (시장 조사 요약)",
+    condition: { kind: "any-track", tracks: ["growth-marketing"] },
+    method: {
+      kind: "plugin",
+      marketplace: "alirezarezvani/claude-skills",
+      pluginId: "research-summarizer@claude-code-skills",
+    },
+  },
+
+  // === Code-quality enforcement (has-dev-track, v0.5.0) ===
+  // SPEC §3.5 — karpathy-coder 4/4. CLAUDE.md P1-P4 선언적 원칙의 검출 도구 layer.
+  // 4 Python tools (stdlib only) + reviewer agent + /karpathy-check + pre-commit hook.
+  {
+    id: "karpathy-coder",
+    description:
+      "karpathy-coder (4 Python tool + reviewer agent + /karpathy-check + pre-commit hook)",
+    condition: { kind: "has-dev-track" },
+    method: {
+      kind: "plugin",
+      marketplace: "alirezarezvani/claude-skills",
+      pluginId: "karpathy-coder@claude-code-skills",
     },
   },
 
@@ -356,7 +456,9 @@ export function shouldInstallAsset(
     case "any-track":
       return ctx.tracks.some((t) => cond.tracks.includes(t));
     case "has-dev-track":
-      return ctx.tracks.some((t) => t !== "executive");
+      // SSOT — track-match.ts hasDevTrack(): csr-*|ssr-*|data|full|tooling.
+      // executive + project-management + growth-marketing = executive-style → 제외.
+      return hasDevTrack(ctx.tracks);
     case "option":
       return ctx.options[cond.flag] === true;
   }
