@@ -25,7 +25,8 @@
     "lint": "biome check src tests",
     "lint:fix": "biome check --write src tests",
     "format": "biome format --write src tests",
-    "ci": "npm run typecheck && npm run lint && npm run test:coverage && npm run build"
+    "ci": "npm run typecheck && npm run lint && npm run test:coverage && npm run build",
+    "prepare": "[ -d dist ] || npm run build"
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
