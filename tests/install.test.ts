@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { installAction, specFromOptions } from "../src/commands/install.js";
+import { executeSpec, installAction, specFromOptions } from "../src/commands/install.js";
 import type { InstallReport } from "../src/installer.js";
 import type { InstallSpec } from "../src/types.js";
 
@@ -144,5 +144,104 @@ describe("installAction", () => {
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     expect(log).toHaveBeenCalledWith(expect.stringContaining("(none)"));
+  });
+});
+
+describe("executeSpec", () => {
+  const baseSpec: InstallSpec = {
+    tracks: ["tooling"],
+    options: {
+      withTauri: false,
+      withGsd: false,
+      withEcc: false,
+      withPrune: false,
+      withTob: false,
+    },
+    cli: "claude",
+    projectDir: "/p",
+  };
+
+  it("logs install report on success (claude only)", () => {
+    const log = vi.fn();
+    const err = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => fakeReport);
+    executeSpec(baseSpec, { log, err, exit, runPipeline, resolveHarnessRoot: () => "/h" });
+    expect(err).not.toHaveBeenCalled();
+    expect(exit).not.toHaveBeenCalled();
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Install complete"));
+    expect(runPipeline).toHaveBeenCalledOnce();
+  });
+
+  it("renders Codex line when report.codex is present", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => ({
+      ...fakeReport,
+      codex: {
+        agentsMdPath: "/p/AGENTS.md",
+        configTomlPath: "/p/.codex/config.toml",
+        hookFiles: ["/p/.codex/hooks/a.sh", "/p/.codex/hooks/b.sh"],
+        skillFiles: ["/p/.codex-skills/uzys-spec/SKILL.md"],
+      },
+    }));
+    executeSpec(
+      { ...baseSpec, cli: "codex" },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Codex"));
+  });
+
+  it("renders OpenCode line when report.opencode is present", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => ({
+      ...fakeReport,
+      opencode: {
+        agentsMdPath: "/p/AGENTS.md",
+        opencodeJsonPath: "/p/opencode.json",
+        commandFiles: Array.from({ length: 6 }, (_, i) => `/p/.opencode/commands/uzys-${i}.md`),
+        pluginPath: "/p/.opencode/plugins/uzys-harness.ts",
+      },
+    }));
+    executeSpec(
+      { ...baseSpec, cli: "opencode" },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("OpenCode"));
+  });
+
+  it("logs warn when skipped > 0", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => ({ ...fakeReport, skipped: 3 }));
+    executeSpec(baseSpec, { log, exit, runPipeline, resolveHarnessRoot: () => "/h" });
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Skipped"));
+  });
+
+  it("logs Backup info when report.backup present", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => ({ ...fakeReport, backup: "/p/.claude.backup-123" }));
+    executeSpec(baseSpec, { log, exit, runPipeline, resolveHarnessRoot: () => "/h" });
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Backup"));
+  });
+
+  it("err + exit(1) when pipeline throws", () => {
+    const err = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => {
+      throw new Error("disk full");
+    });
+    executeSpec(baseSpec, {
+      log: vi.fn(),
+      err,
+      exit,
+      runPipeline,
+      resolveHarnessRoot: () => "/h",
+    });
+    expect(err).toHaveBeenCalledWith(expect.stringContaining("install failed"));
+    expect(err).toHaveBeenCalledWith(expect.stringContaining("disk full"));
+    expect(exit).toHaveBeenCalledWith(1);
   });
 });

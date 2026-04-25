@@ -1,0 +1,207 @@
+import type { SpawnSyncReturns } from "node:child_process";
+import { describe, expect, it, vi } from "vitest";
+import type { ExternalAsset } from "../src/external-assets.js";
+import {
+  type ExternalInstallerDeps,
+  formatSkippedReport,
+  runExternalInstall,
+} from "../src/external-installer.js";
+import { DEFAULT_OPTIONS } from "../src/types.js";
+
+type SpawnFn = NonNullable<ExternalInstallerDeps["spawn"]>;
+
+/** vi.fn은 generic이 까다로워 단순 cast로 처리. */
+function makeSpawnMock(fn: () => SpawnSyncReturns<string>): SpawnFn & {
+  mock: { calls: Array<Parameters<SpawnFn>> };
+} {
+  return vi.fn(fn) as unknown as SpawnFn & {
+    mock: { calls: Array<Parameters<SpawnFn>> };
+  };
+}
+
+function ok(): SpawnSyncReturns<string> {
+  return {
+    pid: 0,
+    output: [],
+    stdout: "",
+    stderr: "",
+    status: 0,
+    signal: null,
+  };
+}
+
+function fail(stderr = "boom"): SpawnSyncReturns<string> {
+  return {
+    pid: 0,
+    output: [],
+    stdout: "",
+    stderr,
+    status: 1,
+    signal: null,
+  };
+}
+
+const TEST_ASSETS: ExternalAsset[] = [
+  {
+    id: "skill-no-name",
+    description: "skill without explicit name",
+    condition: { kind: "any-track", tracks: ["tooling"] },
+    method: { kind: "skill", source: "owner/repo" },
+  },
+  {
+    id: "skill-with-name",
+    description: "skill with --skill flag",
+    condition: { kind: "has-dev-track" },
+    method: { kind: "skill", source: "owner/repo", skill: "react" },
+  },
+  {
+    id: "plugin-asset",
+    description: "claude plugin",
+    condition: { kind: "any-track", tracks: ["full"] },
+    method: { kind: "plugin", marketplace: "ms/foo", pluginId: "foo@ms-foo" },
+  },
+  {
+    id: "npm-asset",
+    description: "npm install -g",
+    condition: { kind: "option", flag: "withEcc" },
+    method: { kind: "npm-global", pkg: "vercel" },
+  },
+  {
+    id: "npx-asset",
+    description: "npx run",
+    condition: { kind: "option", flag: "withGsd" },
+    method: { kind: "npx-run", cmd: "get-shit-done-cc@latest" },
+  },
+];
+
+describe("runExternalInstall — method dispatch", () => {
+  it("skill without --skill produces correct npx args", () => {
+    const spawn = makeSpawnMock(() => ok());
+    runExternalInstall(
+      { tracks: ["tooling"], options: DEFAULT_OPTIONS },
+      { spawn, assets: [TEST_ASSETS[0] as ExternalAsset] },
+    );
+    expect(spawn).toHaveBeenCalledTimes(1);
+    expect(spawn.mock.calls[0]?.[0]).toBe("npx");
+    expect(spawn.mock.calls[0]?.[1]).toEqual(["skills", "add", "owner/repo", "--yes"]);
+  });
+
+  it("skill with --skill includes --skill flag", () => {
+    const spawn = makeSpawnMock(() => ok());
+    runExternalInstall(
+      { tracks: ["tooling"], options: DEFAULT_OPTIONS },
+      { spawn, assets: [TEST_ASSETS[1] as ExternalAsset] },
+    );
+    expect(spawn.mock.calls[0]?.[1]).toEqual([
+      "skills",
+      "add",
+      "owner/repo",
+      "--skill",
+      "react",
+      "--yes",
+    ]);
+  });
+
+  it("plugin invokes marketplace add + plugin install (2 spawn calls)", () => {
+    const spawn = makeSpawnMock(() => ok());
+    runExternalInstall(
+      { tracks: ["full"], options: DEFAULT_OPTIONS },
+      { spawn, assets: [TEST_ASSETS[2] as ExternalAsset] },
+    );
+    expect(spawn).toHaveBeenCalledTimes(2);
+    expect(spawn.mock.calls[0]?.[1]).toEqual(["plugin", "marketplace", "add", "ms/foo"]);
+    expect(spawn.mock.calls[1]?.[1]).toEqual(["plugin", "install", "foo@ms-foo"]);
+  });
+
+  it("npm-global produces npm install -g <pkg>", () => {
+    const spawn = makeSpawnMock(() => ok());
+    runExternalInstall(
+      { tracks: ["tooling"], options: { ...DEFAULT_OPTIONS, withEcc: true } },
+      { spawn, assets: [TEST_ASSETS[3] as ExternalAsset] },
+    );
+    expect(spawn.mock.calls[0]?.[0]).toBe("npm");
+    expect(spawn.mock.calls[0]?.[1]).toEqual(["install", "-g", "vercel"]);
+  });
+
+  it("npx-run produces npx <cmd>", () => {
+    const spawn = makeSpawnMock(() => ok());
+    runExternalInstall(
+      { tracks: ["tooling"], options: { ...DEFAULT_OPTIONS, withGsd: true } },
+      { spawn, assets: [TEST_ASSETS[4] as ExternalAsset] },
+    );
+    expect(spawn.mock.calls[0]?.[0]).toBe("npx");
+    expect(spawn.mock.calls[0]?.[1]).toEqual(["get-shit-done-cc@latest"]);
+  });
+});
+
+describe("runExternalInstall — failure modes", () => {
+  it("warn-skip default reports failure but continues", () => {
+    const spawn = makeSpawnMock(() => fail("registry down"));
+    const warn = vi.fn();
+    const report = runExternalInstall(
+      { tracks: ["tooling"], options: { ...DEFAULT_OPTIONS, withEcc: true, withGsd: true } },
+      {
+        spawn,
+        warn,
+        assets: [TEST_ASSETS[3] as ExternalAsset, TEST_ASSETS[4] as ExternalAsset],
+      },
+    );
+    expect(report.aborted).toBeUndefined();
+    expect(report.succeeded).toBe(0);
+    expect(report.skipped).toBe(2);
+    expect(warn).toHaveBeenCalledTimes(2);
+  });
+
+  it("abort failureMode stops install on first failure", () => {
+    const spawn = makeSpawnMock(() => fail());
+    const abortAsset: ExternalAsset = {
+      id: "must-have",
+      description: "abort if missing",
+      condition: { kind: "any-track", tracks: ["tooling"] },
+      method: { kind: "npm-global", pkg: "critical-pkg" },
+      failureMode: "abort",
+    };
+    const report = runExternalInstall(
+      { tracks: ["tooling"], options: DEFAULT_OPTIONS },
+      { spawn, assets: [abortAsset, TEST_ASSETS[0] as ExternalAsset] },
+    );
+    expect(report.aborted?.id).toBe("must-have");
+    // 두번째 자산은 시도조차 안 됨
+    expect(report.attempted).toHaveLength(1);
+  });
+
+  it("skips assets that don't match the spec (dispatch never called)", () => {
+    const spawn = makeSpawnMock(() => ok());
+    runExternalInstall(
+      { tracks: ["executive"], options: DEFAULT_OPTIONS },
+      { spawn, assets: [TEST_ASSETS[0] as ExternalAsset] }, // tooling-only
+    );
+    expect(spawn).not.toHaveBeenCalled();
+  });
+});
+
+describe("formatSkippedReport", () => {
+  it("returns empty string when nothing skipped", () => {
+    expect(
+      formatSkippedReport({
+        attempted: [{ asset: TEST_ASSETS[0] as ExternalAsset, ok: true }],
+        succeeded: 1,
+        skipped: 0,
+      }),
+    ).toBe("");
+  });
+
+  it("lists failed asset ids + messages", () => {
+    const text = formatSkippedReport({
+      attempted: [
+        { asset: TEST_ASSETS[0] as ExternalAsset, ok: true },
+        { asset: TEST_ASSETS[3] as ExternalAsset, ok: false, message: "registry down" },
+      ],
+      succeeded: 1,
+      skipped: 1,
+    });
+    expect(text).toContain("npm-asset");
+    expect(text).toContain("registry down");
+    expect(text).toContain("1개 외부 자산");
+  });
+});

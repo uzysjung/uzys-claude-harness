@@ -1,12 +1,8 @@
 import { cac } from "cac";
-import {
-  type ExecuteSpecDeps,
-  executeSpec,
-  registerInstallCommand,
-} from "./commands/install.js";
+import { type ExecuteSpecDeps, executeSpec, registerInstallCommand } from "./commands/install.js";
 import { type InteractiveResult, runInteractive } from "./interactive.js";
 
-export const VERSION = "0.3.0";
+export const VERSION = "0.4.0-alpha.1";
 
 export type Cli = ReturnType<typeof cac>;
 
