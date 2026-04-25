@@ -166,6 +166,21 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
   }
   const mcpList = report.mcpServers.join(", ") || "(none)";
   log(assetRow("success", ".mcp.json", mcpList));
+  if (report.envFiles.mcpAllowlist) {
+    log(
+      assetRow(
+        "success",
+        ".mcp-allowlist",
+        `${report.envFiles.mcpAllowlist.length} servers (D35 opt-in gate)`,
+      ),
+    );
+  }
+  if (report.envFiles.envExampleCreated) {
+    log(assetRow("success", ".env.example", "Supabase 토큰 가이드"));
+  }
+  if (report.envFiles.gitignoreEnvAdded) {
+    log(assetRow("success", ".gitignore", "+ .env"));
+  }
   log("");
 
   // ━━━ Phase 2 — External Assets (skills / plugins / npm-global) ━━━
