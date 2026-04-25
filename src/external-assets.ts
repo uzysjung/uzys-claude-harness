@@ -50,11 +50,11 @@ const ALL_CSR_SSR_FULL: Track[] = [
   "full",
 ];
 
+/** csr-*|ssr-nextjs|full per bash setup-harness.sh L1041 (ssr-htmx 제외 — htmx는 React 미사용). */
 const CSR_SSR_NEXTJS_FULL: Track[] = [
   "csr-supabase",
   "csr-fastify",
   "csr-fastapi",
-  "ssr-htmx",
   "ssr-nextjs",
   "full",
 ];
