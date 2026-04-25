@@ -1,5 +1,6 @@
 import { chmodSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { type CodexTransformReport, runCodexTransform } from "./codex/transform.js";
 import { backupDir, copyDir, copyFile, ensureProjectSkeleton } from "./fs-ops.js";
 import { buildManifest } from "./manifest.js";
 import { composeMcpJson, writeMcpJson } from "./mcp-merge.js";
@@ -22,6 +23,8 @@ export interface InstallReport {
   backup: string | null;
   installedTracks: string[];
   mcpServers: string[];
+  /** Present when CLI ∈ {codex, both}. */
+  codex: CodexTransformReport | null;
 }
 
 /**
@@ -77,6 +80,12 @@ export function runInstall(ctx: InstallContext): InstallReport {
   // Write metadata file used by detect_install_state on next run
   writeInstalledTracks(projectDir, spec.tracks);
 
+  // Codex transform when --cli ∈ {codex, both}
+  let codex: CodexTransformReport | null = null;
+  if (spec.cli === "codex" || spec.cli === "both") {
+    codex = runCodexTransform({ harnessRoot, projectDir });
+  }
+
   return {
     filesCopied,
     dirsCopied,
@@ -84,6 +93,7 @@ export function runInstall(ctx: InstallContext): InstallReport {
     backup: backupPath,
     installedTracks: [...spec.tracks].sort(),
     mcpServers: Object.keys(mcpResult.mcpServers).sort(),
+    codex,
   };
 }
 
