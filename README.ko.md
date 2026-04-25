@@ -135,7 +135,7 @@ curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/i
 
 **로컬 clone에서**:
 ```bash
-bash /path/to/uzys-claude-harness/scripts/setup-harness.sh --add-track tooling --project-dir .
+npx -y github:uzysjung/uzys-claude-harness --add-track tooling --project-dir .
 ```
 
 `--add-track`은 기존 `.claude/*`를 보존하고 새 MCP를 `jq`로 `.mcp.json`에 idempotent merge.
@@ -152,7 +152,7 @@ curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/i
 
 **로컬 clone에서**:
 ```bash
-bash /path/to/uzys-claude-harness/scripts/setup-harness.sh --update --project-dir .
+npx -y github:uzysjung/uzys-claude-harness --update --project-dir .
 ```
 
 `--update` 동작:
@@ -173,13 +173,13 @@ rm -rf .claude && mv .claude.backup-<timestamp> .claude
 ```bash
 git clone https://github.com/uzysjung/uzys-claude-harness.git
 cd uzys-claude-harness
-bash scripts/setup-harness.sh --track tooling --project-dir .
+npx -y github:uzysjung/uzys-claude-harness --track tooling --project-dir .
 ```
 
 ### 다중 Track 동시 설치 (union)
 
 ```bash
-bash scripts/setup-harness.sh --track tooling --track csr-fastapi --project-dir .
+npx -y github:uzysjung/uzys-claude-harness --track tooling --track csr-fastapi --project-dir .
 ```
 
 처음부터 여러 Track 필요한 걸 알면 이게 가장 빠름 (2회 setup보다 빠름).
@@ -255,7 +255,7 @@ curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/i
 ### 기타 옵션
 
 ```bash
-bash scripts/setup-harness.sh --help                 # 전체 옵션 표시
+npx -y github:uzysjung/uzys-claude-harness --help                 # 전체 옵션 표시
 ```
 
 ### 사전 요구사항
@@ -337,7 +337,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness
 
 플래그 모드 (CI / 자동화):
 ```bash
-bash scripts/setup-harness.sh --track tooling --cli codex --project-dir .
+npx -y github:uzysjung/uzys-claude-harness --track tooling --cli codex --project-dir .
 ```
 
 `--cli`는 `claude` (기본), `codex`, `both` 셋 중 하나. 기본값 `claude`라 기존 워크플로우는 영향 없음.
@@ -540,7 +540,7 @@ A. macOS + Linux (WSL 포함)는 CI에서 검증. Native Windows shell은 미지
 A. 안 건드림. `setup-harness.sh --project-dir`이 `~/.claude/*`, `/etc/*`, `/usr/bin/*` 등 차단 (D16 보호). 모든 설치는 프로젝트 스코프.
 
 **Q. 이전 버전 설치돼 있는데?**
-A. `bash scripts/setup-harness.sh --update --project-dir .` — `.claude/`를 `.claude.backup-<ts>/`로 백업 + 기존 파일만 latest templates로 덮어쓰기 + orphan 자동 제거 (예: 폐기된 rule) + `settings.json` stale hook 참조 정리.
+A. `npx -y github:uzysjung/uzys-claude-harness --update --project-dir .` — `.claude/`를 `.claude.backup-<ts>/`로 백업 + 기존 파일만 latest templates로 덮어쓰기 + orphan 자동 제거 (예: 폐기된 rule) + `settings.json` stale hook 참조 정리.
 
 **Q. 9 Track은 너무 많은 거 아닌가?**
 A. Track은 조건부 install list일 뿐 abstraction 아님. Track 추가 = TSV 한 줄 + rule 매핑 한 줄. 런타임 비용 0. 필요한 Track만 사용; `--track` 명시 선택.

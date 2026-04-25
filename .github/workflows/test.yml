@@ -1,4 +1,4 @@
-name: test-harness
+name: ci
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  quick:
-    name: Quick test (no install)
+  ci:
+    name: TypeScript CI (typecheck + lint + test:coverage + build)
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -17,24 +17,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install jq (Ubuntu only — macOS ships with jq)
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update -qq && sudo apt-get install -y jq
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Show versions
         run: |
-          bash --version | head -1
-          jq --version
-          git --version
+          node --version
+          npm --version
 
-      - name: Bash syntax check
+      - name: Run CI pipeline
+        run: npm run ci
+
+      - name: Smoke test (install --track tooling into temp dir)
+        shell: bash
         run: |
-          bash -n scripts/setup-harness.sh
-          bash -n scripts/test-harness.sh
-          bash -n scripts/prune-ecc.sh
-          bash -n scripts/sync-cherrypicks.sh
-          bash -n install.sh
-          for f in templates/hooks/*.sh; do bash -n "$f"; done
-
-      - name: Run test-harness --quick
-        run: bash scripts/test-harness.sh --quick
+          tmp=$(mktemp -d)
+          node dist/index.js install --track tooling --project-dir "$tmp"
+          test -f "$tmp/.claude/CLAUDE.md"
+          test -f "$tmp/.claude/.installed-tracks"
+          test -f "$tmp/.mcp.json"
+          rm -rf "$tmp"

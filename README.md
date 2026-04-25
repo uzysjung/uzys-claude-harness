@@ -135,7 +135,7 @@ curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/i
 
 **From local clone**:
 ```bash
-bash /path/to/uzys-claude-harness/scripts/setup-harness.sh --add-track tooling --project-dir .
+npx -y github:uzysjung/uzys-claude-harness --add-track tooling --project-dir .
 ```
 
 `--add-track` preserves existing `.claude/*` and merges new MCPs into `.mcp.json` via `jq` (idempotent).
@@ -152,7 +152,7 @@ curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/i
 
 **From local clone**:
 ```bash
-bash /path/to/uzys-claude-harness/scripts/setup-harness.sh --update --project-dir .
+npx -y github:uzysjung/uzys-claude-harness --update --project-dir .
 ```
 
 What `--update` does:
@@ -173,13 +173,13 @@ rm -rf .claude && mv .claude.backup-<timestamp> .claude
 ```bash
 git clone https://github.com/uzysjung/uzys-claude-harness.git
 cd uzys-claude-harness
-bash scripts/setup-harness.sh --track tooling --project-dir .
+npx -y github:uzysjung/uzys-claude-harness --track tooling --project-dir .
 ```
 
 ### Multi-Track in one go (union)
 
 ```bash
-bash scripts/setup-harness.sh --track tooling --track csr-fastapi --project-dir .
+npx -y github:uzysjung/uzys-claude-harness --track tooling --track csr-fastapi --project-dir .
 ```
 
 Use this when you know upfront you need multiple tracks. Faster than two separate runs.
@@ -254,7 +254,7 @@ curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/i
 ### Other flags
 
 ```bash
-bash scripts/setup-harness.sh --help                 # show full options
+npx -y github:uzysjung/uzys-claude-harness --help                 # show full options
 ```
 
 ### Prerequisites
@@ -376,7 +376,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness
 
 Flag mode (CI / automation):
 ```bash
-bash scripts/setup-harness.sh --track tooling --cli codex --project-dir .
+npx -y github:uzysjung/uzys-claude-harness --track tooling --cli codex --project-dir .
 ```
 
 `--cli` accepts `claude` (default), `codex`, or `both`. Default is `claude` so existing flows are unaffected.
@@ -482,7 +482,7 @@ After `scripts/setup-harness.sh` completes you get a verification table:
 │ Plugins          │ tried  │ network  │   ✅   │
 ```
 
-CI runs `bash scripts/test-harness.sh --quick` (≈5s, 85 tests) on every PR.
+CI runs `npm test` (≈5s, 85 tests) on every PR.
 
 ## Updating cherry-picked content
 
@@ -526,7 +526,7 @@ A. macOS + Linux (incl. WSL) are tested in CI. Native Windows shell is not suppo
 A. No. `setup-harness.sh --project-dir` blocks `~/.claude/*`, `/etc/*`, `/usr/bin/*` etc. (D16 protection). All installation is project-scoped.
 
 **Q. What if I already installed an older version?**
-A. `bash scripts/setup-harness.sh --update --project-dir .` — backs up `.claude/` to `.claude.backup-<ts>/`, overwrites only existing files with latest templates, prunes orphans (e.g., deprecated rule files), cleans stale hook references in `settings.json`.
+A. `npx -y github:uzysjung/uzys-claude-harness --update --project-dir .` — backs up `.claude/` to `.claude.backup-<ts>/`, overwrites only existing files with latest templates, prunes orphans (e.g., deprecated rule files), cleans stale hook references in `settings.json`.
 
 **Q. Why 9 Tracks? Isn't that over-engineered?**
 A. Tracks are conditional install lists, not abstractions. Adding a Track = one TSV row + one rule mapping. No runtime cost. Use only the Tracks you need; `--track` selection is explicit.

@@ -5,6 +5,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+### Changed (CLI rewrite — bash → TypeScript, cutover)
+
+`scripts/setup-harness.sh` (1453 LOC), `scripts/test-harness.sh`, `scripts/claude-to-codex.sh` 폐기. install.sh는 npx wrapper(28 LOC)로 축소. 새 진입점은 모두 Node 기반(`@uzysjung/claude-harness` package, bin: `claude-harness`).
+
+- **Phase A**: TypeScript 프로젝트 골격 + cac CLI + Vitest 90%+ 커버리지 (PR #12)
+- **Phase B**: `@clack/prompts` 인터랙티브 + 5-action 라우터 + state 감지 (PR #13)
+- **Phase C**: 실 install 파이프라인 — 매니페스트 데이터 표 + .mcp.json 병합 + 백업/롤백 (PR #14)
+- **Phase D**: TS Codex 호환 통합 — `claude-to-codex.sh` 247 LOC를 TS 5 모듈로 포팅, OQ4 Closed (PR #15)
+- **Phase E**: 9 Track 통합 테스트 + 매니페스트 5종 보강 (PR #16)
+- **Phase F (이번)**: bash 4종 cutover + GH Releases 분배 + CI workflow vitest 전환
+
+새 진입점 (모든 `bash <(curl ...)` / `bash scripts/*` 대체):
+```bash
+# 권장 (curl 진입 그대로 — 내부에서 npx 호출)
+bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)
+
+# CI / 자동화
+npx -y github:uzysjung/uzys-claude-harness install --track tooling --project-dir .
+```
+
+해소된 사용자 보고 문제:
+- 인터랙티브 prompt 입력 대기 시각화 (clack ↑↓ 화살표 + Space 토글)
+- `/dev/tty: Device not configured` stderr 노이즈 0건
+- 1453 LOC 단일 파일 → 모듈화 (≤ 300 LOC each, 13 src 모듈)
+- shellcheck SC2015 등 누적 경고 → TypeScript strict + biome
+- 분배 환경 차이 (BSD vs GNU sed) → Node.js 단일 의존성
+
+
+
 ## [v27.19.0] — 2026-04-25
 
 ### Added
