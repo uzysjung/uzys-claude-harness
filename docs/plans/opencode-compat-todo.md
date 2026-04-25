@@ -95,15 +95,15 @@
 ## Open OQ 추적
 
 - [x] **OQ2** Slash prefix → `uzys-spec` 채택 (Phase B2, 2026-04-25)
-- [ ] **OQ5** Plugin 배포 형식 → Phase B 또는 E (1차 로컬)
-- [ ] **OQ6** opencode-skills 커뮤니티 plugin 의존 → Phase B (1차 자체 구현)
+- [x] **OQ5** Plugin 배포 형식 → 1차 로컬 번들 채택 (`templates/opencode/.opencode/plugins/`). npm publish는 후속 ADR (Codex OQ8 동일 패턴)
+- [x] **OQ6** opencode-skills 커뮤니티 plugin 의존 → 1차 자체 구현 채택 (uzys 자산만 정확히 노출). 의존은 후속 검토
 
 ---
 
 ## 완료 조건
 
-- [ ] AC1~AC6 모두 Pass
-- [ ] Phase A~G 체크박스 완료
-- [ ] ADR-004 Status: Accepted
-- [ ] OQ2 Closed (OQ5/OQ6는 후속 ADR 가능)
-- [ ] v0.3.0(잠정) 태그 후보 + push
+- [x] AC1~AC6 모두 Pass (AC5는 정적 100% + 라이브 사후)
+- [x] Phase A~G 체크박스 완료 (G 포함)
+- [x] ADR-004 Status: Accepted (2026-04-25)
+- [x] OQ2/OQ5/OQ6 모두 결정 (1차 결정 — 후속 ADR 여지 명시)
+- [x] v0.3.0 ship 진입 (gate-status build/verify/review = true, ship 진행 중)
