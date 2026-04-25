@@ -1,8 +1,8 @@
 # ADR-002: Codex CLI Hook 호환 전략 (Revised)
 
-- **Status**: Proposed (2026-04-24, revised) — Phase E에서 Accepted 전환 예정
-- **Date**: 2026-04-24 (초안), 2026-04-24 (revision)
-- **PR**: #3 (초안 merge), #(TBD) (revision)
+- **Status**: **Accepted** (2026-04-25, Phase E 완료)
+- **Date**: 2026-04-24 (초안), 2026-04-24 (v2 revision), 2026-04-25 (Accepted)
+- **PR**: #3 (초안 merge), #4 (v2 revision), #(TBD) (Accept 전환)
 - **Supersedes**: 없음 (self-revision; 초안 v1은 동일 파일 내 §Appendix-초안 기록)
 - **Related**: `docs/specs/codex-compat.md` §3.4 OQ1/OQ5, `docs/research/codex-compat-matrix-2026-04-24.md` §3
 
