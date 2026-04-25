@@ -19,7 +19,7 @@
 
 ### A-이월 (Phase A 범위 밖 판단)
 
-- [ ] **A4** README.ko.md 동기화 — 영문 A1 변경분 한국어 반영 (사용자 결정 대기)
+- [x] **A4** README.ko.md 동기화 — 영문 A1 변경분 한국어 반영 (commit 3e5af9a, 2026-04-23)
 
 ---
 
@@ -122,8 +122,7 @@
 
 ## 이번 세션 발견 이슈 (추후 해결 대상)
 
-- **setup-harness.sh `--update`가 신규 hook 배포 누락**: `update_dir`이 target에 이미 있는 파일만 덮어씀. v27.14.0에 추가된 `hito-counter.sh`가 기존 설치에 안 들어감 → 수동 복사로 해결. 향후 `--update`에 신규 파일 복사 로직 추가 검토 (Major CR 후보, Phase 4b 이월 아님).
-- **settings.json의 `permissions` 블록이 개인 local 설정**: `--update`로 덮어써지지 않음(의도). hito UserPromptSubmit 섹션을 jq로 수동 병합. `--update`가 settings.json을 대체하는 대신 "병합"하도록 개선 후보.
+> **2026-04-25 업데이트**: bash `setup-harness.sh` 폐기 (v0.2.0 CLI rewrite, ADR-003 Accepted). 아래 두 이슈는 모두 bash 시절 잔재이며 TypeScript CLI는 인터랙티브 모드로 통합되어 무효 처리.
 
 ## 완료 조건
 
