@@ -1,3 +1,4 @@
+import type { InstallMode } from "./installer.js";
 import { type Prompts, defaultPrompts } from "./prompts.js";
 import { type DetectedInstall, detectInstallState } from "./state.js";
 import type { CliMode, InstallSpec, OptionFlags, Track } from "./types.js";
@@ -31,6 +32,8 @@ export interface InteractiveDeps {
 export interface InteractiveResult {
   ok: boolean;
   spec?: InstallSpec;
+  /** Install mode dispatched (router action). Default "fresh" for new installs. */
+  mode?: InstallMode;
   /** When ok=false: machine-readable reason (`no-tty`, `cancelled`, `disabled-action`, `exit`). */
   reason?: "no-tty" | "cancelled" | "disabled-action" | "exit";
   message?: string;
@@ -68,6 +71,7 @@ export async function runInteractive(
   const state = detect(projectDir);
 
   let initialTracks: Track[] | undefined;
+  let mode: InstallMode = "fresh";
   if (state.state === "existing") {
     const action = await prompts.selectAction(state);
     if (action === null) {
@@ -82,10 +86,39 @@ export async function runInteractive(
       prompts.cancel("Track removal is not automated in v27 — manually edit `.claude/`. Aborting.");
       return { ok: false, reason: "disabled-action" };
     }
-    if (action === "update" || action === "add") {
-      initialTracks = state.tracks;
+    if (action === "update") {
+      mode = "update";
+      // Update mode은 정책 파일만 갱신 — Track 변경 없음. spec.tracks = state.tracks.
+      const summary = formatSummary({
+        tracks: state.tracks,
+        options: applyOptionRules(toOptionFlags([])),
+        cli: "claude",
+        projectDir,
+      });
+      const confirmed = await prompts.confirmInstall(`UPDATE policy files only:\n${summary}`);
+      if (!confirmed) {
+        prompts.outro("Cancelled.");
+        return { ok: false, reason: "cancelled" };
+      }
+      prompts.outro("Running update mode...");
+      return {
+        ok: true,
+        mode: "update",
+        spec: {
+          tracks: state.tracks,
+          options: applyOptionRules(toOptionFlags([])),
+          cli: "claude",
+          projectDir,
+        },
+      };
     }
-    // "reinstall" falls through with no initialTracks (clean slate prompt)
+    if (action === "add") {
+      mode = "add";
+      initialTracks = state.tracks;
+    } else if (action === "reinstall") {
+      mode = "reinstall";
+      // reinstall: clean slate prompt (no initialTracks)
+    }
   }
 
   const tracks = await prompts.selectTracks(initialTracks);
@@ -121,6 +154,7 @@ export async function runInteractive(
   prompts.outro("Running install pipeline...");
   return {
     ok: true,
+    mode,
     spec: { tracks, options, cli, projectDir },
   };
 }

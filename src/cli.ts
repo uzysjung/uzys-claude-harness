@@ -41,7 +41,9 @@ export async function defaultAction(deps: DefaultActionDeps = {}): Promise<void>
     exit(1);
     return;
   }
-  execute(result.spec, { log, err, exit });
+  const execDeps: import("./commands/install.js").ExecuteSpecDeps = { log, err, exit };
+  if (result.mode) execDeps.mode = result.mode;
+  execute(result.spec, execDeps);
 }
 
 export function buildCli(): Cli {
