@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.2.0] — 2026-04-25
+
 ### Changed (CLI rewrite — bash → TypeScript, cutover)
 
 `scripts/setup-harness.sh` (1453 LOC), `scripts/test-harness.sh`, `scripts/claude-to-codex.sh` 폐기. install.sh는 npx wrapper(28 LOC)로 축소. 새 진입점은 모두 Node 기반(`@uzysjung/claude-harness` package, bin: `claude-harness`).

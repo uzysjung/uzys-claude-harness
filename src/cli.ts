@@ -2,7 +2,7 @@ import { cac } from "cac";
 import { registerInstallCommand } from "./commands/install.js";
 import { type InteractiveResult, runInteractive } from "./interactive.js";
 
-export const VERSION = "0.1.0-alpha.1";
+export const VERSION = "0.2.0";
 
 export type Cli = ReturnType<typeof cac>;
 
