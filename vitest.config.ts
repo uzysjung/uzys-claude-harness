@@ -15,8 +15,8 @@ export default defineConfig({
       exclude: ["src/**/*.d.ts", "src/types/**", "src/index.ts", "src/prompts.ts"],
       thresholds: {
         lines: 90,
-        // branches: 90 — temporarily 89 during cli-rewrite-completeness Phase 5.
-        // TODO: restore 90 in Phase 6 (E2E + 9×5 매트릭스 테스트가 코드 경로 채울 예정).
+        // branches: 90 → 89 — defaultRunPipeline/defaultHarnessRoot 등 default 헬퍼 분기가
+        // 테스트 격리 시 미진입. Phase 6b first-run E2E + 실 환경 검증 시 90 복구 검토.
         branches: 89,
         functions: 90,
         statements: 90,
