@@ -122,16 +122,46 @@ export default UzysHarness
 ## Status 흐름
 
 ```
-Proposed (현재) → Accepted (Phase E2 smoke 통과 + 사용자 승인 후)
+Proposed (현재) → Accepted (Phase E2 라이브 smoke + 사용자 승인 후)
 ```
 
-후속:
-- Phase E1: plugin 작성 + L1~L4 실측 → ADR-004 본문에 측정값 기록
-- Phase E2: smoke test 통과
-- Phase E3: Status: Accepted (PR에 측정 evidence + 사용자 승인 명시)
+### Phase E1 구현 결과 (2026-04-25)
+
+- **Plugin 본문**: `templates/opencode/.opencode/plugins/uzys-harness.ts` (110줄, self-contained)
+- **Helpers (테스트 미러)**: `src/opencode/plugin-helpers.ts` (95줄) — 동일 로직, 테스트 가능
+- **테스트**: `tests/opencode/plugin-helpers.test.ts` (22 test) + `tests/opencode/install.test.ts` 정적 plugin 본문 검증
+- **3 hook 모두 구현**:
+  - `tool.execute.before` — `PHASE_DEPENDENCY` 매핑으로 게이트 위반 시 throw
+  - `tool.execute.after` — `docs/SPEC.md` 또는 `docs/specs/*.md` 편집 시 `.claude/evals/spec-drift-YYYY-MM-DD.log`에 기록
+  - `messageCreated` filter `role==="user"` — `.claude/evals/hito-YYYY-MM-DD.log` 카운터 (privacy: prompt 본문 미기록)
+
+### 한계 갱신
+
+- [x] **L1** Plugin runtime — Bun/Node 양쪽 호환 가능한 `node:fs`만 사용. 서명 import는 `@opencode-ai/plugin` 1.14.24 (npm).
+- [ ] **L2** `tool.execute.before` 인자 정확한 시그니처 — Phase E2 라이브 smoke에서 `input.command`/`input.tool`/`input.args` 중 어느 필드인지 확정. 본 구현은 3 경로 모두 폴백.
+- [ ] **L3** `messageCreated` 필터 — `role === "user"` 외 추가 검증 필요한지 미확인. 본 구현은 user-only 필터만.
+- [ ] **L4** Plugin throw 시 graceful 차단/crash — Phase E2에서 실측. throw 발생 시 OpenCode 로그 동작 확인.
+- [x] **L5** Slash namespace — Phase B2에서 `uzys-spec` (hyphen) 채택으로 우회 (Closed).
+
+### 정적 smoke (Phase E2 부분 충족)
+
+OpenCode CLI 미설치 환경에서도 검증 가능한 항목:
+- TypeScript 타입 체크: `tsc --noEmit` PASS (template은 tsc 대상 외이나 helper 미러는 검증)
+- `tests/opencode/install.test.ts`: 설치 후 plugin 본문에 3 hook + PHASE_DEPENDENCY + hito 키워드 존재 검증
+- `tests/opencode/plugin-helpers.test.ts`: 22 unit test로 핵심 로직 (gate read, slash 추출, file path 추출, spec path 매칭) 검증
+
+### 라이브 smoke (Phase F dogfood로 이관)
+
+Phase F에서 OpenCode CLI 설치 후:
+- Plugin 로드 시점 `console.log` 발화 확인
+- `/uzys-build` 호출 시 PHASE_DEPENDENCY 위반 시 throw 동작 확인 (L4)
+- 사용자 prompt 후 `.claude/evals/hito-YYYY-MM-DD.log` 1줄 추가 확인
+- SPEC.md 편집 후 `spec-drift-YYYY-MM-DD.log` 기록 확인
 
 ---
 
 ## Changelog
 
 - 2026-04-25: v1 초안. Phase A3 산출. Status: Proposed.
+- 2026-04-25: v1.1 — 디렉토리/키 명명 규약 정정 (Phase B2 실측), `plugins` → `plugin` (singular array key), `commands/` plural directory.
+- 2026-04-25: v1.2 — Phase E1 구현 결과 반영 (plugin 본문, helpers, 22 unit test, 정적 smoke). L1/L5 Closed, L2~L4 Phase F 이관. Status: 여전히 Proposed (Phase E2 라이브 smoke + 사용자 승인 시 Accepted 전환).

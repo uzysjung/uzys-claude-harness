@@ -47,6 +47,14 @@ describe("OpenCode install pipeline (integration)", () => {
     expect(existsSync(join(projectDir, "opencode.json"))).toBe(true);
     expect(existsSync(join(projectDir, ".opencode/plugins/uzys-harness.ts"))).toBe(true);
 
+    // Plugin body verifies E1 hook implementations
+    const plugin = readFileSync(join(projectDir, ".opencode/plugins/uzys-harness.ts"), "utf8");
+    expect(plugin).toContain('"tool.execute.before"');
+    expect(plugin).toContain('"tool.execute.after"');
+    expect(plugin).toContain("messageCreated");
+    expect(plugin).toContain("PHASE_DEPENDENCY");
+    expect(plugin).toContain("hito-"); // HITO log naming
+
     for (const phase of ["spec", "plan", "build", "test", "review", "ship"]) {
       expect(existsSync(join(projectDir, ".opencode/commands", `uzys-${phase}.md`))).toBe(true);
     }

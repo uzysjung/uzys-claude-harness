@@ -48,11 +48,11 @@
 
 ## Phase E — Plugin 작성
 
-- [ ] **E1** `templates/opencode/plugin/uzys-harness.ts` (3 hook 매핑)
-- [ ] **E2** OpenCode CLI 설치 + plugin 로드 smoke test
-- [ ] **E3** ADR-004 v2 Accepted (사용자 승인)
+- [x] **E1** `templates/opencode/.opencode/plugins/uzys-harness.ts` (110줄, self-contained) + `src/opencode/plugin-helpers.ts` (95줄, 테스트 미러) — 3 hook 모두 구현
+- [~] **E2** Plugin 정적 smoke 통과 (tsc + 22 unit test + install.test.ts plugin 본문 검증). 라이브 smoke (OpenCode CLI 런타임 의존)는 **Phase F dogfood로 이관**
+- [ ] **E3** ADR-004 v2 Accepted — **사용자 승인 대기**. Status 여전히 Proposed
 
-**Phase E 게이트**: AC5 충족.
+**Phase E 게이트**: AC5 부분 충족 (정적 검증 100%, 라이브 smoke Phase F 이관). **사용자 승인 대기**.
 
 ---
 
