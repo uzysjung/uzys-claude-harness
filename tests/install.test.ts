@@ -11,6 +11,7 @@ const fakeReport: InstallReport = {
   installedTracks: ["tooling"],
   mcpServers: ["context7"],
   codex: null,
+  codexOptIn: null,
   opencode: null,
   external: null,
   updateMode: null,
@@ -164,6 +165,8 @@ describe("executeSpec", () => {
       withEcc: false,
       withPrune: false,
       withTob: false,
+      withCodexSkills: false,
+      withCodexTrust: false,
     },
     cli: "claude",
     projectDir: "/p",
@@ -350,6 +353,8 @@ describe("executeSpec", () => {
           withEcc: true,
           withPrune: true,
           withTob: true,
+          withCodexSkills: false,
+          withCodexTrust: false,
         },
       },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
@@ -555,6 +560,78 @@ describe("executeSpec", () => {
       mode: "reinstall",
     });
     expect(log).toHaveBeenCalledWith(expect.stringContaining("uzys-claude-harness · reinstall"));
+  });
+
+  it("renders Codex opt-in rows when codexOptIn report has skills + trust", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => ({
+      ...fakeReport,
+      codex: {
+        agentsMdPath: "/p/AGENTS.md",
+        configTomlPath: "/p/.codex/config.toml",
+        hookFiles: [],
+        skillFiles: [],
+      },
+      codexOptIn: {
+        skillsInstalled: { enabled: true, count: 6, targetDir: "/Users/x/.codex/skills" },
+        trustEntry: { enabled: true, status: "registered" as const },
+      },
+    }));
+    executeSpec(
+      { ...baseSpec, cli: "codex" },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("~/.codex/skills/uzys-*"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("6 copied"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("trust entry"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('trust_level="trusted"'));
+  });
+
+  it("renders 'already present' for trust entry when previously registered", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => ({
+      ...fakeReport,
+      codex: {
+        agentsMdPath: "/p/AGENTS.md",
+        configTomlPath: "/p/.codex/config.toml",
+        hookFiles: [],
+        skillFiles: [],
+      },
+      codexOptIn: {
+        skillsInstalled: { enabled: false, count: 0, targetDir: "/Users/x/.codex/skills" },
+        trustEntry: { enabled: true, status: "already-present" as const },
+      },
+    }));
+    executeSpec(
+      { ...baseSpec, cli: "codex" },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("already present"));
+  });
+
+  it("renders trust entry error as skip row", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => ({
+      ...fakeReport,
+      codex: {
+        agentsMdPath: "/p/AGENTS.md",
+        configTomlPath: "/p/.codex/config.toml",
+        hookFiles: [],
+        skillFiles: [],
+      },
+      codexOptIn: {
+        skillsInstalled: { enabled: false, count: 0, targetDir: "/Users/x/.codex/skills" },
+        trustEntry: { enabled: true, status: "error" as const, message: "permission denied" },
+      },
+    }));
+    executeSpec(
+      { ...baseSpec, cli: "codex" },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("permission denied"));
   });
 
   it("err + exit(1) when pipeline throws", () => {

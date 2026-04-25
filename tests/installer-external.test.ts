@@ -23,6 +23,8 @@ const NO_OPTS: OptionFlags = {
   withEcc: false,
   withPrune: false,
   withTob: false,
+  withCodexSkills: false,
+  withCodexTrust: false,
 };
 
 function spec(tracks: Track[], options: Partial<OptionFlags>, projectDir: string): InstallSpec {
@@ -119,7 +121,11 @@ describe("runInstall — external assets integration", () => {
       runExternal,
       harnessRoot: HARNESS_ROOT,
       projectDir,
-      spec: spec(["csr-fastapi"], { withTob: true }, projectDir),
+      spec: spec(
+        ["csr-fastapi"],
+        { withTob: true, withCodexSkills: false, withCodexTrust: false },
+        projectDir,
+      ),
     });
     expect(runExternal.mock.calls[0]?.[0]?.options.withTob).toBe(true);
   });

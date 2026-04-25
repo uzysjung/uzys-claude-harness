@@ -38,6 +38,10 @@ export interface OptionFlags {
   withEcc: boolean;
   withPrune: boolean;
   withTob: boolean;
+  /** Codex global opt-in: ~/.codex/skills/uzys-* 복사. D16 — 사용자 명시 동의 필수. */
+  withCodexSkills: boolean;
+  /** Codex global opt-in: ~/.codex/config.toml [projects."..."] trust entry. D16 동일. */
+  withCodexTrust: boolean;
 }
 
 export const DEFAULT_OPTIONS: OptionFlags = {
@@ -46,6 +50,8 @@ export const DEFAULT_OPTIONS: OptionFlags = {
   withEcc: false,
   withPrune: false,
   withTob: false,
+  withCodexSkills: false,
+  withCodexTrust: false,
 };
 
 /** Aggregate result of interactive flow — the spec the install pipeline consumes. */

@@ -13,6 +13,8 @@ const NO_OPTS: OptionFlags = {
   withEcc: false,
   withPrune: false,
   withTob: false,
+  withCodexSkills: false,
+  withCodexTrust: false,
 };
 
 function buildSpec(tracks: Track[], projectDir: string): InstallSpec {

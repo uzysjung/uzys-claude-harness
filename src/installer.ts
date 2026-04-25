@@ -1,5 +1,6 @@
 import { chmodSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { type CodexOptInReport, runCodexOptIn } from "./codex/opt-in.js";
 import { type CodexTransformReport, runCodexTransform } from "./codex/transform.js";
 import { addGitignoreEnv, writeEnvExample, writeMcpAllowlist } from "./env-files.js";
 import {
@@ -62,6 +63,8 @@ export interface InstallReport {
   mcpServers: string[];
   /** Present when CLI ∈ {codex, both, all}. */
   codex: CodexTransformReport | null;
+  /** Present when Codex transform ran AND user opted-in to global skills/trust. null when no Codex or both flags off. */
+  codexOptIn: CodexOptInReport | null;
   /** Present when CLI ∈ {opencode, all}. */
   opencode: OpencodeTransformReport | null;
   /** External install report (claude plugin / npm -g / npx skills). null when disabled or empty. */
@@ -121,6 +124,7 @@ export function runInstall(ctx: InstallContext): InstallReport {
       installedTracks: [...spec.tracks].sort(),
       mcpServers: [],
       codex: null,
+      codexOptIn: null,
       opencode: null,
       external: null,
       updateMode: updateReport,
@@ -182,8 +186,17 @@ export function runInstall(ctx: InstallContext): InstallReport {
 
   // Codex transform when --cli ∈ {codex, both, all}
   let codex: CodexTransformReport | null = null;
+  let codexOptIn: CodexOptInReport | null = null;
   if (spec.cli === "codex" || spec.cli === "both" || spec.cli === "all") {
     codex = runCodexTransform({ harnessRoot, projectDir });
+    // Codex global opt-in (D16): only when user explicitly enabled at least one flag
+    if (spec.options.withCodexSkills || spec.options.withCodexTrust) {
+      codexOptIn = runCodexOptIn({
+        projectDir,
+        withCodexSkills: spec.options.withCodexSkills,
+        withCodexTrust: spec.options.withCodexTrust,
+      });
+    }
   }
 
   // OpenCode transform when --cli ∈ {opencode, all}
@@ -216,6 +229,7 @@ export function runInstall(ctx: InstallContext): InstallReport {
     installedTracks: [...spec.tracks].sort(),
     mcpServers: Object.keys(mcpResult.mcpServers).sort(),
     codex,
+    codexOptIn,
     opencode,
     external,
     updateMode: null,
