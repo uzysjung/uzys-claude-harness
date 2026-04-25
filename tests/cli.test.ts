@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
-import { VERSION, buildCli } from "../src/cli.js";
+import { describe, expect, it, vi } from "vitest";
+import { VERSION, buildCli, defaultAction } from "../src/cli.js";
 import { isCliMode } from "../src/commands/install.js";
+import type { InteractiveResult } from "../src/interactive.js";
 
 describe("buildCli", () => {
   it("returns a cac instance with the expected name", () => {
@@ -42,21 +43,78 @@ describe("buildCli", () => {
     expect(defaultCmd).toBeDefined();
   });
 
-  it("default command action prints interactive placeholder messages", () => {
+  it("default command has the interactive description label", () => {
     const cli = buildCli();
     const defaultCmd = cli.commands.find((cmd) => cmd.name === "");
-    const calls: string[] = [];
-    const original = console.log;
-    console.log = (...args: unknown[]) => {
-      calls.push(args.join(" "));
-    };
+    expect(defaultCmd?.description).toContain("Interactive");
+  });
+});
+
+describe("defaultAction", () => {
+  it("logs success message when interactive returns ok=true", async () => {
+    const log = vi.fn();
+    const err = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const run = vi.fn(
+      async (): Promise<InteractiveResult> => ({
+        ok: true,
+        spec: {
+          tracks: ["tooling"],
+          options: {
+            withTauri: false,
+            withGsd: false,
+            withEcc: false,
+            withPrune: false,
+            withTob: false,
+          },
+          cli: "claude",
+          projectDir: "/p",
+        },
+      }),
+    );
+    await defaultAction({ log, err, exit, run });
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Phase C"));
+    expect(exit).not.toHaveBeenCalled();
+  });
+
+  it("calls exit(2) on no-tty", async () => {
+    const log = vi.fn();
+    const err = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const run = vi.fn(async () => ({
+      ok: false as const,
+      reason: "no-tty" as const,
+      message: "no tty",
+    }));
+    await defaultAction({ log, err, exit, run });
+    expect(err).toHaveBeenCalledWith("no tty");
+    expect(exit).toHaveBeenCalledWith(2);
+  });
+
+  it("calls exit(0) on cancellation/exit/disabled with no message", async () => {
+    const log = vi.fn();
+    const err = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const run = vi.fn(async () => ({
+      ok: false as const,
+      reason: "cancelled" as const,
+    }));
+    await defaultAction({ log, err, exit, run });
+    expect(err).not.toHaveBeenCalled();
+    expect(exit).toHaveBeenCalledWith(0);
+  });
+
+  it("uses default deps without throwing for the no-tty path", async () => {
+    const original = process.stdin.isTTY;
+    Object.defineProperty(process.stdin, "isTTY", { value: false, configurable: true });
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const err = vi.fn();
     try {
-      // biome-ignore lint/suspicious/noExplicitAny: cac internal command shape varies
-      (defaultCmd as any)?.commandAction?.();
+      await defaultAction({ exit, err });
     } finally {
-      console.log = original;
+      Object.defineProperty(process.stdin, "isTTY", { value: original, configurable: true });
     }
-    expect(calls.some((line) => line.includes("Interactive mode"))).toBe(true);
+    expect(exit).toHaveBeenCalledWith(2);
   });
 });
 
