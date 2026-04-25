@@ -73,7 +73,7 @@ describe("installAction", () => {
     expect(exit).not.toHaveBeenCalled();
     expect(log).toHaveBeenCalledWith(expect.stringContaining("Install complete"));
     expect(log).toHaveBeenCalledWith(expect.stringContaining("tooling"));
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("Files copied"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("5 files"));
     expect(runPipeline).toHaveBeenCalledOnce();
   });
 
@@ -131,7 +131,7 @@ describe("installAction", () => {
       { cli: "claude", track: ["tooling"] },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("Backup"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("/backup/.claude.bak"));
     expect(log).toHaveBeenCalledWith(expect.stringContaining("/backup/.claude.bak"));
   });
 
@@ -216,7 +216,8 @@ describe("executeSpec", () => {
     const exit = vi.fn() as unknown as (code: number) => never;
     const runPipeline = vi.fn(() => ({ ...fakeReport, skipped: 3 }));
     executeSpec(baseSpec, { log, exit, runPipeline, resolveHarnessRoot: () => "/h" });
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("Skipped"));
+    // skipped row is rendered with `assetRow("skip", ...)` → contains the count
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("skipped"));
   });
 
   it("logs Backup info when report.backup present", () => {
@@ -224,7 +225,134 @@ describe("executeSpec", () => {
     const exit = vi.fn() as unknown as (code: number) => never;
     const runPipeline = vi.fn(() => ({ ...fakeReport, backup: "/p/.claude.backup-123" }));
     executeSpec(baseSpec, { log, exit, runPipeline, resolveHarnessRoot: () => "/h" });
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("Backup"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("/p/.claude.backup-123"));
+  });
+
+  it("renders 'Claude · Codex · OpenCode' line for cli=all", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => ({
+      ...fakeReport,
+      codex: {
+        agentsMdPath: "/p/AGENTS.md",
+        configTomlPath: "/p/.codex/config.toml",
+        hookFiles: [],
+        skillFiles: [],
+      },
+      opencode: {
+        agentsMdPath: "/p/AGENTS.md",
+        opencodeJsonPath: "/p/opencode.json",
+        commandFiles: [],
+        pluginPath: "/p/.opencode/plugins/uzys-harness.ts",
+      },
+    }));
+    executeSpec(
+      { ...baseSpec, cli: "all" },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Claude · Codex · OpenCode"));
+  });
+
+  it("renders 'Claude · Codex' line for cli=both (Codex only)", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => ({
+      ...fakeReport,
+      codex: {
+        agentsMdPath: "/p/AGENTS.md",
+        configTomlPath: "/p/.codex/config.toml",
+        hookFiles: [],
+        skillFiles: [],
+      },
+    }));
+    executeSpec(
+      { ...baseSpec, cli: "both" },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Claude · Codex"));
+  });
+
+  it("renders 'Claude · OpenCode' line when only opencode present", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => ({
+      ...fakeReport,
+      opencode: {
+        agentsMdPath: "/p/AGENTS.md",
+        opencodeJsonPath: "/p/opencode.json",
+        commandFiles: [],
+        pluginPath: "/p/.opencode/plugins/uzys-harness.ts",
+      },
+    }));
+    executeSpec(
+      { ...baseSpec, cli: "opencode" },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Claude · OpenCode"));
+  });
+
+  it("shortens long /private/tmp paths in TARGET row", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => fakeReport);
+    executeSpec(
+      {
+        ...baseSpec,
+        projectDir: "/private/tmp/some-very-long-path-that-exceeds-fifty-characters",
+      },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    const targetCall = log.mock.calls.find((args) =>
+      typeof args[0] === "string" ? args[0].includes("TARGET") : false,
+    );
+    // /private prefix dropped
+    expect(targetCall?.[0]).not.toContain("/private/");
+    expect(targetCall?.[0]).toContain("/tmp/");
+  });
+
+  it("shortens HOME-relative paths in TARGET row", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => fakeReport);
+    const home = process.env.HOME ?? "/Users/test";
+    process.env.HOME = home;
+    executeSpec(
+      {
+        ...baseSpec,
+        projectDir: `${home}/some-very-long-project-name-here-that-is-over-fifty-chars`,
+      },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    const targetCall = log.mock.calls.find((args) =>
+      typeof args[0] === "string" ? args[0].includes("TARGET") : false,
+    );
+    expect(targetCall?.[0]).toContain("~/");
+  });
+
+  it("formatOptions reflects enabled flags", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => fakeReport);
+    executeSpec(
+      {
+        ...baseSpec,
+        options: {
+          withTauri: true,
+          withGsd: true,
+          withEcc: true,
+          withPrune: true,
+          withTob: true,
+        },
+      },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    // OPTIONS row contains all flag labels
+    const optsCall = log.mock.calls.find((args) =>
+      typeof args[0] === "string" ? args[0].includes("OPTIONS") : false,
+    );
+    expect(optsCall?.[0]).toContain("tauri");
+    expect(optsCall?.[0]).toContain("ecc");
+    expect(optsCall?.[0]).toContain("tob");
   });
 
   it("err + exit(1) when pipeline throws", () => {

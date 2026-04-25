@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import type { Cli } from "../cli.js";
-import { c, header, keyValue, status } from "../design.js";
+import { assetRow, c, infoRow, phaseHeader, sectionHeader, status } from "../design.js";
 import { type InstallReport, runInstall as runInstallPipeline } from "../installer.js";
 import {
   CLI_MODES,
@@ -131,46 +131,141 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
   const runPipeline = deps.runPipeline ?? defaultRunPipeline;
   const resolveHarnessRoot = deps.resolveHarnessRoot ?? defaultHarnessRoot;
 
+  // ━━━ TARGET ━━━ pre-flight info block ━━━
+  log("");
+  log(sectionHeader("uzys-claude-harness · install"));
+  log("");
+  log(infoRow("TARGET", shortenPath(spec.projectDir)));
+  log(infoRow("TRACKS", spec.tracks.join(", ")));
+  log(infoRow("CLI", spec.cli));
+  log(infoRow("OPTIONS", formatOptions(spec)));
+  log("");
+
+  // ━━━ Phase 1 — Templates ━━━
+  log(phaseHeader(1, "Templates"));
+  log("");
+
   let report: InstallReport;
   try {
     report = runPipeline(spec, resolveHarnessRoot());
   } catch (e: unknown) {
     const detail = e instanceof Error ? e.message : String(e);
-    err(status.failure(c.red(`ERROR: install failed — ${detail}`)));
+    log("");
+    err(status.failure(c.red(`install failed — ${detail}`)));
     exit(1);
     return;
   }
 
-  log("");
-  log(header(`Install — ${spec.tracks.join(", ")}`));
-  log("");
-  log(keyValue("Tracks", report.installedTracks.join(", ")));
-  log(keyValue("CLI", spec.cli));
-  log(keyValue("Target", spec.projectDir));
-  log("");
-  log(status.success(`${keyValue("Files copied", String(report.filesCopied)).trimStart()}`));
-  log(status.success(`${keyValue("Dirs copied", String(report.dirsCopied)).trimStart()}`));
+  log(assetRow("success", "rules + hooks + commands + agents", `${report.filesCopied} files`));
+  log(assetRow("success", "skeleton + project-claude/<track>.md", `${report.dirsCopied} dirs`));
   if (report.skipped > 0) {
-    log(status.warn(`${keyValue("Skipped", String(report.skipped)).trimStart()}`));
+    log(assetRow("skip", "manifest entries (applies → false)", `${report.skipped} skipped`));
   }
   if (report.backup) {
-    log(status.info(`${keyValue("Backup", report.backup).trimStart()}`));
+    log(assetRow("success", "backup", shortenPath(report.backup)));
   }
-  log(
-    status.success(
-      `${keyValue("MCP servers", report.mcpServers.join(", ") || c.dim("(none)")).trimStart()}`,
-    ),
-  );
-  if (report.codex) {
-    const summary = `AGENTS.md + .codex/{config.toml, ${report.codex.hookFiles.length} hooks} + ${report.codex.skillFiles.length} skills`;
-    log(status.success(`${keyValue("Codex", summary).trimStart()}`));
+  const mcpList = report.mcpServers.join(", ") || "(none)";
+  log(assetRow("success", ".mcp.json", mcpList));
+  log("");
+
+  // ━━━ Phase 2 — Codex / OpenCode (CLI-specific) ━━━
+  if (report.codex || report.opencode) {
+    log(phaseHeader(2, formatCliPhaseTitle(spec.cli)));
+    log("");
+    // AGENTS.md is shared across Codex/OpenCode — render once with shared note
+    if (report.codex && report.opencode) {
+      log(assetRow("success", "AGENTS.md", "shared (Codex + OpenCode)"));
+    } else if (report.codex || report.opencode) {
+      log(assetRow("success", "AGENTS.md", "from .claude/CLAUDE.md"));
+    }
+    if (report.codex) {
+      log(assetRow("success", ".codex/config.toml", "settings + [mcp_servers.*]"));
+      log(assetRow("success", ".codex/hooks/", `${report.codex.hookFiles.length} files`));
+      log(
+        assetRow(
+          "success",
+          ".codex-skills/uzys-*/SKILL.md",
+          `${report.codex.skillFiles.length} skills`,
+        ),
+      );
+    }
+    if (report.opencode) {
+      log(assetRow("success", "opencode.json", "$schema + 5 keys"));
+      log(
+        assetRow("success", ".opencode/commands/", `${report.opencode.commandFiles.length} files`),
+      );
+      log(assetRow("success", ".opencode/plugins/uzys-harness.ts", "self-contained plugin"));
+    }
+    log("");
   }
-  if (report.opencode) {
-    const summary = `AGENTS.md + opencode.json + .opencode/{${report.opencode.commandFiles.length} commands, plugin}`;
-    log(status.success(`${keyValue("OpenCode", summary).trimStart()}`));
+
+  // ━━━ Summary ━━━
+  log(sectionHeader("Summary"));
+  log("");
+  log(infoRow("STATUS", c.green("Install complete")));
+  log(infoRow("TRACKS", report.installedTracks.join(", ")));
+  if (report.codex && report.opencode) {
+    log(infoRow("CLIs", "Claude · Codex · OpenCode"));
+  } else if (report.codex) {
+    log(infoRow("CLIs", "Claude · Codex"));
+  } else if (report.opencode) {
+    log(infoRow("CLIs", "Claude · OpenCode"));
+  } else {
+    log(infoRow("CLIs", "Claude"));
   }
   log("");
-  log(c.bold(c.green("Install complete.")));
+  log(infoRow("NEXT", `${c.bold("claude")}  →  ${c.cyan("/uzys:spec")}`));
+  log("");
+}
+
+function formatOptions(spec: InstallSpec): string {
+  const flags: string[] = [];
+  if (spec.options.withTauri) flags.push("tauri");
+  if (spec.options.withGsd) flags.push("gsd");
+  if (spec.options.withEcc) flags.push("ecc");
+  if (spec.options.withPrune) flags.push("prune");
+  if (spec.options.withTob) flags.push("tob");
+  return flags.length > 0 ? flags.join(", ") : c.dim("(defaults only)");
+}
+
+/**
+ * Shorten an absolute path for display:
+ *   /Users/foo/bar     → ~/bar (HOME relative)
+ *   /private/tmp/x.X   → /tmp/x.X
+ *   /a/very/long/path  → …/long/path (≥3 segs from end if > 50 chars)
+ */
+function shortenPath(p: string): string {
+  if (p.length <= 50) return p;
+  const home = process.env.HOME ?? "";
+  if (home && p.startsWith(home)) {
+    const rel = p.slice(home.length);
+    return `~${rel.startsWith("/") ? "" : "/"}${rel}`;
+  }
+  // private/tmp prefix on macOS — drop /private
+  if (p.startsWith("/private/tmp/")) {
+    return p.slice("/private".length);
+  }
+  // Last 3 segments
+  const segs = p.split("/").filter(Boolean);
+  if (segs.length > 3) {
+    return `…/${segs.slice(-3).join("/")}`;
+  }
+  return p;
+}
+
+function formatCliPhaseTitle(cli: CliMode): string {
+  switch (cli) {
+    case "codex":
+      return "Codex artifacts";
+    case "opencode":
+      return "OpenCode artifacts";
+    case "both":
+      return "Codex artifacts";
+    case "all":
+      return "Codex + OpenCode artifacts";
+    case "claude":
+      return "Claude artifacts";
+  }
 }
 
 function defaultRunPipeline(spec: InstallSpec, harnessRoot: string): InstallReport {
