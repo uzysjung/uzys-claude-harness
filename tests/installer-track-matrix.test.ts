@@ -128,7 +128,12 @@ describe("Track matrix — assets called per track", () => {
 
   it("executive: only Anthropic + finance/c-level (no dev tools)", () => {
     const { ids } = runForTrack(["executive"]);
-    expect(ids).toEqual(["anthropic-document-skills", "c-level-skills", "finance-skills"]);
+    expect(ids).toEqual([
+      "anthropic-document-skills",
+      "c-level-skills",
+      "business-growth-skills",
+      "finance-skills",
+    ]);
     // No dev-track assets
     expect(ids).not.toContain("addy-agent-skills");
     expect(ids).not.toContain("polars-K-Dense");
@@ -150,6 +155,7 @@ describe("Track matrix — assets called per track", () => {
         "next-skills",
         "anthropic-document-skills",
         "c-level-skills",
+        "business-growth-skills",
         "finance-skills",
       ]),
     );

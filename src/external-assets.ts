@@ -271,24 +271,37 @@ export const EXTERNAL_ASSETS: ReadonlyArray<ExternalAsset> = [
       pluginId: "document-skills@anthropic-agent-skills",
     },
   },
+  // alirezarezvani/claude-skills marketplace (v2.3.0) — 2026-04-25 통합 갱신.
+  // 기존 alirezarezvani/c-level-skills + alirezarezvani/finance-skills 별도 marketplace
+  // → 통합된 alirezarezvani/claude-skills marketplace (claude-code-skills 이름)로 이동.
   {
     id: "c-level-skills",
-    description: "c-level-skills (alirezarezvani)",
+    description: "c-level-skills (claude-code-skills, 28 advisory)",
     condition: { kind: "any-track", tracks: ["executive", "full"] },
     method: {
       kind: "plugin",
-      marketplace: "alirezarezvani/c-level-skills",
-      pluginId: "c-level-skills@c-level-skills",
+      marketplace: "alirezarezvani/claude-skills",
+      pluginId: "c-level-skills@claude-code-skills",
+    },
+  },
+  {
+    id: "business-growth-skills",
+    description: "business-growth-skills (4 — customer success, sales eng, revops, contract)",
+    condition: { kind: "any-track", tracks: ["executive", "full"] },
+    method: {
+      kind: "plugin",
+      marketplace: "alirezarezvani/claude-skills",
+      pluginId: "business-growth-skills@claude-code-skills",
     },
   },
   {
     id: "finance-skills",
-    description: "finance-skills (alirezarezvani)",
+    description: "finance-skills (3 — financial analyst, SaaS metrics, investment advisor)",
     condition: { kind: "any-track", tracks: ["executive", "full"] },
     method: {
       kind: "plugin",
-      marketplace: "alirezarezvani/finance-skills",
-      pluginId: "finance-skills@finance-skills",
+      marketplace: "alirezarezvani/claude-skills",
+      pluginId: "finance-skills@claude-code-skills",
     },
   },
 

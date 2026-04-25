@@ -9,7 +9,7 @@ import { DEFAULT_OPTIONS, type OptionFlags, type Track } from "../src/types.js";
 const NO_OPTIONS: OptionFlags = { ...DEFAULT_OPTIONS };
 
 describe("external-assets EXTERNAL_ASSETS catalog", () => {
-  it("contains 29 distinct asset ids (no duplicates)", () => {
+  it("contains 30 distinct asset ids (no duplicates)", () => {
     const ids = EXTERNAL_ASSETS.map((a) => a.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids).toContain("polars-K-Dense");
@@ -19,6 +19,7 @@ describe("external-assets EXTERNAL_ASSETS catalog", () => {
     expect(ids).toContain("ecc-prune");
     expect(ids).toContain("trailofbits-skills");
     expect(ids).toContain("gsd-orchestrator");
+    expect(ids).toContain("business-growth-skills");
   });
 
   it("every asset has description + condition + method", () => {

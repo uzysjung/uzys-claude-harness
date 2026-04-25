@@ -265,7 +265,7 @@ npx -y github:uzysjung/uzys-claude-harness --help                 # show full op
 | `ssr-htmx` | FastAPI + Jinja2 + HTMX + daisyUI | Developer | + Railway MCP |
 | `ssr-nextjs` | Next.js + shadcn/ui | Developer | + Railway MCP, next-skills |
 | `data` | Python + DuckDB + Trino + ML/DL + PySide6 | Data Scientist | + polars/dask/wshobson skills, Anthropic data plugin |
-| `executive` | PPT/Excel/Word/PDF + proposals/DD | CPO/CSO/CTO | + document-skills, c-level-skills, finance-skills |
+| `executive` | PPT/Excel/Word/PDF + proposals/DD | CPO/CSO/CTO | + document-skills, c-level-skills (28), business-growth-skills, finance-skills (alirezarezvani/claude-skills marketplace) |
 | `tooling` | Bash + Markdown + CLI tools (meta projects) | Tool Developer | + cli-development rules |
 | `full` | Union of everything | All | All MCPs + all plugins |
 
