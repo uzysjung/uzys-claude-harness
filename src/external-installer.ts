@@ -1,0 +1,209 @@
+/**
+ * External installer — `EXTERNAL_ASSETS` 매트릭스를 실제 호출로 변환.
+ *
+ * SPEC: docs/specs/cli-rewrite-completeness.md F1
+ *
+ * Decision (OQ1): 실패는 warn-skip. 종료 시 누락 자산 목록 보고.
+ *   abort는 첫 실행 신뢰성을 깨뜨리므로 채택 안 함 (vibe killer).
+ *
+ * Spawning은 `child_process.spawnSync` 사용. command/args 분리로 shell injection 차단.
+ * stdout/stderr는 captured — 사용자에게 한 줄 요약만 노출 (verbose-log는 별도 옵션 후속).
+ */
+
+import { type SpawnSyncReturns, spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { EXTERNAL_ASSETS, type ExternalAsset, filterApplicableAssets } from "./external-assets.js";
+import type { OptionFlags, Track } from "./types.js";
+
+export interface ExternalInstallerDeps {
+  /** Override `spawnSync` for tests (mock으로 호출 횟수 + args 검증). */
+  spawn?: (cmd: string, args: ReadonlyArray<string>, opts: SpawnOpts) => SpawnSyncReturns<string>;
+  /** harness root (prune-ecc.sh script 위치 resolve용). */
+  harnessRoot?: string;
+  /** asset 매트릭스 override (테스트용, 기본 EXTERNAL_ASSETS 전체). */
+  assets?: ReadonlyArray<ExternalAsset>;
+  /** 진행 상황 로그 stream (기본 console.log). */
+  log?: (msg: string) => void;
+  /** 경고 메시지 stream (기본 console.error). */
+  warn?: (msg: string) => void;
+}
+
+interface SpawnOpts {
+  encoding: "utf8";
+  stdio: ("ignore" | "pipe")[] | "ignore" | "pipe";
+  timeout?: number;
+}
+
+export interface AssetInstallResult {
+  asset: ExternalAsset;
+  ok: boolean;
+  /** ok=false 시 user-facing 메시지 */
+  message?: string;
+}
+
+export interface ExternalInstallReport {
+  /** 적용 시도된 자산 (조건 통과한 것만) */
+  attempted: ReadonlyArray<AssetInstallResult>;
+  /** 성공 갯수 */
+  succeeded: number;
+  /** warn-skip 된 갯수 */
+  skipped: number;
+  /** abort failureMode가 발화된 자산 (있으면 install 중단) */
+  aborted?: ExternalAsset;
+}
+
+const DEFAULT_SPAWN_TIMEOUT_MS = 120_000;
+
+/**
+ * spec에 적용 가능한 자산을 모두 시도. 실패는 warn-skip (기본).
+ */
+export function runExternalInstall(
+  ctx: { tracks: ReadonlyArray<Track>; options: OptionFlags },
+  deps: ExternalInstallerDeps = {},
+): ExternalInstallReport {
+  const log = deps.log ?? console.log;
+  const warn = deps.warn ?? console.error;
+  const spawn = deps.spawn ?? defaultSpawn;
+  const assets = deps.assets ?? EXTERNAL_ASSETS;
+  const harnessRoot = deps.harnessRoot ?? process.cwd();
+
+  const applicable = filterApplicableAssets(assets, ctx);
+  const attempted: AssetInstallResult[] = [];
+
+  for (const asset of applicable) {
+    log(`  → ${asset.description}`);
+    const result = installOne(asset, { spawn, harnessRoot });
+
+    if (!result.ok) {
+      const failureMode = asset.failureMode ?? "warn-skip";
+      if (failureMode === "abort") {
+        attempted.push(result);
+        return {
+          attempted,
+          succeeded: attempted.filter((r) => r.ok).length,
+          skipped: attempted.filter((r) => !r.ok).length,
+          aborted: asset,
+        };
+      }
+      warn(`    [warn-skip] ${asset.id}: ${result.message ?? "failed"}`);
+    }
+
+    attempted.push(result);
+  }
+
+  return {
+    attempted,
+    succeeded: attempted.filter((r) => r.ok).length,
+    skipped: attempted.filter((r) => !r.ok).length,
+  };
+}
+
+/**
+ * 자산 1개 설치. method.kind 별 적절한 명령 실행.
+ */
+function installOne(
+  asset: ExternalAsset,
+  ctx: {
+    spawn: NonNullable<ExternalInstallerDeps["spawn"]>;
+    harnessRoot: string;
+  },
+): AssetInstallResult {
+  const { method } = asset;
+  switch (method.kind) {
+    case "skill":
+      return runSpawn(asset, ctx.spawn, "npx", buildSkillArgs(method));
+    case "plugin":
+      return installPlugin(asset, ctx.spawn, method);
+    case "npm-global":
+      return runSpawn(asset, ctx.spawn, "npm", ["install", "-g", method.pkg]);
+    case "npx-run":
+      return runSpawn(asset, ctx.spawn, "npx", [method.cmd, ...(method.args ?? [])]);
+    case "shell-script": {
+      const scriptPath = join(ctx.harnessRoot, method.script);
+      if (!existsSync(scriptPath)) {
+        return {
+          asset,
+          ok: false,
+          message: `script not found: ${scriptPath}`,
+        };
+      }
+      return runSpawn(asset, ctx.spawn, "bash", [scriptPath, ...method.args]);
+    }
+  }
+}
+
+function buildSkillArgs(method: { kind: "skill"; source: string; skill?: string }): string[] {
+  const args = ["skills", "add", method.source];
+  if (method.skill) {
+    args.push("--skill", method.skill);
+  }
+  args.push("--yes");
+  return args;
+}
+
+/**
+ * Plugin은 marketplace add → install 두 단계. marketplace add 실패는 무시 (이미 등록 케이스).
+ */
+function installPlugin(
+  asset: ExternalAsset,
+  spawn: NonNullable<ExternalInstallerDeps["spawn"]>,
+  method: { kind: "plugin"; marketplace: string; pluginId: string },
+): AssetInstallResult {
+  // marketplace add는 idempotent — 실패해도 install 시도 (이미 등록 케이스가 흔함)
+  spawn("claude", ["plugin", "marketplace", "add", method.marketplace], spawnOpts());
+  return runSpawn(asset, spawn, "claude", ["plugin", "install", method.pluginId]);
+}
+
+function runSpawn(
+  asset: ExternalAsset,
+  spawn: NonNullable<ExternalInstallerDeps["spawn"]>,
+  cmd: string,
+  args: ReadonlyArray<string>,
+): AssetInstallResult {
+  const result = spawn(cmd, args, spawnOpts());
+  if (result.error) {
+    return { asset, ok: false, message: result.error.message };
+  }
+  if ((result.status ?? 1) !== 0) {
+    const stderr = (result.stderr ?? "").trim();
+    const tail = stderr.length > 200 ? `${stderr.slice(0, 200)}…` : stderr;
+    return {
+      asset,
+      ok: false,
+      message: `${cmd} exited ${result.status}${tail ? `: ${tail}` : ""}`,
+    };
+  }
+  return { asset, ok: true };
+}
+
+function spawnOpts(): SpawnOpts {
+  return {
+    encoding: "utf8",
+    stdio: "pipe",
+    timeout: DEFAULT_SPAWN_TIMEOUT_MS,
+  };
+}
+
+function defaultSpawn(
+  cmd: string,
+  args: ReadonlyArray<string>,
+  opts: SpawnOpts,
+): SpawnSyncReturns<string> {
+  return spawnSync(cmd, [...args], opts);
+}
+
+/**
+ * 누락(skip) 자산 목록을 사용자 보고용 텍스트로 포맷.
+ */
+export function formatSkippedReport(report: ExternalInstallReport): string {
+  const failed = report.attempted.filter((r) => !r.ok);
+  if (failed.length === 0) return "";
+  const lines = failed.map((r) => `  • ${r.asset.id} — ${r.message ?? "failed"}`);
+  return [
+    `${failed.length}개 외부 자산이 설치되지 않았습니다 (warn-skip):`,
+    ...lines,
+    "",
+    "수동 설치 또는 후속 재시도 필요. 자세한 내용은 docs/REFERENCE.md 또는 README.md 참조.",
+  ].join("\n");
+}

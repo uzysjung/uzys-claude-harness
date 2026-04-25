@@ -92,3 +92,59 @@ describe("design module — color enabled (TTY)", () => {
     expect(c.green("ok")).toBe("ok");
   });
 });
+
+describe("design — phase + section + asset rendering (NO_COLOR)", () => {
+  beforeEach(() => {
+    process.env.NO_COLOR = "1";
+    vi.resetModules();
+  });
+
+  it("phaseHeader pads to width with rule chars", async () => {
+    const { phaseHeader } = await import("../src/design.js");
+    const out = phaseHeader(1, "Templates", 60);
+    expect(out).toContain("Phase 1");
+    expect(out).toContain("Templates");
+    expect(out.length).toBe(60);
+  });
+
+  it("sectionHeader includes title + width pad", async () => {
+    const { sectionHeader } = await import("../src/design.js");
+    const out = sectionHeader("Summary", 40);
+    expect(out).toContain("Summary");
+    expect(out.length).toBe(40);
+  });
+
+  it("divider produces width chars of rule", async () => {
+    const { divider } = await import("../src/design.js");
+    const out = divider(20);
+    expect(out.length).toBe(20);
+  });
+
+  it("infoRow has label + value with padding", async () => {
+    const { infoRow } = await import("../src/design.js");
+    const out = infoRow("KEY", "value");
+    expect(out).toContain("KEY");
+    expect(out).toContain("value");
+  });
+
+  it("assetRow renders different symbols for kind", async () => {
+    const { assetRow } = await import("../src/design.js");
+    expect(assetRow("success", "lbl")).toContain("✓");
+    expect(assetRow("skip", "lbl")).toContain("⊘");
+    expect(assetRow("failure", "lbl")).toContain("✗");
+  });
+
+  it("assetRow with meta puts meta to the right", async () => {
+    const { assetRow } = await import("../src/design.js");
+    const out = assetRow("success", "asset-id", "5 files");
+    expect(out).toContain("asset-id");
+    expect(out).toContain("5 files");
+    expect(out.indexOf("asset-id")).toBeLessThan(out.indexOf("5 files"));
+  });
+
+  it("assetRow without meta omits trailing whitespace", async () => {
+    const { assetRow } = await import("../src/design.js");
+    const out = assetRow("success", "x");
+    expect(out).not.toMatch(/\s+$/);
+  });
+});

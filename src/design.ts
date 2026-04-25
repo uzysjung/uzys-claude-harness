@@ -1,13 +1,16 @@
 /**
  * design.ts — CLI visual design tokens (color, symbols, layout helpers).
  *
- * Goals (from user feedback on the bash CLI):
+ * Aesthetic direction: **refined ops-report**. Mission control feel without
+ * decoration noise. Phase markers + aligned 2-column rows + structured summary.
+ *
+ * Goals:
  *   1. Make input-wait points visually obvious (handled by @clack/prompts).
  *   2. Make the install pipeline output legible:
- *      - clear visual hierarchy (header / key-value / status row)
- *      - consistent column alignment for "Tracks:", "Files copied:", etc.
- *      - color-coded status (success/warn/error/info), but only when the
- *        output is a TTY and `NO_COLOR` is not set.
+ *      - phase-segmented progress (━━━ Phase N · Title ━━━)
+ *      - aligned per-asset rows (✓/⊘/✗ + id + meta)
+ *      - explicit skipped/failed reporting (no silent skips)
+ *      - terminal-width responsive (default 78)
  *   3. Zero runtime dependencies — emit raw ANSI escapes.
  *
  * `NO_COLOR` is honored per https://no-color.org.
@@ -43,23 +46,90 @@ export const c = {
 export const symbol = {
   success: "✓",
   failure: "✗",
+  skip: "⊘",
   arrow: "›",
+  pointer: "▸",
   bullet: "•",
   warn: "⚠",
+  /** Heavy horizontal box-drawing — phase dividers. */
+  rule: "━",
+  /** Middle dot — section separator. */
+  mid: "·",
 };
 
-/** Render a section header. Bold cyan with a leading arrow. */
+/** Default width for phase headers / dividers. Terminal default ≥ 78. */
+export const DEFAULT_WIDTH = 78;
+
+/** Render a legacy section header. Bold cyan with a leading arrow. (kept for backward compat) */
 export function header(title: string): string {
   return c.bold(c.cyan(`${symbol.arrow} ${title}`));
 }
 
 /**
- * Render a `key: value` row with a fixed-width left column for alignment.
- * The default width (16) matches the install report's longest key.
+ * Render a phase header — `━━━ Phase N · Title ━━━━━━━...` (full-width).
+ * Used to delimit major install pipeline phases.
  */
+export function phaseHeader(n: number | string, title: string, width = DEFAULT_WIDTH): string {
+  const label = `${symbol.rule}${symbol.rule}${symbol.rule} Phase ${n} ${symbol.mid} ${title} `;
+  const fill = symbol.rule.repeat(Math.max(0, width - visibleLength(label)));
+  return c.bold(c.cyan(`${label}${fill}`));
+}
+
+/**
+ * Render a section header (non-phase) — `━━━ Title ━━━━━━━...`.
+ * Used for TARGET / SUMMARY / NEXT etc.
+ */
+export function sectionHeader(title: string, width = DEFAULT_WIDTH): string {
+  const label = `${symbol.rule}${symbol.rule}${symbol.rule} ${title} `;
+  const fill = symbol.rule.repeat(Math.max(0, width - visibleLength(label)));
+  return c.bold(c.cyan(`${label}${fill}`));
+}
+
+/** Plain horizontal divider — `━━━...━━━` (no label). */
+export function divider(width = DEFAULT_WIDTH): string {
+  return c.dim(symbol.rule.repeat(width));
+}
+
+/**
+ * Render a `key: value` row with a fixed-width left column for alignment.
+ * Used in pre-flight / summary blocks (▸ TRACKS  executive, tooling).
+ */
+export function infoRow(key: string, value: string, width = 12): string {
+  const label = `${symbol.pointer} ${key}`.padEnd(width + 2, " ");
+  return `  ${c.dim(label)} ${value}`;
+}
+
+/** Backward-compat — `keyValue` (used by older install report). */
 export function keyValue(key: string, value: string, width = 16): string {
   const padded = `${key}:`.padEnd(width, " ");
   return `  ${c.dim(padded)} ${value}`;
+}
+
+/**
+ * Render an asset row — `  ✓ asset-id                       meta`.
+ * symbol = success/skip/failure. label = stable id (left-pad). meta = dim right column.
+ */
+export function assetRow(
+  kind: "success" | "skip" | "failure",
+  label: string,
+  meta = "",
+  labelWidth = 40,
+): string {
+  const sym = renderSymbol(kind);
+  const labelPadded = label.padEnd(labelWidth, " ");
+  const metaText = meta ? c.dim(meta) : "";
+  return `  ${sym} ${labelPadded} ${metaText}`.trimEnd();
+}
+
+function renderSymbol(kind: "success" | "skip" | "failure"): string {
+  switch (kind) {
+    case "success":
+      return c.green(symbol.success);
+    case "skip":
+      return c.yellow(symbol.skip);
+    case "failure":
+      return c.red(symbol.failure);
+  }
 }
 
 export const status = {
@@ -68,3 +138,11 @@ export const status = {
   warn: (msg: string): string => `${c.yellow(symbol.warn)} ${msg}`,
   info: (msg: string): string => `${c.cyan(symbol.bullet)} ${msg}`,
 };
+
+/**
+ * Strip ANSI escape sequences so visible width can be measured (for header padding).
+ */
+function visibleLength(s: string): number {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape stripping requires \x1b
+  return s.replace(/\x1b\[[0-9;]*m/g, "").length;
+}
