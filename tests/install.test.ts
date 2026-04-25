@@ -13,6 +13,11 @@ const fakeReport: InstallReport = {
   codex: null,
   opencode: null,
   external: null,
+  envFiles: {
+    envExampleCreated: false,
+    gitignoreEnvAdded: false,
+    mcpAllowlist: null,
+  },
 };
 
 describe("specFromOptions", () => {
@@ -473,6 +478,24 @@ describe("executeSpec", () => {
     // Phase 2 (external) + Phase 3 (codex)
     expect(log).toHaveBeenCalledWith(expect.stringContaining("Phase 2"));
     expect(log).toHaveBeenCalledWith(expect.stringContaining("Phase 3"));
+  });
+
+  it("renders .env.example + .gitignore + .mcp-allowlist rows when envFiles flags set", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => ({
+      ...fakeReport,
+      envFiles: {
+        envExampleCreated: true,
+        gitignoreEnvAdded: true,
+        mcpAllowlist: ["context7", "github", "supabase"],
+      },
+    }));
+    executeSpec(baseSpec, { log, exit, runPipeline, resolveHarnessRoot: () => "/h" });
+    expect(log).toHaveBeenCalledWith(expect.stringContaining(".env.example"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining(".gitignore"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining(".mcp-allowlist"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("3 servers"));
   });
 
   it("err + exit(1) when pipeline throws", () => {

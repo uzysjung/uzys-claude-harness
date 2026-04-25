@@ -1,6 +1,7 @@
 import { chmodSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { type CodexTransformReport, runCodexTransform } from "./codex/transform.js";
+import { addGitignoreEnv, writeEnvExample, writeMcpAllowlist } from "./env-files.js";
 import {
   type ExternalInstallReport,
   type ExternalInstallerDeps,
@@ -46,6 +47,15 @@ export interface InstallReport {
   opencode: OpencodeTransformReport | null;
   /** External install report (claude plugin / npm -g / npx skills). null when disabled or empty. */
   external: ExternalInstallReport | null;
+  /** Environment file generation results (always present). */
+  envFiles: {
+    /** true if .env.example was created (csr-supabase/full only). */
+    envExampleCreated: boolean;
+    /** true if .gitignore got `.env` line appended. */
+    gitignoreEnvAdded: boolean;
+    /** Server names written to .mcp-allowlist; null if skipped. */
+    mcpAllowlist: string[] | null;
+  };
 }
 
 /**
@@ -101,6 +111,13 @@ export function runInstall(ctx: InstallContext): InstallReport {
   // Write metadata file used by detect_install_state on next run
   writeInstalledTracks(projectDir, spec.tracks);
 
+  // Environment files (F7/F8 — bash setup-harness.sh L880~890 + L954~996 등가)
+  const envFiles = {
+    envExampleCreated: writeEnvExample(projectDir, spec.tracks),
+    gitignoreEnvAdded: addGitignoreEnv(projectDir),
+    mcpAllowlist: writeMcpAllowlist(projectDir),
+  };
+
   // Codex transform when --cli ∈ {codex, both, all}
   let codex: CodexTransformReport | null = null;
   if (spec.cli === "codex" || spec.cli === "both" || spec.cli === "all") {
@@ -139,6 +156,7 @@ export function runInstall(ctx: InstallContext): InstallReport {
     codex,
     opencode,
     external,
+    envFiles,
   };
 }
 
