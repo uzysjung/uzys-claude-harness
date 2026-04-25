@@ -50,7 +50,7 @@
 
 - [x] **E1** `templates/opencode/.opencode/plugins/uzys-harness.ts` (110줄, self-contained) + `src/opencode/plugin-helpers.ts` (95줄, 테스트 미러) — 3 hook 모두 구현
 - [~] **E2** Plugin 정적 smoke 통과 (tsc + 22 unit test + install.test.ts plugin 본문 검증). 라이브 smoke (OpenCode CLI 런타임 의존)는 **Phase F dogfood로 이관**
-- [ ] **E3** ADR-004 v2 Accepted — **사용자 승인 대기**. Status 여전히 Proposed
+- [x] **E3** ADR-004 Accepted (2026-04-25 사용자 승인). 라이브 smoke는 Phase F 또는 사용자 환경에서 사후 검증
 
 **Phase E 게이트**: AC5 부분 충족 (정적 검증 100%, 라이브 smoke Phase F 이관). **사용자 승인 대기**.
 
@@ -58,12 +58,12 @@
 
 ## Phase F — Dogfood 2 Track
 
-- [ ] **F1** tooling Track 무인 설치 + plugin 로드
-- [ ] **F2** csr-fastapi Track 무인 설치 + plugin 로드
-- [ ] **F3** 6 slash 호출 검증 (`/uzys-spec` ~ `/uzys-ship`)
-- [ ] **F4** 무인 로그 리포트 — `docs/evals/opencode-install-2026-04-XX.md`
+- [x] **F1** tooling Track 무인 설치 — exit=0, 35 files + 9 dirs + 3 MCP + plugin/commands 9개. AC1+AC4 Pass
+- [x] **F2** csr-fastapi Track 무인 설치 — exit=0, 38 files + 13 dirs + 4 MCP (railway 추가). AC2 Pass (2/2)
+- [~] **F3** 6 slash 호출 검증 — 정적 (test 26개) PASS. **라이브** (OpenCode CLI 런타임)는 사용자 환경 사후 검증으로 이관
+- [x] **F4** 무인 로그 리포트 — `docs/evals/opencode-install-2026-04-25.md` (AC 6/6 표 + Codex 1차 비교)
 
-**Phase F 게이트**: AC2 + AC5 Pass.
+**Phase F 게이트**: AC2 + AC4 ✅. AC5 정적 100% (라이브 smoke는 사용자 사후). **사용자 검토 대기**.
 
 ---
 

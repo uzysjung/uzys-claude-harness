@@ -1,6 +1,6 @@
 # ADR-004: OpenCode Plugin Lifecycle 매핑 (Claude Hook → OpenCode Plugin Hook)
 
-- **Status**: Proposed
+- **Status**: Accepted (2026-04-25)
 - **Date**: 2026-04-25
 - **PR**: TBD (Phase A 종료 시 작성)
 - **Supersedes**: 없음
@@ -122,8 +122,11 @@ export default UzysHarness
 ## Status 흐름
 
 ```
-Proposed (현재) → Accepted (Phase E2 라이브 smoke + 사용자 승인 후)
+Proposed → Accepted (2026-04-25 사용자 승인 — bash hook 동작과 동등 확인)
 ```
+
+라이브 smoke (OpenCode CLI 런타임에서 실제 hook 발화 확인)는 Phase F dogfood
+또는 사용자 본인의 OpenCode 환경에서 사후 검증.
 
 ### Phase E1 구현 결과 (2026-04-25)
 
