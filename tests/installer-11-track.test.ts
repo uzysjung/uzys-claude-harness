@@ -81,6 +81,9 @@ describe("11-track install (E2E vs templates/)", () => {
     // Core: skeleton + meta
     expect(existsSync(join(projectDir, ".claude/CLAUDE.md"))).toBe(true);
     expect(existsSync(join(projectDir, ".claude/settings.json"))).toBe(true);
+    // Project-root CLAUDE.md (templates/project-claude/<track>.md → <projectDir>/CLAUDE.md).
+    // Single-track install only — manifest.ts L261-269 conditional. Reviewer LOW-3 guard.
+    expect(existsSync(join(projectDir, "CLAUDE.md"))).toBe(true);
 
     // Common rules always present
     for (const rule of ["git-policy", "change-management", "gates-taxonomy"]) {
