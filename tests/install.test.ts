@@ -634,6 +634,39 @@ describe("executeSpec", () => {
     expect(log).toHaveBeenCalledWith(expect.stringContaining("permission denied"));
   });
 
+  it("shortens long non-HOME non-/private paths to '…/last3' fallback", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => fakeReport);
+    // Force HOME mismatch: use /opt/very/long/non-home/project-name-that-is-over-fifty-chars
+    const longPath = "/opt/some/very/long/path/way/over/fifty/chars/total/here/indeed";
+    process.env.HOME = "/Users/never-matches";
+    executeSpec(
+      { ...baseSpec, projectDir: longPath },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    const targetCall = log.mock.calls.find((args) =>
+      typeof args[0] === "string" ? args[0].includes("TARGET") : false,
+    );
+    // Last 3 segments fallback
+    expect(targetCall?.[0]).toContain("…/");
+  });
+
+  it("uses path as-is when ≤ 50 chars", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => fakeReport);
+    const shortPath = "/short/p";
+    executeSpec(
+      { ...baseSpec, projectDir: shortPath },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    const targetCall = log.mock.calls.find((args) =>
+      typeof args[0] === "string" ? args[0].includes("TARGET") : false,
+    );
+    expect(targetCall?.[0]).toContain("/short/p");
+  });
+
   it("err + exit(1) when pipeline throws", () => {
     const err = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
