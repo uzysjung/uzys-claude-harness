@@ -1,6 +1,11 @@
 import { copyFileSync, cpSync, existsSync, mkdirSync, renameSync } from "node:fs";
 import { dirname, join } from "node:path";
 
+/** Ensure a directory exists, creating parents as needed. Idempotent. */
+export function ensureDir(path: string): void {
+  mkdirSync(path, { recursive: true });
+}
+
 export interface CopyResult {
   copied: number;
   skipped: number;

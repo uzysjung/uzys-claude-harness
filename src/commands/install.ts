@@ -125,6 +125,11 @@ export function installAction(options: InstallOptions, deps: InstallActionDeps =
     log(`  Backup:        ${report.backup}`);
   }
   log(`  MCP servers:   ${report.mcpServers.join(", ") || "(none)"}`);
+  if (report.codex) {
+    log(
+      `  Codex:         AGENTS.md + .codex/{config.toml, ${report.codex.hookFiles.length} hooks} + ${report.codex.skillFiles.length} skills`,
+    );
+  }
 }
 
 function defaultRunPipeline(spec: InstallSpec, harnessRoot: string): InstallReport {

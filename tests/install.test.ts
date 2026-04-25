@@ -10,6 +10,7 @@ const fakeReport: InstallReport = {
   backup: null,
   installedTracks: ["tooling"],
   mcpServers: ["context7"],
+  codex: null,
 };
 
 describe("specFromOptions", () => {
