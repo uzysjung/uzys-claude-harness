@@ -37,9 +37,11 @@
   - `prompts` (terkelg/prompts) — 가볍지만 활발한 유지 부족
   - 직접 구현 — Non-Goals (P2 Simplicity)
 
-### D3. 인자 파싱 — `commander` (Phase A 실측 후 확정 가능)
+### D3. 인자 파싱 — **`cac`** (Phase A 실측 결과 채택)
 
-- `cac` 도 후보. 결정 전 30분 spike — 두 lib에 동일 명령(`install --track tooling`) 구현 후 빌드 크기 / 가독성 비교
+- 초기 후보: `commander` (de facto). Phase A 실 빌드 시 **commander 내부 `require("events")` 가 ESM 번들에서 `Dynamic require ... is not supported` 에러로 실패**. tsup `cjsInterop: true` 도 미해결.
+- 대안 `cac` (~7 KB, 순수 ESM) 로 전환 → 빌드 통과 + 번들 크기 110 KB → **20 KB**. API 표면도 동일 수준 (commander 클래스형, cac 함수형).
+- 옵션 이름 규약: cac은 자동 camelCase (`--with-tauri` → `withTauri`). 테스트 + 타입 정의에 반영.
 - 부속 명령: `install`, `update`, `add-track`, `test`, `--help`, `--version`. 인자 없음 = 인터랙티브
 
 ### D4. 빌드 도구 — `tsup` (esbuild 기반)
