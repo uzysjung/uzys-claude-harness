@@ -24,6 +24,9 @@ function buildSpec(tracks: Track[], projectDir: string): InstallSpec {
   };
 }
 
+/** No-op external install — tests don't want to trigger real `claude plugin install`. */
+const NO_EXTERNAL = null;
+
 const TRACKS: ReadonlyArray<Track> = [
   "tooling",
   "csr-supabase",
@@ -62,6 +65,7 @@ describe("9-track install (E2E vs templates/)", () => {
 
   it.each(TRACKS)("track=%s install passes core invariants", (track) => {
     const report = runInstall({
+      runExternal: NO_EXTERNAL,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: buildSpec([track], projectDir),
@@ -108,6 +112,7 @@ describe("track-specific skills routing", () => {
 
   it("data + full route python-patterns / python-testing", () => {
     runInstall({
+      runExternal: NO_EXTERNAL,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: buildSpec(["data"], projectDir),
@@ -118,6 +123,7 @@ describe("track-specific skills routing", () => {
 
   it("data does NOT route nextjs-turbopack", () => {
     runInstall({
+      runExternal: NO_EXTERNAL,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: buildSpec(["data"], projectDir),
@@ -127,6 +133,7 @@ describe("track-specific skills routing", () => {
 
   it("ssr-nextjs routes nextjs-turbopack", () => {
     runInstall({
+      runExternal: NO_EXTERNAL,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: buildSpec(["ssr-nextjs"], projectDir),
@@ -136,6 +143,7 @@ describe("track-specific skills routing", () => {
 
   it("executive routes investor-materials + investor-outreach + market-research", () => {
     runInstall({
+      runExternal: NO_EXTERNAL,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: buildSpec(["executive"], projectDir),
@@ -147,6 +155,7 @@ describe("track-specific skills routing", () => {
 
   it("tooling does NOT route investor-* (executive-only)", () => {
     runInstall({
+      runExternal: NO_EXTERNAL,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: buildSpec(["tooling"], projectDir),
@@ -156,6 +165,7 @@ describe("track-specific skills routing", () => {
 
   it("csr-fastapi routes python-patterns (csr-fastapi + data + full union)", () => {
     runInstall({
+      runExternal: NO_EXTERNAL,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: buildSpec(["csr-fastapi"], projectDir),
@@ -175,6 +185,7 @@ describe("--with-tauri option", () => {
 
   it("adds tauri rule when csr-* + withTauri", () => {
     runInstall({
+      runExternal: NO_EXTERNAL,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: {
@@ -187,6 +198,7 @@ describe("--with-tauri option", () => {
 
   it("does NOT add tauri rule when data + withTauri (no CSR)", () => {
     runInstall({
+      runExternal: NO_EXTERNAL,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: {
@@ -209,6 +221,7 @@ describe("--cli=both produces both Claude and Codex outputs", () => {
 
   it("creates AGENTS.md + .codex/ alongside .claude/", () => {
     const report = runInstall({
+      runExternal: NO_EXTERNAL,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: { ...buildSpec(["tooling"], projectDir), cli: "both" },

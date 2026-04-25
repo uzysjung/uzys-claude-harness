@@ -1,11 +1,16 @@
 import { chmodSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { type CodexTransformReport, runCodexTransform } from "./codex/transform.js";
+import {
+  type ExternalInstallReport,
+  type ExternalInstallerDeps,
+  runExternalInstall,
+} from "./external-installer.js";
 import { backupDir, copyDir, copyFile, ensureProjectSkeleton } from "./fs-ops.js";
 import { buildManifest } from "./manifest.js";
 import { composeMcpJson, writeMcpJson } from "./mcp-merge.js";
 import { type OpencodeTransformReport, runOpencodeTransform } from "./opencode/transform.js";
-import type { InstallSpec } from "./types.js";
+import type { InstallSpec, OptionFlags, Track } from "./types.js";
 
 export interface InstallContext {
   /** Path to the harness repo (where `templates/` lives). */
@@ -15,6 +20,17 @@ export interface InstallContext {
   spec: InstallSpec;
   /** When true, an existing .claude/ is renamed to a timestamped backup before install. */
   backup?: boolean;
+  /**
+   * External install (claude plugin / npm -g / npx skills) injection point.
+   * Default: real `runExternalInstall`. Tests inject mock to avoid real spawn.
+   * Pass `null` to disable external install entirely.
+   */
+  runExternal?:
+    | ((
+        ctx: { tracks: ReadonlyArray<Track>; options: OptionFlags },
+        deps: ExternalInstallerDeps,
+      ) => ExternalInstallReport)
+    | null;
 }
 
 export interface InstallReport {
@@ -28,6 +44,8 @@ export interface InstallReport {
   codex: CodexTransformReport | null;
   /** Present when CLI ∈ {opencode, all}. */
   opencode: OpencodeTransformReport | null;
+  /** External install report (claude plugin / npm -g / npx skills). null when disabled or empty. */
+  external: ExternalInstallReport | null;
 }
 
 /**
@@ -95,6 +113,22 @@ export function runInstall(ctx: InstallContext): InstallReport {
     opencode = runOpencodeTransform({ harnessRoot, projectDir });
   }
 
+  // External assets (claude plugin / npm -g / npx skills) — runs when not explicitly disabled.
+  // Default = real runExternalInstall. Tests inject mock or `null` to skip.
+  // log/warn are silenced here — executeSpec renders the report rows after-the-fact (no interleave).
+  let external: ExternalInstallReport | null = null;
+  if (ctx.runExternal !== null) {
+    const runExt = ctx.runExternal ?? runExternalInstall;
+    external = runExt(
+      { tracks: spec.tracks, options: spec.options },
+      {
+        harnessRoot,
+        log: () => {},
+        warn: () => {},
+      },
+    );
+  }
+
   return {
     filesCopied,
     dirsCopied,
@@ -104,6 +138,7 @@ export function runInstall(ctx: InstallContext): InstallReport {
     mcpServers: Object.keys(mcpResult.mcpServers).sort(),
     codex,
     opencode,
+    external,
   };
 }
 

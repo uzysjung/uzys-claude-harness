@@ -19,6 +19,7 @@ describe("OpenCode install pipeline (integration)", () => {
 
   it("tooling + --cli=opencode: writes baseline + AGENTS.md + opencode.json + .opencode/{commands,plugins}", () => {
     const report = runInstall({
+      runExternal: null,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: {
@@ -75,6 +76,7 @@ describe("OpenCode install pipeline (integration)", () => {
 
   it("tooling + --cli=all: writes Claude + Codex + OpenCode all 3", () => {
     const report = runInstall({
+      runExternal: null,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: {
@@ -105,6 +107,7 @@ describe("OpenCode install pipeline (integration)", () => {
 
   it("--cli=claude does NOT generate OpenCode artifacts", () => {
     const report = runInstall({
+      runExternal: null,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: {
@@ -128,6 +131,7 @@ describe("OpenCode install pipeline (integration)", () => {
 
   it("--cli=both (Codex 1차 호환) does NOT generate OpenCode", () => {
     const report = runInstall({
+      runExternal: null,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: {

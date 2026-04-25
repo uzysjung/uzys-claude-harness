@@ -19,6 +19,7 @@ describe("installer (integration with templates/)", () => {
 
   it("tooling track: installs core assets + writes .installed-tracks", () => {
     const report = runInstall({
+      runExternal: null,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: {
@@ -72,6 +73,7 @@ describe("installer (integration with templates/)", () => {
 
   it("executive track: skips uzys/* commands and dev rules", () => {
     runInstall({
+      runExternal: null,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: {
@@ -95,6 +97,7 @@ describe("installer (integration with templates/)", () => {
 
   it("multi-track: union of rules + no project-root CLAUDE.md", () => {
     runInstall({
+      runExternal: null,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: {
@@ -120,6 +123,7 @@ describe("installer (integration with templates/)", () => {
   it("backup option moves existing .claude/ aside before install", () => {
     // Pre-populate a .claude/ to trigger backup
     runInstall({
+      runExternal: null,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       spec: {
@@ -136,6 +140,7 @@ describe("installer (integration with templates/)", () => {
       },
     });
     const second = runInstall({
+      runExternal: null,
       harnessRoot: HARNESS_ROOT,
       projectDir,
       backup: true,
@@ -159,6 +164,7 @@ describe("installer (integration with templates/)", () => {
   it("throws when templates directory missing", () => {
     expect(() =>
       runInstall({
+        runExternal: null,
         harnessRoot: "/no/such/root",
         projectDir,
         spec: {

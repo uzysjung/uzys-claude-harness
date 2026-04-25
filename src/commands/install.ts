@@ -168,9 +168,21 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
   log(assetRow("success", ".mcp.json", mcpList));
   log("");
 
-  // ━━━ Phase 2 — Codex / OpenCode (CLI-specific) ━━━
-  if (report.codex || report.opencode) {
-    log(phaseHeader(2, formatCliPhaseTitle(spec.cli)));
+  // ━━━ Phase 2 — External Assets (skills / plugins / npm-global) ━━━
+  if (report.external && report.external.attempted.length > 0) {
+    log(phaseHeader(2, "External Assets"));
+    log("");
+    for (const r of report.external.attempted) {
+      const meta = r.ok ? formatAssetMeta(r.asset) : (r.message ?? "failed");
+      log(assetRow(r.ok ? "success" : "skip", r.asset.id, meta));
+    }
+    log("");
+  }
+
+  // ━━━ Phase 3 — Codex / OpenCode (CLI-specific) ━━━
+  if ((report.codex || report.opencode) && spec.cli !== "claude") {
+    const phaseN = report.external && report.external.attempted.length > 0 ? 3 : 2;
+    log(phaseHeader(phaseN, formatCliPhaseTitle(spec.cli)));
     log("");
     // AGENTS.md is shared across Codex/OpenCode — render once with shared note
     if (report.codex && report.opencode) {
@@ -213,9 +225,36 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
   } else {
     log(infoRow("CLIs", "Claude"));
   }
+  if (report.external && report.external.skipped > 0) {
+    log("");
+    log(
+      infoRow(
+        "WARN",
+        c.yellow(
+          `${report.external.skipped} external asset${report.external.skipped > 1 ? "s" : ""} skipped (see Phase 2 above)`,
+        ),
+      ),
+    );
+  }
   log("");
   log(infoRow("NEXT", `${c.bold("claude")}  →  ${c.cyan("/uzys:spec")}`));
   log("");
+}
+
+function formatAssetMeta(asset: import("../external-assets.js").ExternalAsset): string {
+  const m = asset.method;
+  switch (m.kind) {
+    case "skill":
+      return m.skill ? `${m.source} · ${m.skill}` : m.source;
+    case "plugin":
+      return m.pluginId;
+    case "npm-global":
+      return `npm install -g ${m.pkg}`;
+    case "npx-run":
+      return `npx ${m.cmd}`;
+    case "shell-script":
+      return `bash ${m.script}`;
+  }
 }
 
 function formatOptions(spec: InstallSpec): string {
@@ -253,7 +292,11 @@ function shortenPath(p: string): string {
   return p;
 }
 
-function formatCliPhaseTitle(cli: CliMode): string {
+/**
+ * 'claude' mode never reaches here (phase 2/3 is gated on codex || opencode in executeSpec).
+ * The remaining 4 modes map to phase titles.
+ */
+function formatCliPhaseTitle(cli: Exclude<CliMode, "claude">): string {
   switch (cli) {
     case "codex":
       return "Codex artifacts";
@@ -263,8 +306,6 @@ function formatCliPhaseTitle(cli: CliMode): string {
       return "Codex artifacts";
     case "all":
       return "Codex + OpenCode artifacts";
-    case "claude":
-      return "Claude artifacts";
   }
 }
 
