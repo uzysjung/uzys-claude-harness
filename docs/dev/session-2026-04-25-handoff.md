@@ -1,7 +1,9 @@
 # Session Handoff — 2026-04-25
 
-> **Outgoing**: Phase 1 Finalization 진행 중 + **Codex 호환 1차 완료** (v27.19.0).
-> **Incoming**: Phase D HITO baseline 수집 경과 대기 (목표 ≥ 2026-04-30) → v28.0.0 (Foundation 완료 선언).
+> **Outgoing**: Phase 1 Finalization 진행 중 + **Codex 호환 1차 완료** (v27.19.0) + **CLI rewrite 완료** (v0.2.0, 2026-04-25).
+> **Incoming**: Phase D HITO baseline 수집 경과 대기 (3/7일, 목표 ≥ 2026-04-30) → v28.0.0 (Foundation 완료 선언).
+>
+> **2026-04-25 추가**: 본 세션에서 bash setup-harness.sh (1453 LOC) 폐기 + TypeScript CLI 재작성 (`@uzysjung/claude-harness` v0.2.0). PR #11~19 (9 PR / 7 Phase). 사용자 보고 핵심 문제(인터랙티브 입출력 명시성 + `/dev/tty` 노이즈) 해결.
 
 ---
 
@@ -57,7 +59,7 @@
 ls -la .claude/evals/hito-*.log
 bash scripts/hito-aggregate.sh --summary
 
-# 2. 종료 기준 충족 여부:
+# 2. 종료 기준 충족 여부 (ADR-001 OQ1):
 # - 7일 경과 (시작일 2026-04-23, 첫 가능 시점 2026-04-30)
 # - 세션 수 ≥ 10
 # - feature 분류 ≥ 3종 (수동 분류 필요)
@@ -68,9 +70,15 @@ bash scripts/hito-aggregate.sh --summary
 # - /uzys:review → /uzys:ship → v28.0.0 태그
 ```
 
-### 2.3 CLI 재작성 (`docs/specs/cli-rewrite.md`) — Phase A 착수 대기
+**현재 진척 (2026-04-25)**:
+- 3일 / 7일 (43%, 04-23 ~ 04-25)
+- 누적 prompts: 53 (avg 17.6/day)
+- 세션 수: ≥ 10 충족 추정 (3일 × 다회)
+- feature 분류: 미수행 (수동, 7일 충족 후 일괄)
 
-**Status**: Accepted (2026-04-25). PR #11 머지 → Phase A 착수.
+### 2.3 CLI 재작성 (`docs/specs/cli-rewrite.md`) — **완료 (2026-04-25, v0.2.0)**
+
+**Status**: Accepted → 완료. ADR-003 Accepted.
 
 **Trigger**: `scripts/setup-harness.sh` 1453줄 + 인터랙티브 prompt 입력 대기 시각적 불명 + `/dev/tty: Device not configured` stderr 노이즈.
 
@@ -82,28 +90,35 @@ bash scripts/hito-aggregate.sh --summary
 - GitHub Releases 1차 → npm 후속
 - bash 3종 (`install.sh`, `setup-harness.sh`, `test-harness.sh`) cutover 폐기
 
-**Phase 분해** (총 6~8일):
-- A 초기화 + 골격 (1일)
-- B clack prompt + state 감지 (1일)
-- C 설치 단계 핵심 (1.5일)
-- D Codex 호환 통합 (0.5~1일)
-- E 테스트 스위트 90% 커버리지 (1.5일)
-- F 빌드 + 분배 + 폐기 (0.5~1일)
-- G dogfood + Ship (0.5일)
+**Phase 결과** (총 1세션 내 완료, 추정 6~8일 → 실제 1일):
 
-**다음 세션 진입**:
-```bash
-# 1. PR #11 (SPEC + ADR-003) 머지 확인
-gh pr view 11 --json state
+| Phase | PR | 산출 |
+|-------|----|----|
+| A 초기화 + 골격 | #12 | TS 프로젝트 + cac CLI + Vitest 90%+ |
+| B clack + state | #13 | 5-action 라우터 + 인터랙티브 |
+| C install pipeline | #14 | 매니페스트 + .mcp.json 병합 + 백업 |
+| D Codex TS 포팅 | #15 | OQ4 Closed (`claude-to-codex.sh` 247→TS 5 모듈) |
+| E 9 Track 통합 | #16 | parametric 테스트 + 매니페스트 5종 보강 |
+| F bash cutover | #17 | bash 4종 폐기 (1980 LOC), npx wrapper (31 LOC) |
+| G 디자인 + dogfood | #18 | `design.ts` + 9/9 라이브 PASS + ADR-003 Accepted |
+| Release | #19 | **v0.2.0 태그** |
 
-# 2. Phase A 시작 — TS 프로젝트 초기화
-git checkout -b feat/cli-rewrite-phase-a
-mkdir -p src tests
-# package.json, tsconfig.json, biome.json, vitest.config.ts 생성
-# 30분 spike: commander vs cac, tsup vs esbuild
-```
+**핵심 결과**:
+- 1453 LOC bash + 280 test-harness + 247 codex script → **1731 LOC TS (18 src 모듈) + 198 tests**
+- 커버리지 lines 96.78% / branches 91.27% / functions 97.05%
+- **사용자 보고 문제 해결**: 인터랙티브 prompt 입력 대기 시각화 (clack ↑↓ + Space) + `/dev/tty: Device not configured` stderr 노이즈 0건
+- 디자인 명시성: bold cyan header + ✓/⚠/✗/• 시각 심볼 + 16자 정렬 + NO_COLOR 존중
+- 진입: `bash <(curl .../install.sh)` (호환 wrapper) + `npx -y github:uzysjung/uzys-claude-harness#main install ...` (CI)
 
-**병행 관계**: Phase 1 Finalization AC3 HITO baseline은 wall-clock 대기라 본 작업과 직렬 충돌 없음. 본 CLI 재작성 작업이 HITO 측정 자체를 끊지 않음 (Claude Code 사용 그대로).
+**OQ Closed**:
+- OQ3 빌드 도구: tsup (esbuild wrapper)
+- OQ4 `claude-to-codex.sh` 포팅: TS 채택
+- OQ5 테스트 러너: vitest
+- OQ6 인자 파서: cac (commander가 ESM 번들 실패하여 전환)
+
+**남은 OQ**:
+- OQ1 npm vs GH Releases — 현재 GH Releases 1차, npm은 외부 영입 시 별도 ADR
+- OQ2 패키지명 `@uzysjung/claude-harness` — npm publish 결정 시 재검토
 
 ### 2.4 Codex 1차 후속 (별도 SPEC 또는 follow-up)
 
