@@ -1136,6 +1136,16 @@ else
 fi
 rm -rf "$T23_8_DIR"
 
+# T23.10 — README Codex 섹션 (Phase G)
+if grep -q "Codex CLI support" "$ROOT/README.md" && \
+   grep -q "Codex CLI 지원" "$ROOT/README.ko.md" && \
+   grep -q -- "--cli codex" "$ROOT/README.md" && \
+   grep -q "openai/codex#16732" "$ROOT/README.md"; then
+  pass "README: Codex 섹션 (en + ko) + --cli + Issue #16732 명시"
+else
+  fail "README: Codex 섹션 누락 또는 핵심 내용 누락"
+fi
+
 # T23.9 — Hook env rename (CLAUDE_PROJECT_DIR → CODEX_PROJECT_DIR)
 T23_9_DIR="$(mktemp -d -t test-codex-hook-XXXXXX)"
 if bash "$ROOT/scripts/claude-to-codex.sh" "$T23_9_DIR" >/dev/null 2>&1; then

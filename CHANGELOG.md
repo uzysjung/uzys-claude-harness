@@ -5,6 +5,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v27.19.0] — 2026-04-25
+
+### Added
+- **Codex CLI 호환 풀 하네스 복제 (1차)** — `--cli={claude,codex,both}` 플래그 + 인터랙티브 prompt
+  - `scripts/claude-to-codex.sh` — Claude Code SSOT를 Codex 자산으로 변환 (5-단)
+  - `templates/codex/` — AGENTS.md.template, config.toml.template, hooks 스캐폴드, 6 skills
+  - `--cli=codex` 시 `setup-harness.sh`가 변환 호출 + 2단 opt-in (글로벌 skills / trust entry)
+  - 인터랙티브 라우터 2c 단계: CLI 선택 (`①Claude ②Codex ③Both`)
+  - test-harness T23 (10 assertion) — CLI 플래그 / E2E 무인 설치 / slash rename / hook env rename / README 섹션
+- **Codex 호환 SPEC + ADR + 호환 매트릭스 + dogfood 리포트**:
+  - `docs/specs/codex-compat.md` — Sprint Contract + AC1~AC6
+  - `docs/decisions/ADR-002-codex-hook-gap.md` v2 (Accepted) — Hook 갭 소멸, 포맷 변환 규약
+  - `docs/research/codex-compat-matrix-2026-04-24.md` — Codex 0.124.0 실측 + Hook 이벤트 맵
+  - `docs/evals/codex-install-2026-04-25.md` — 2 Track (tooling + csr-fastapi) 실측 dogfood
+- **README.md / README.ko.md "Codex CLI 지원" 섹션** — 설치 / 자산 구조 / 슬래시 rename / 2가지 opt-in / 알려진 제약 (Issue #16732, #17532) / 참고 링크
+
+### Notes
+- Hook event PascalCase ↔ snake_case 변환은 mechanical. stdin JSON 필드 호환으로 Claude Code hook 스크립트 본체 재사용
+- ApplyPatch(파일 쓰기) hook 미발화 (#16732) → `sandbox_mode=workspace-write` + `approval_policy=on-request` 네이티브 보호로 이관
+- 글로벌 `~/.codex/` 수정은 명시 opt-in 후에만 (D16 정신 + ADR-002 v2 D4)
+- Claude-only 기본 경로 regression 0 — `--cli=claude` (기본) 흐름 변화 없음
+
+### SPEC AC 충족
+- AC1 `--cli=codex` 무인 설치 / AC2 ≥2 Track / AC3 6 skill slash / AC4 MCP 2+ 서버 / AC5 Hook 포맷 변환 / AC6 Claude regression 0 — **모두 Pass**
+
 ## [v27.18.0] — 2026-04-23
 
 ### Added

@@ -323,6 +323,67 @@ executive는 `market-research` 중심 서브셋.
 
 전체 자산 목록 + 신뢰 등급: [docs/REFERENCE.md](./docs/REFERENCE.md).
 
+## Codex CLI 지원
+
+Claude Code 외에 **OpenAI Codex CLI** (0.124.0+) 설치도 지원한다. Claude Code가 SSOT이며 Codex 자산은 변환 스크립트로 파생된다.
+
+### Codex 설치
+
+인터랙티브 (권장):
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)
+# 선택: ① tooling   |   2c) CLI: ② Codex
+```
+
+플래그 모드 (CI / 자동화):
+```bash
+bash scripts/setup-harness.sh --track tooling --cli codex --project-dir .
+```
+
+`--cli`는 `claude` (기본), `codex`, `both` 셋 중 하나. 기본값 `claude`라 기존 워크플로우는 영향 없음.
+
+### 생성되는 자산
+
+`--cli=codex` 또는 `--cli=both`이면, 표준 설치 완료 후 `scripts/claude-to-codex.sh`가 다음을 생성:
+
+```
+<project>/
+├── AGENTS.md                          # .claude/CLAUDE.md에서 변환 생성
+└── .codex/
+    ├── config.toml                    # sandbox + approval + [[hooks.*]] + [mcp_servers.*]
+    └── hooks/
+        ├── session-start.sh           # session_start
+        ├── hito-counter.sh            # user_prompt_submit
+        └── gate-check.sh              # pre_tool_use matcher="Skill"
+
+~/.codex/skills/uzys-{spec,plan,build,test,review,ship}/SKILL.md   # opt-in (확인 받음)
+```
+
+Slash 이름: Codex는 `:`를 슬래시에서 미지원하여 `/uzys:spec` → `/uzys-spec` 형태로 rename됨.
+
+### 두 가지 opt-in 프롬프트 (`~/.codex/` 수정)
+
+변환 후 설치 스크립트가 묻는 두 가지:
+
+```
+~/.codex/skills/ 에 uzys-* 6종 설치? [y/N]
+~/.codex/config.toml 에 프로젝트 trust entry 추가? [y/N]
+```
+
+기본값 모두 **No**. 거절 시 글로벌 변경 0. 두 번째 질문 승인은 프로젝트 스코프 `.codex/config.toml` 훅 로드를 위해 필요.
+
+### 알려진 제약 (Codex 0.124.0 upstream)
+
+- **`pre_tool_use` / `post_tool_use`는 Bash 툴에만 발화** — ApplyPatch(파일 쓰기)는 가로채지 않음 ([openai/codex#16732](https://github.com/openai/codex/issues/16732)). 하네스는 `sandbox_mode = "workspace-write"` + `approval_policy = "on-request"` 조합으로 보완 (파일 쓰기 경로에선 hook보다 강력).
+- **인터랙티브 세션에서 프로젝트 스코프 hook 미로드 가능** ([openai/codex#17532](https://github.com/openai/codex/issues/17532)). `codex exec` 비대화형은 영향 없음.
+
+### 참고
+
+- 풀 SPEC: [`docs/specs/codex-compat.md`](./docs/specs/codex-compat.md)
+- Hook 전략 ADR: [`docs/decisions/ADR-002-codex-hook-gap.md`](./docs/decisions/ADR-002-codex-hook-gap.md) (Accepted)
+- 호환 매트릭스: [`docs/research/codex-compat-matrix-2026-04-24.md`](./docs/research/codex-compat-matrix-2026-04-24.md)
+- Dogfood 검증: [`docs/evals/codex-install-2026-04-25.md`](./docs/evals/codex-install-2026-04-25.md)
+
 ## 11개 행동 원칙
 
 Karpathy LLM 관찰 + Anthropic Harness Design + 실전 운영 경험에서 추출:
