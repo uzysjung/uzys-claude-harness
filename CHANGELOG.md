@@ -14,7 +14,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 - **Phase C**: 실 install 파이프라인 — 매니페스트 데이터 표 + .mcp.json 병합 + 백업/롤백 (PR #14)
 - **Phase D**: TS Codex 호환 통합 — `claude-to-codex.sh` 247 LOC를 TS 5 모듈로 포팅, OQ4 Closed (PR #15)
 - **Phase E**: 9 Track 통합 테스트 + 매니페스트 5종 보강 (PR #16)
-- **Phase F (이번)**: bash 4종 cutover + GH Releases 분배 + CI workflow vitest 전환
+- **Phase F**: bash 4종 cutover + GH Releases 분배 + CI workflow vitest 전환 (PR #17)
+- **Phase G (이번)**: CLI 디자인 명시성 (`src/design.ts` ANSI helper) + 9 Track 라이브 dogfood 9/9 PASS + ADR-003 Accepted (PR #18)
 
 새 진입점 (모든 `bash <(curl ...)` / `bash scripts/*` 대체):
 ```bash
