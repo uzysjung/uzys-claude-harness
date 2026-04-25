@@ -1,0 +1,47 @@
+{
+  "name": "@uzysjung/claude-harness",
+  "version": "0.1.0-alpha.1",
+  "description": "TypeScript CLI for uzys-claude-harness — install, update, and manage Claude Code / Codex CLI assets",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "bin": {
+    "claude-harness": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src tests",
+    "lint:fix": "biome check --write src tests",
+    "format": "biome format --write src tests",
+    "ci": "npm run typecheck && npm run lint && npm run test:coverage && npm run build"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.7.0",
+    "cac": "^6.7.14"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uzysjung/uzys-claude-harness.git"
+  }
+}

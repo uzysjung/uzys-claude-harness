@@ -29,3 +29,10 @@ docs/checkpoints/
 
 # HITO raw logs (private usage data; aggregated in docs/evals/hito-baseline-*.md)
 .claude/evals/hito-*.log
+
+# CLI rewrite (Phase A+, npm/Node)
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.vitest-cache/
