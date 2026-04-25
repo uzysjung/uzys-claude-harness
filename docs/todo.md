@@ -95,6 +95,10 @@
 
 ---
 
+## 병행 SPEC 진행 상태 (참고)
+
+- `docs/specs/codex-compat.md` — **Codex 호환 1차 완료** (2026-04-25, v27.19.0). Phase A~G 7단계 모두 완료. ADR-001과 별도 스펙. 본 todo는 Phase 1 Finalization 전용. Codex 후속(OQ7/OQ8/OpenCode 2차)은 `docs/dev/session-2026-04-25-handoff.md` 참조.
+
 ## 다음 세션 가이드
 
 현 세션 2026-04-23 완료 범위: **#2 현행화 + Phase A + A4 + C + Phase D 측정 시작 준비**.
