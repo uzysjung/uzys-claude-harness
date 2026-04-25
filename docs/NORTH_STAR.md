@@ -7,90 +7,118 @@
 
 ## 1. North Star Statement
 
-> **"필수적인 skill / plugin / CLAUDE.md / Agent.md 번들만으로, 구체적인 디렉션 없이도 고수준의 서비스를 한 번에 만들 수 있게 하는 하네스."**
+> **"AI와 사용자가 하네스 규칙을 공통 언어로 삼아 적은 왕복으로 빠르게 개발하는 환경."**
 
-사용자가 매번 "이건 이렇게 해, 저건 저렇게 해"를 지시하지 않아도 — Track만 선택하면 그 Stack에 필요한 모든 맥락(rules / hooks / skills / agents / plugins / MCP)이 자동 설치되고, SPEC 한 번 정의하면 `/uzys:auto`가 Plan → Build → Test → Review → Ship을 완주한다. 사용자는 **큰 그림 결정**(North Star, SPEC 범위, Major CR, Ship 승인)에만 개입.
+vibe coding = "AI ↔ 사용자가 하네스 규칙(rules / hooks / skills / 6-gate / Track / SPEC)을 공유 어휘로 사용해 효율적으로 소통 → 빠른 개발". AI 단독 자동화가 아니라 **양쪽이 같은 의미로 해석하는 통신 프로토콜**의 풍부함과 정확성이 핵심.
 
-"Harness = AI Model(s) + Harness"의 **Harness 쪽**을 극단적으로 얇지만 단단하게 만든다.
+하네스가 제공하는 것 = 양쪽이 동일하게 해석하는 어휘 집합. 어휘가 풍부하고 정확할수록 동일 결과에 더 적은 왕복 + 더 빠른 시간 + 더 적은 재설명.
+
+"Harness = AI Model(s) + Harness"의 **Harness 쪽** = 통신 프로토콜이자 공유 어휘.
+
+**대상**: 퍼블릭 — 누구나 vibe coder. 시니어/주니어/멀티 역할 무관.
 
 ---
 
 ## 2. North Star Metric (NSM)
 
-**1차 지표 (현재 단계)**: **HITO — Human-In-The-Loop Occurrences per Feature**
-- 정의: 하나의 feature를 `/uzys:spec` → `/uzys:ship` 까지 가는 동안 사용자가 명시적으로 개입(지시문 입력/승인/수정 요청)한 횟수
-- 목표: **≤ 3회 per feature** (SPEC 정의 1 + Major CR 평균 1 + Ship 최종 승인 1)
-- 의미: 이 지표가 달성되면 "구체적 디렉션 없이도 만들어진다"는 Statement가 수치로 증명됨. 초과분은 harness 부족분 지표.
-
-**2차 보조 지표**
+### 1차 지표 — 소통 효율 (vibe core)
 
 | Metric | 정의 | 목표 |
 |--------|------|------|
-| **Clean Install Success Rate** | `curl\|bash` 1회 실행으로 Track 설치가 에러 없이 완료되는 비율 | ≥ 95% |
-| **Revision Loop Depth** | `/uzys:auto` 한 사이클에서 에이전트 자동 수정 루프가 돌아가는 평균 횟수 | ≤ 2 |
-| **Explicit Instruction Length** | 사용자가 세션당 입력하는 평균 지시문 길이 | 감소 추세 (4주 moving avg) |
-| **Test-harness PASS Rate** | 147 assertion 중 PASS 비율 | 100% (현재 147/147) |
+| **HITO per Feature** | feature 1개 완주(`/uzys:spec` → `/uzys:ship`)까지 사용자 명시 개입 (지시문/승인/수정 요청) 횟수 | **≤ 3** |
+| **Re-clarification Rate** | AI가 동일 context를 두 번 이상 묻거나, 사용자가 같은 결정을 두 번 이상 내리는 빈도 (sample 기반) | **≤ 5%** of total prompts |
 
-> 모든 지표는 single-user 환경(Jay 본인 + 초대된 early adopter)에서 자가 수집. Phase 3 진입 시 재정의.
+### 2차 지표 — 속도 + 진입 + 신뢰
+
+| Metric | 정의 | 목표 |
+|--------|------|------|
+| **Time-to-first-Build** | `npx -y github:.../uzys-claude-harness` 실행부터 첫 `/uzys:build` 완료까지 | **≤ 30분 (p90)** |
+| **First-Run Success Rate** | 첫 설치 시도가 사용자 수동 개입 (에러 fix / 누락 파일 / 의존성 추가 install) **0건**으로 종료 | **≥ 95%** |
+| **Promise = Implementation** | README/USAGE/SPEC에서 광고된 모든 자산 (skill / plugin / MCP / hook)이 실제 설치·작동 | **100%** (거짓 광고 0건) |
+| **Cross-CLI Parity** | Claude / Codex / OpenCode 3 CLI 동일 어휘 동등 작동률 (slash 호출 + hook 발화 + skill 인식) | **≥ 95%** |
+
+### 측정 방법
+
+- HITO: `templates/hooks/hito-counter.sh` + `scripts/hito-aggregate.sh` (자동)
+- Re-clarification: 세션 transcript 수동 sampling (분기 1회)
+- Time-to-first-Build: dogfood 세션 + early adopter 자체 보고
+- First-Run Success: GitHub Issues + Discord/email 보고 + dogfood log
+- Promise = Implementation: install pipeline E2E test + grep README ↔ manifest cross-check (CI)
+- Cross-CLI Parity: `tests/installer-9-track.test.ts` × 3 CLI matrix
 
 ---
 
 ## 3. Strategic Boundaries (방향성 경계)
 
-### 3.1 Will (집중)
+### 3.1 Will (vibe coding 핵심)
 
-- **Minimum Viable Bundle** — Track별로 그 Stack에 진짜 필요한 skill/plugin/MCP만. 과잉 번들 금지.
-- **Deterministic Harness** — hook으로 강제 가능한 건 hook으로 (순서, 파일 보호, 게이트). LLM 판단은 최후 수단.
-- **ECC-First** — 자체 작성 전에 ECC/agent-skills/vendor 생태계에 있는지 먼저 확인. 없으면 cherry-pick. 없으면 자체.
-- **Multi-Stack 동등성** — Python REST / Next.js / SSR / 데이터 / 임원용 문서 / 순수 CLI 어디든 같은 6-gate와 같은 `/uzys:*` 명령이 통한다.
-- **Project-Scope 오염 금지** — 글로벌 `~/.claude/` 절대 건드리지 않음 (D16 보호).
-- **Transparent Defaults** — 설치 중 어떤 plugin/skill이 설치되는지 각 줄 단위로 명시. 숨김 동작 없음.
+- **공통 어휘 풍부화** — Rule / Hook / Skill 추가 기준: "AI와 사용자가 같은 의미로 해석하는가". 모호하면 거절
+- **재설명 제거** — 같은 context를 두 번 묻게 만드는 모든 friction 제거 (CLAUDE.md persistence, gate-status, decision log, ADR)
+- **Promise = Implementation** — README/USAGE/SPEC 광고는 100% 실제 동작. 거짓 광고는 vibe를 가장 빠르게 깨뜨림
+- **Public-first** — 처음 보는 사용자가 즉시 같은 어휘로 대화 시작 가능. 한 줄 설치 + 자동 컨텍스트 로드
+- **Deterministic Harness** — 게이트/규칙/순서는 hook으로 강제. LLM 판단 의존은 최후 수단
+- **Multi-Stack 동등성** — Python REST / Next.js / SSR / 데이터 / 임원 문서 / 순수 CLI 어디서나 같은 6-gate + 같은 `/uzys:*` 어휘
+- **Project-Scope 오염 금지** — 글로벌 `~/.claude/`, `~/.codex/`, `~/.opencode/` 절대 미수정 (D16)
+- **Transparent Defaults** — 설치 중 어떤 자산이 들어가는지 한 줄씩 명시. 숨김 동작 0건
 
 ### 3.2 Won't (의도적 비-방향)
 
-scope creep의 1차 방어선. "X는 안 한다"를 명시.
+scope creep 1차 방어선. "X는 안 한다"를 명시.
 
-- **범용 Best Practice 강요 안 함** — 린터 영역(naming, formatting, import 순서)은 린터에. Rule은 프로젝트 특화 불변식만.
-- **UI 스킨 / 테마 / 시각 장식 없음** — CLI 출력 색상 수준. gum/whiptail 같은 TUI 의존 추가 안 함 (근본 문제를 fd 재부착 + 출력 격리로 해결).
-- **모든 Track에 모든 skill 설치 안 함** — UI skill은 UI track에만, Python skill은 Python track에만.
-- **팀/조직 협업 기능 우선 안 함** — 현 단계는 1인 시니어 엔지니어용. multi-user는 Phase 4 탐색.
-- **LLM 판단에만 의존하는 자동화 금지** — 의사결정 게이트(`Proposed → Accepted`, `REGRESSION → Review block`)는 명시적 pass/fail.
-- **특정 Stack에 tied된 hack 금지** — "우리는 Postgres + Next.js만 지원" 같은 단일 스택 가정 금지.
+- **AI 단독 자동화** — vibe coding은 소통이지 "맡기기" 아님. 인간 결정 게이트(SPEC, Major CR, Ship)는 유지
+- **사용자가 외워야 하는 어휘** — 모든 어휘는 skill descriptor / hook 메시지 / 인터랙티브 prompt로 자동 노출
+- **범용 Best Practice 강요** — 린터 영역(naming, formatting, import 순서)은 린터에. Rule은 프로젝트 특화 불변식만
+- **UI 스킨 / 테마 / 시각 장식** — CLI 출력 색상 수준. gum/whiptail TUI 의존 금지
+- **모든 Track에 모든 자산** — 어휘는 맥락별 분리 (UI 어휘는 UI track에만)
+- **특정 Stack tied hack** — "Postgres + Next.js만 지원" 같은 단일 스택 가정 금지
 
 ### 3.3 Trade-offs (의식적 선택)
 
 | 선택 | 포기한 것 | 근거 |
 |------|----------|------|
-| Rule 17 / Hook 6 slim-down | 범용 guide 두께 | 린터로 가능한 건 린터에. Rule은 "반드시 지켜야"만. 분기 1회 재평가 |
-| `/uzys:auto` revision 자동 루프 | 매 단계 인간 승인 | 1인 사용자 속도 우선. revision 상한 + Escalation Gate로 폭주 방지 |
-| ECC cherry-pick | 통합 플러그인 자체 관리 | 상위 커뮤니티에 유지보수 위임. sync 자동 drift 감지 |
-| shell 스크립트 설치 | npm 패키지 / 플러그인화 | 의존성 0, bash 5+만. `curl\|bash` 1줄로 충분 |
-| 9 Track vs 단일 monolith | 설치 로직 복잡도 | 멀티 역할 사용자에게 필수. TSV + helper 함수로 복잡도 관리 |
-| 도메인 비종속 generic 템플릿 | GoalTrack/Vantage 도메인 맞춤 편의 | 누구나 fork해서 쓰도록. 특정 개인 private repo 참조 제거 |
+| Rule 17 / Hook 6 slim-down | 범용 guide 두께 | 어휘는 정확성 > 분량. 린터 가능한 건 린터에. 분기 1회 재평가 |
+| `/uzys:auto` revision 자동 루프 | 매 단계 인간 승인 | 소통 왕복 최소화. revision 상한 + Escalation Gate로 폭주 방지 |
+| ECC cherry-pick + 외부 plugin install | 통합 플러그인 자체 관리 | 상위 커뮤니티 어휘에 위임. sync 자동 drift 감지 + 한 줄 설치로 어휘 자동 등록 |
+| `npx` + `prepare` 빌드 | bash + curl 1줄 | 의존성 0 가정 폐기. Node 20+ 전제로 단순화 + 결정론 향상 |
+| 9 Track 분리 | 단일 monolith | 어휘 맥락 분리. TSV + helper로 복잡도 관리 |
+| 도메인 비종속 generic 템플릿 | 특정 도메인 맞춤 편의 | 누구나 fork. 특정 private repo 참조 제거 |
 
 ---
 
 ## 4. Phase Roadmap (장기 진화 단계)
 
-### Phase 1 — Foundation (현재, ~v27.x)
-- 목표: **구체적 디렉션 없이도 Track 선택 → Spec → Ship까지 흘러가는 최소 번들** 완성.
-- 성공 조건: 9 Track clean install 100%, test-harness 147/147 PASS, HITO 측정 baseline 확보.
-- 핵심 산출물: 9 Track, 6-gate, 3 자체 skill(north-star/ui-visual-review/spec-scaling), PLAN template, ADR workflow, install.sh end-to-end E2E.
+### Phase 1 — 어휘 완전성 (현재)
 
-### Phase 2 — Adoption Loop
-- 목표: 실제 프로젝트 2-3개에 적용해서 HITO 데이터 수집. 부족한 부분 역추적.
-- 진입 조건: Phase 1 안정화. test-harness 유지. 외부 사용자(Jay 외) 첫 설치 성공.
-- 핵심 산출물: HITO 측정 스크립트, 세션 evaluation 자동화, instinct promotion 첫 사례.
+- 목표: **bash setup-harness.sh 등가성 100% 복원**. 약속 = 동작. CLI rewrite (v0.2.0) 시 누락된 외부 자산 32건 + Router 분기 + 환경 파일 모두 복원
+- 진입 조건: 본 NORTH_STAR.md 수정 완료 (2026-04-25)
+- 성공 조건: Reviewer CRITICAL 4 + HIGH 9 모두 fix. 9 Track install 성공 100%. test 248 → 250+ PASS
+- 핵심 산출물: `docs/specs/cli-rewrite-completeness.md`, install pipeline 외부 plugin 호출 통합, Router 3 액션 분기, .env/.gitignore/.mcp-allowlist 자동 생성, Codex opt-in (`~/.codex/skills/`, trust entry)
 
-### Phase 3 — Self-Improvement Loop
-- 목표: **Ralph 루프 + continuous-learning-v2 instinct 자동 승격**으로 harness가 세션 경험으로 스스로 개선.
-- 진입 조건: HITO ≤ 3 달성 + 2-3 프로젝트 실전 운용 + instinct confidence ≥ 0.8 사례 3개 이상.
-- 핵심 산출물: instinct → Rule 자동 승격 파이프라인(인간 승인 게이트 유지), 세션 간 학습 이전.
+### Phase 2 — 진입 효율 (Vibe Onboarding)
 
-### Phase 4 (탐색) — Multi-User / Team Harness
-- 가설: 1인 하네스를 소규모 팀이 공유 가능한 버전으로 확장.
-- 진입 조건: Phase 3 자기 개선 루프 안정 + 외부 early adopter 5+.
-- 결정 사항: 본 문서 분기 갱신 시 검토. 현재는 Won't에 등록.
+- 목표: **First-Run Success Rate ≥ 95%**. 처음 설치하는 사용자가 첫 실행에서 수동 개입 0건
+- 진입 조건: Phase 1 완료 + Promise=Implementation 100% 검증
+- 성공 조건: fresh env 5+ (Linux/macOS, Node 20/22, npm/pnpm) 매트릭스에서 첫 실행 성공률 측정
+- 핵심 산출물: 다양 환경 매트릭스 CI, GitHub Action E2E install 검증, 사용자 발견 issue 우선 처리 SLA
+
+### Phase 3 — Adoption Signal Loop
+
+- 목표: 외부 사용자(stars / forks / issue 보고) 신호로 어휘 부족분 역추적 + 보강
+- 진입 조건: Phase 2 안정화 + 외부 사용자 5+
+- 성공 조건: HITO ≤ 3 외부 사용자 자가 측정 사례 3+, instinct confidence ≥ 0.8 사례 3+
+- 핵심 산출물: 외부 dogfood 보고서 자동화, instinct → Rule 승격 첫 사례
+
+### Phase 4 — 어휘 자기 진화 (Self-Improvement Loop)
+
+- 가설: instinct → Rule 자동 승격으로 harness 어휘가 세션 경험에서 스스로 진화
+- 진입 조건: Phase 3 안정화 + instinct → Rule 승격 인간 검토 5+ 사례
+- 결정 사항: 본 문서 분기 갱신 시 검토
+
+### Phase 5 (탐색) — Multi-User / Team Harness
+
+- 가설: 1인 하네스를 소규모 팀이 공유 가능한 버전으로 확장
+- 진입 조건: Phase 4 자기 개선 루프 안정 + 외부 early adopter 20+
+- 결정 사항: 본 문서 갱신 시 재평가. 현재는 미결정 (Won't 등록 아님 — 추후 결정)
 
 ---
 
@@ -100,34 +128,31 @@ scope creep의 1차 방어선. "X는 안 한다"를 명시.
 
 | Gate | 질문 | Pass 기준 |
 |------|------|---------|
-| **1. Trend** | Claude Code 생태계 흐름(ECC / agent-skills / MCP 표준 / Ralph 루프 / spec-driven / auto memory)에 1개 이상 정렬되는가? | YES — 어느 흐름인지 명시 |
-| **2. Persona** | 시니어 엔지니어 / 멀티 역할 개인(CEO·CTO·CISO·데이터 사이언티스트)에게 직접 가치를 주는가? 팀 기능 우선이면 -1. | YES |
-| **3. Capability** | hook / skill / plugin / MCP / rule 중 하나로 **결정론적**으로 구현 가능한가? LLM 판단에만 의존하면 -1. | YES (구현 수단 명시) |
-| **4. Lean** | Rule 17 / Hook 6 / Skill 번들 크기를 **늘리지 않거나 기존 확장**인가? 새 범주 신설이면 근거 필수. | YES 또는 근거 있음 |
+| **1. Vocabulary** | AI와 사용자가 **같은 의미**로 해석하는 새 어휘인가? 모호하면 -1 | YES — 의미 + Pass/Fail 조건 명시 |
+| **2. Persona** | 퍼블릭 vibe coder (시니어/주니어/멀티 역할 무관)에게 직접 가치를 주는가? | YES |
+| **3. Capability** | hook / skill / plugin / MCP / rule 중 하나로 **결정론적**으로 구현 가능한가? LLM 판단에만 의존하면 -1 | YES (구현 수단 명시) |
+| **4. Promise = Implementation** | 약속한 동작이 100% 구현 가능한가? "거의 작동"은 거짓 광고 → vibe killer | YES (E2E 검증 가능) |
 
 4개 모두 Pass = 우선순위 진입. 1개라도 Fail = 보류(Open Question) 또는 거절.
 
-### 이 게이트를 통과한 최근 기능 (v27.8~v27.12)
-- **v27.8.0 curl|bash 설치 UX fix** — Trend(실제 설치 경험), Persona(사용자 통증), Capability(shell flag), Lean(기존 script 확장). 4/4.
-- **v27.10.0 north-star skill** — Trend(spec-driven + Ralph), Persona(큰 그림 결정), Capability(skill), Lean(새 범주지만 4-gate 자체가 의사결정 축이라 필수). 4/4.
-- **v27.11.0 ui-visual-review** — Trend(chrome-devtools MCP), Persona(UI regression 방지), Capability(skill + Playwright), Lean(UI track 한정). 4/4.
+### 이 게이트로 거절될 후보 (예시)
 
-### 이 게이트로 거절된 제안
-- **gum TUI installer** — Persona/Capability는 Pass지만 **Lean Fail** (end user에 gum 의존성 추가). `</dev/null` + fd 3 패턴으로 의존성 0 해결.
-- **GoalTrack WAGI 지표** — 도메인 특수. Lean Fail + Persona 일반화 부족.
-- **skills-lock.json (Vantage)** — 현재 내부 skill만이라 공급망 위험 낮음. 필요도 < 복잡도. Lean Fail.
+- **외부 자산 ToB (Trail of Bits)** — Vocabulary Pass(보안 어휘), Persona Pass(공통), Capability Pass(plugin install), Promise=Implementation은 옵션 작동 시점에 검증. 4-gate Pass 시점에 P0
+- **사용자가 알아야 하는 추가 명령어** — 어휘 자동 노출 안 되면 Vocabulary Fail
+- **단일 Stack tied 자동화** — Persona Fail (특정 사용자만)
 
 ---
 
 ## 6. Versioning & Review
 
-- 본 문서는 **분기 1회** 또는 **NSM(HITO) 도달/미달** 시 갱신.
-- 주요 갱신 (Major CR): NSM 변경 / Phase 정의 변경 / Won't 변경.
-- 가벼운 갱신 (Clarification): Trade-off 추가, 트렌드 매핑 보강, 새 Pass/Fail 사례 추가.
-- 갱신 시 사유 + 날짜 1줄을 Changelog에 기록.
+- 본 문서는 **분기 1회** 또는 **NSM 도달/미달** 시 갱신
+- 주요 갱신 (Major CR): NSM 변경 / Phase 정의 변경 / Won't 변경 / Statement 변경
+- 가벼운 갱신 (Clarification): Trade-off 추가, Heuristics Pass/Fail 사례 추가
+- 갱신 시 사유 + 날짜 1줄을 Changelog에 기록
 
 ---
 
 ## 7. Changelog
 
 - 2026-04-20: 초안 작성. 근거 — 사용자 본인 정의 Statement + v27.8~v27.12.1 7개 커밋의 4-gate 사후 검증 결과 + Phase 1 완료 상태(147 test-harness PASS).
+- **2026-04-25**: **Major CR — vibe coding 정의 정확화 + 퍼블릭 publishing 전제 명시**. Statement 변경(`AI와 사용자가 하네스 규칙을 공통 언어로 삼아…`). 1차 NSM에 Re-clarification Rate 추가. 2차 NSM에 First-Run Success Rate / Promise=Implementation / Cross-CLI Parity 추가. Strategic Boundaries 갱신 (Won't에서 1인 단독 가정 삭제). Phase Roadmap 재정의 (Phase 1 = 어휘 완전성 = bash 등가성 복원). Decision Heuristics 4-gate를 Vocabulary 중심으로 재정의. 근거: 사용자 redirect — "vibe coding = AI/사용자가 하네스 규칙으로 효율적 소통해 빨리 개발하는 것" + 리포 퍼블릭 publishing 전제 인지.
