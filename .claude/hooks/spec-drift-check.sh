@@ -9,6 +9,12 @@
 #  3. SPEC.md Status가 "Define"인데 build/verify gate가 완료된 경우
 #  4. PRD.md Status가 In Progress인데 모든 Phase가 Complete인 경우
 #
+# Sub-SPEC 모드 (spec-scaling 지원):
+#  SHIP_SUBSPEC=<name> 환경변수 설정 시:
+#    - SPEC 파일: docs/specs/<name>.md
+#    - todo 파일: docs/plans/<name>-todo.md
+#  미설정 시 기본 docs/SPEC.md + docs/todo.md 검사 (기존 동작 유지)
+#
 # Exit codes:
 #  0: drift 없음
 #  1: drift 발견 (경고 출력)
@@ -19,6 +25,18 @@ PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 DOCS_DIR="$PROJECT_DIR/docs"
 [ ! -d "$DOCS_DIR" ] && DOCS_DIR="$PROJECT_DIR/Docs"
 
+# Sub-SPEC 모드 감지
+if [ -n "$SHIP_SUBSPEC" ]; then
+  SPEC_FILE="$DOCS_DIR/specs/${SHIP_SUBSPEC}.md"
+  TODO_FILE="$DOCS_DIR/plans/${SHIP_SUBSPEC}-todo.md"
+  echo "Sub-SPEC mode: SHIP_SUBSPEC=$SHIP_SUBSPEC"
+  echo "  SPEC: $SPEC_FILE"
+  echo "  Todo: $TODO_FILE"
+else
+  SPEC_FILE="$DOCS_DIR/SPEC.md"
+  TODO_FILE="$DOCS_DIR/todo.md"
+fi
+
 DRIFT=0
 BLOCK=0
 
@@ -27,36 +45,36 @@ count_unchecked() {
   grep -c "^- \[ \]\|^  - \[ \]" "$file" 2>/dev/null | tail -1 | tr -d ' \n'
 }
 
-# 1. SPEC.md unchecked 검사
-if [ -f "$DOCS_DIR/SPEC.md" ]; then
-  UNCHECKED=$(count_unchecked "$DOCS_DIR/SPEC.md")
+# 1. SPEC unchecked 검사 (sub-SPEC 모드 시 docs/specs/<name>.md)
+if [ -f "$SPEC_FILE" ]; then
+  UNCHECKED=$(count_unchecked "$SPEC_FILE")
   UNCHECKED=${UNCHECKED:-0}
   if [ "$UNCHECKED" -gt 0 ] 2>/dev/null; then
-    echo "DRIFT: SPEC.md에 unchecked 항목 ${UNCHECKED}건" >&2
+    echo "DRIFT: $(basename "$SPEC_FILE")에 unchecked 항목 ${UNCHECKED}건" >&2
     DRIFT=$((DRIFT + 1))
   fi
 fi
 
-# 2. todo.md unchecked 검사
-if [ -f "$DOCS_DIR/todo.md" ]; then
-  UNCHECKED=$(count_unchecked "$DOCS_DIR/todo.md")
+# 2. todo unchecked 검사 (sub-SPEC 모드 시 docs/plans/<name>-todo.md)
+if [ -f "$TODO_FILE" ]; then
+  UNCHECKED=$(count_unchecked "$TODO_FILE")
   UNCHECKED=${UNCHECKED:-0}
   if [ "$UNCHECKED" -gt 0 ] 2>/dev/null; then
-    echo "DRIFT: todo.md에 unchecked 항목 ${UNCHECKED}건" >&2
+    echo "DRIFT: $(basename "$TODO_FILE")에 unchecked 항목 ${UNCHECKED}건" >&2
     DRIFT=$((DRIFT + 1))
   fi
 fi
 
-# 3. SPEC.md Status 일관성 — gate-status.json과 대조
+# 3. SPEC Status 일관성 — gate-status.json과 대조
 GATE_FILE="$PROJECT_DIR/.claude/gate-status.json"
-if [ -f "$GATE_FILE" ] && [ -f "$DOCS_DIR/SPEC.md" ] && command -v jq &> /dev/null; then
+if [ -f "$GATE_FILE" ] && [ -f "$SPEC_FILE" ] && command -v jq &> /dev/null; then
   BUILD_DONE=$(jq -r '.build.completed // false' "$GATE_FILE")
   VERIFY_DONE=$(jq -r '.verify.completed // false' "$GATE_FILE")
 
   # SPEC Status가 "Define"인지 확인 (frontmatter 형식만, 본문 파이프라인 설명 제외)
-  if grep -qE "^> \*\*Status\*\*:.*Define" "$DOCS_DIR/SPEC.md"; then
+  if grep -qE "^> \*\*Status\*\*:.*Define" "$SPEC_FILE"; then
     if [ "$BUILD_DONE" = "true" ] || [ "$VERIFY_DONE" = "true" ]; then
-      echo "DRIFT: SPEC.md Status='Define'인데 Build/Verify gate가 완료됨" >&2
+      echo "DRIFT: $(basename "$SPEC_FILE") Status='Define'인데 Build/Verify gate가 완료됨" >&2
       DRIFT=$((DRIFT + 1))
       # Ship 게이트에서는 차단 (Build 이후에도 SPEC이 Define이면 안 됨)
       [ "$1" = "ship" ] && BLOCK=1
