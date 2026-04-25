@@ -42,7 +42,7 @@ function runForTrack(
 }
 
 describe("Track matrix — assets called per track", () => {
-  it("tooling: dev baseline + dev-tools (no Track-specific assets)", () => {
+  it("tooling: dev baseline + dev-tools + v0.5.0 dev assets (product-skills + karpathy-coder)", () => {
     const { ids } = runForTrack(["tooling"]);
     expect(ids).toEqual([
       "addy-agent-skills",
@@ -50,10 +50,12 @@ describe("Track matrix — assets called per track", () => {
       "find-skills",
       "agent-browser",
       "architecture-decision-record",
+      "product-skills",
+      "karpathy-coder",
     ]);
   });
 
-  it("data: 5 data-specific + dev baseline + dev-tools", () => {
+  it("data: 5 data-specific + dev baseline + dev-tools + v0.5.0 dev assets", () => {
     const { ids } = runForTrack(["data"]);
     expect(ids).toEqual([
       "polars-K-Dense",
@@ -66,6 +68,8 @@ describe("Track matrix — assets called per track", () => {
       "find-skills",
       "agent-browser",
       "architecture-decision-record",
+      "product-skills",
+      "karpathy-coder",
     ]);
   });
 
@@ -186,20 +190,93 @@ describe("Track matrix — assets called per track", () => {
 });
 
 describe("Track matrix — spawn call counts", () => {
-  it("tooling: 6 spawn calls (1 plugin × 2 + 3 skills + 1 npm)", () => {
-    // addy(plugin=2) + playwright(skill=1) + find-skills(1) + agent-browser(npm=1) + ADR(1) = 6
+  it("tooling: 10 spawn calls (v0.5.0 — product-skills + karpathy-coder added)", () => {
+    // addy(plugin=2) + playwright(1) + find-skills(1) + agent-browser(npm=1) + ADR(1)
+    //   + product-skills(plugin=2) + karpathy-coder(plugin=2) = 10
     const { spawnCallCount } = runForTrack(["tooling"]);
-    expect(spawnCallCount).toBe(6);
+    expect(spawnCallCount).toBe(10);
   });
 
-  it("data: tooling baseline 6 + data 6 (4 skills + 1 plugin × 2) = 12", () => {
+  it("data: tooling baseline 10 + data 6 (4 skills + 1 plugin × 2) = 16", () => {
     const { spawnCallCount } = runForTrack(["data"]);
-    expect(spawnCallCount).toBe(12);
+    expect(spawnCallCount).toBe(16);
   });
 
   it("--with-gsd alone (executive base) adds 1 npx call", () => {
     const baseExec = runForTrack(["executive"]).spawnCallCount;
     const withGsd = runForTrack(["executive"], { withGsd: true }).spawnCallCount;
     expect(withGsd - baseExec).toBe(1);
+  });
+});
+
+// === v0.5.0 — 신규 Track 매핑 검증 (P2-T4 합집합 회귀 + P3-T2 신규 Track) ===
+describe("Track matrix — v0.5.0 신규 Track", () => {
+  it("project-management: pm-skills + product-skills (executive-style baseline, no dev tools)", () => {
+    const { ids } = runForTrack(["project-management"]);
+    expect(ids).toEqual(["pm-skills", "product-skills"]);
+    // No has-dev-track assets
+    expect(ids).not.toContain("addy-agent-skills");
+    expect(ids).not.toContain("karpathy-coder");
+    // No executive assets
+    expect(ids).not.toContain("anthropic-document-skills");
+    expect(ids).not.toContain("c-level-skills");
+  });
+
+  it("growth-marketing: business-growth (재사용) + marketing/content/demand/research", () => {
+    const { ids } = runForTrack(["growth-marketing"]);
+    expect(ids).toEqual([
+      "business-growth-skills",
+      "marketing-skills",
+      "content-creator",
+      "demand-gen",
+      "research-summarizer",
+    ]);
+    // No has-dev-track assets
+    expect(ids).not.toContain("karpathy-coder");
+    expect(ids).not.toContain("product-skills");
+    // c-level/finance-skills excluded (executive/full only)
+    expect(ids).not.toContain("c-level-skills");
+    expect(ids).not.toContain("finance-skills");
+  });
+
+  it("project-management spawn calls: 4 (2 plugins × 2)", () => {
+    const { spawnCallCount } = runForTrack(["project-management"]);
+    expect(spawnCallCount).toBe(4);
+  });
+
+  it("growth-marketing spawn calls: 10 (5 plugins × 2)", () => {
+    const { spawnCallCount } = runForTrack(["growth-marketing"]);
+    expect(spawnCallCount).toBe(10);
+  });
+
+  // P2-T4 회귀 검증 — business-growth-skills condition 합집합.
+  it("OQ2 — business-growth-skills hits executive (regression check)", () => {
+    const { ids } = runForTrack(["executive"]);
+    expect(ids).toContain("business-growth-skills");
+  });
+
+  it("OQ2 — business-growth-skills hits full (regression check)", () => {
+    const { ids } = runForTrack(["full"]);
+    expect(ids).toContain("business-growth-skills");
+  });
+
+  it("OQ2 — business-growth-skills hits growth-marketing (new condition)", () => {
+    const { ids } = runForTrack(["growth-marketing"]);
+    expect(ids).toContain("business-growth-skills");
+  });
+
+  // karpathy-coder = has-dev-track only (PM/Growth excluded)
+  it("karpathy-coder excluded from project-management + growth-marketing", () => {
+    expect(runForTrack(["project-management"]).ids).not.toContain("karpathy-coder");
+    expect(runForTrack(["growth-marketing"]).ids).not.toContain("karpathy-coder");
+    expect(runForTrack(["executive"]).ids).not.toContain("karpathy-coder");
+  });
+
+  it("karpathy-coder included in all dev tracks (csr/ssr/data/full/tooling)", () => {
+    expect(runForTrack(["tooling"]).ids).toContain("karpathy-coder");
+    expect(runForTrack(["csr-supabase"]).ids).toContain("karpathy-coder");
+    expect(runForTrack(["ssr-nextjs"]).ids).toContain("karpathy-coder");
+    expect(runForTrack(["data"]).ids).toContain("karpathy-coder");
+    expect(runForTrack(["full"]).ids).toContain("karpathy-coder");
   });
 });
