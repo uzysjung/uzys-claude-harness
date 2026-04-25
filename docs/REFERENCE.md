@@ -16,7 +16,9 @@
 
 ## Track 약어
 
-`csr-*` (csr-supabase, csr-fastify, csr-fastapi) / `ssr-*` (ssr-htmx, ssr-nextjs) / `data` / `executive` / `tooling` / `full` (= 모든 dev track union)
+`csr-*` (csr-supabase, csr-fastify, csr-fastapi) / `ssr-*` (ssr-htmx, ssr-nextjs) / `data` / `executive` / `tooling` / `full` (= 모든 dev track union) / `project-management` (v0.5.0) / `growth-marketing` (v0.5.0)
+
+**dev tracks** = csr-* + ssr-* + data + tooling + full (executive + project-management + growth-marketing 제외).
 
 ---
 
@@ -35,6 +37,14 @@
 | **c-level-skills** | [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | 🟡 | executive, full | `claude plugin install c-level-skills@claude-code-skills` | 28 C-level advisory: virtual board (CEO/CTO/COO/CPO/CMO/CFO/CRO/CISO/CHRO), executive mentor, board deck builder, scenario war room, M&A playbook |
 | **business-growth-skills** | [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | 🟡 | executive, full | `claude plugin install business-growth-skills@claude-code-skills` | 4 customer success / sales engineer / revenue operations / contract & proposal writer |
 | **finance-skills** | [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | 🟡 | executive, full | `claude plugin install finance-skills@claude-code-skills` | 3 financial analyst (DCF/ratio), SaaS metrics coach (ARR/MRR/CAC/LTV), business investment advisor |
+| **business-growth-skills** (v0.5.0 확장) | alirezarezvani/claude-skills | 🟡 | + **growth-marketing** | (위 기존 entry — condition 합집합 확장) | growth-marketing Track에서 재사용 |
+| **pm-skills** (v0.5.0) | alirezarezvani/claude-skills | 🟡 | project-management | `claude plugin install pm-skills@claude-code-skills` | 6 — senior PM, scrum master, Jira expert, Confluence expert, Atlassian admin, template creator |
+| **product-skills** (v0.5.0) | alirezarezvani/claude-skills | 🟡 | dev tracks + project-management | `claude plugin install product-skills@claude-code-skills` | 15 — RICE, PRD, agile PO, UX research, UI design system, competitive teardown, landing page, SaaS scaffolder, product analytics, experiment, product discovery, roadmap communicator, code-to-prd, research summarizer, apple-hig-expert |
+| **marketing-skills** (v0.5.0) | alirezarezvani/claude-skills | 🟡 | growth-marketing | `claude plugin install marketing-skills@claude-code-skills` | 44 — content/SEO/CRO/channels/growth/intelligence/sales/twitter |
+| **content-creator** (v0.5.0) | alirezarezvani/claude-skills | 🟡 | growth-marketing | `claude plugin install content-creator@claude-code-skills` | SEO content + brand voice + frameworks |
+| **demand-gen** (v0.5.0) | alirezarezvani/claude-skills | 🟡 | growth-marketing | `claude plugin install demand-gen@claude-code-skills` | multi-channel demand gen + paid media + partnership |
+| **research-summarizer** (v0.5.0) | alirezarezvani/claude-skills | 🟡 | growth-marketing | `claude plugin install research-summarizer@claude-code-skills` | 시장 조사 요약 |
+| **karpathy-coder** (v0.5.0) | alirezarezvani/claude-skills | 🟡 | dev tracks (has-dev-track) | `claude plugin install karpathy-coder@claude-code-skills` | 4 Python tool (`complexity_checker`, `diff_surgeon`, `assumption_linter`, `goal_verifier`) + reviewer agent + `/karpathy-check` slash + pre-commit hook — CLAUDE.md P1-P4 enforcement layer |
 | **data plugin** | [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) | ✅ | data, full | `claude plugin install data@knowledge-work-plugins` | SQL 탐색 + matplotlib/seaborn/plotly visualization |
 
 ### Optional Plugins (대화형 프롬프트)

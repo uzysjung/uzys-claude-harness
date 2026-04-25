@@ -21,7 +21,7 @@ claude
 > /uzys:auto    # run the full pipeline (Plan → Build → Test → Review → Ship)
 ```
 
-Tracks available in the prompt: `csr-supabase`, `csr-fastify`, `csr-fastapi`, `ssr-nextjs`, `ssr-htmx`, `data`, `executive`, `tooling`, `full` — see [Tracks](#tracks-full-reference).
+Tracks available in the prompt: `csr-supabase`, `csr-fastify`, `csr-fastapi`, `ssr-nextjs`, `ssr-htmx`, `data`, `executive`, `tooling`, `full`, `project-management`, `growth-marketing` — see [Tracks](#tracks-full-reference).
 
 > Alternative: `bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)` — backward-compat wrapper. Internally calls the same `npx` command. Use when you don't have `npx` in PATH yet but Node 20+ is installed. For CI / unattended scripts, see [Flag mode](#flag-mode-ci--automation).
 
@@ -268,6 +268,8 @@ npx -y github:uzysjung/uzys-claude-harness --help                 # show full op
 | `executive` | PPT/Excel/Word/PDF + proposals/DD | CPO/CSO/CTO | + document-skills, c-level-skills (28), business-growth-skills, finance-skills (alirezarezvani/claude-skills marketplace) |
 | `tooling` | Bash + Markdown + CLI tools (meta projects) | Tool Developer | + cli-development rules |
 | `full` | Union of everything | All | All MCPs + all plugins |
+| `project-management` (v0.5.0) | Jira/Confluence/Atlassian + PRD/RICE | PM / Scrum Master | + pm-skills (6), product-skills (15) |
+| `growth-marketing` (v0.5.0) | SEO/CRO/content/demand-gen | Growth / Marketing Lead | + marketing-skills (44), content-creator, demand-gen, research-summarizer, business-growth-skills (재사용) |
 
 ### Common tools (all dev tracks)
 
@@ -276,6 +278,7 @@ Installed regardless of track (executive gets a subset):
 | Category | Item | Purpose |
 |----------|------|---------|
 | Plugin | `addy-agent-skills`, `Impeccable` | 6-gate workflow backbone + design quality |
+| Plugin (v0.5.0) | `karpathy-coder` | 4 Python tool + reviewer agent + `/karpathy-check` + pre-commit hook — CLAUDE.md P1-P4 enforcement |
 | Skill (cherry-pick) | `deep-research` | Multi-source research (firecrawl + exa) — all dev tracks |
 | Skill (cherry-pick) | `market-research` | Competitive / TAM research — `executive` only |
 | Skill (npx) | `find-skills` (vercel-labs) | On-demand skill discovery |
@@ -595,8 +598,8 @@ A. No. `claude-harness install --project-dir` blocks `~/.claude/*`, `/etc/*`, `/
 **Q. What if I already installed an older version?**
 A. `npx -y github:uzysjung/uzys-claude-harness --update --project-dir .` — backs up `.claude/` to `.claude.backup-<ts>/`, overwrites only existing files with latest templates, prunes orphans (e.g., deprecated rule files), cleans stale hook references in `settings.json`.
 
-**Q. Why 9 Tracks? Isn't that over-engineered?**
-A. Tracks are conditional install lists, not abstractions. Adding a Track = one TSV row + one rule mapping. No runtime cost. Use only the Tracks you need; `--track` selection is explicit.
+**Q. Why 11 Tracks? Isn't that over-engineered?**
+A. Tracks are conditional install lists, not abstractions. Adding a Track = one TSV row + one rule mapping. No runtime cost. Use only the Tracks you need; `--track` selection is explicit. v0.5.0 added `project-management` (PM/Scrum) and `growth-marketing` (Growth/Marketing) for non-dev personas.
 
 **Q. Can I use this without ECC plugin?**
 A. Yes. ECC is opt-in (interactive prompt or `--with-ecc` flag). The 6-gate workflow + agent-skills + per-track plugins work standalone.
