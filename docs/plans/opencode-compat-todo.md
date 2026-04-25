@@ -7,11 +7,11 @@
 
 ## Phase A — Compat 매트릭스 + ADR-004 초안
 
-- [ ] **A1** OpenCode plugin lifecycle 정밀 리서치 (Context7)
-- [ ] **A2** 호환 매트릭스 — `docs/research/opencode-compat-matrix-2026-04-25.md`
-- [ ] **A3** ADR-004 v1 초안 (Status: Proposed) — `docs/decisions/ADR-004-opencode-plugin-mapping.md`
+- [x] **A1** OpenCode plugin lifecycle 정밀 리서치 (Context7) — Plugin/PluginInput/Hooks 타입 + 6 hook + event bus 확인
+- [x] **A2** 호환 매트릭스 — `docs/research/opencode-compat-matrix-2026-04-25.md` (147줄, Codex/OpenCode 비교 + 갭 4종)
+- [x] **A3** ADR-004 v1 초안 (Status: Proposed) — `docs/decisions/ADR-004-opencode-plugin-mapping.md` (3 hook 매핑 + L1~L5 실측 항목)
 
-**Phase A 게이트**: A1~A3 + 사용자 검토.
+**Phase A 게이트**: A1~A3 완료 + **사용자 검토 대기**.
 
 ---
 
