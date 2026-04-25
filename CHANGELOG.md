@@ -5,6 +5,70 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.4.0] — 2026-04-25
+
+### Fixed — CLI Rewrite Completeness (bash setup-harness.sh 등가성 100% 복원)
+
+v0.2.0 CLI rewrite 시 누락된 외부 자산 32건 + Router 분기 + 환경 파일 + Codex opt-in 모두 구현. NORTH_STAR Phase 1 (어휘 완전성) 목표 달성.
+
+**Driver**: 사용자 실측 누락 발견 + Reviewer 전수 조사 (CRITICAL 4 / HIGH 9 / MEDIUM 5 / LOW 3).
+
+#### CRITICAL fix (4건)
+- **`--with-ecc` 옵션 실제 호출** — 이전 dead. `claude plugin install everything-claude-code@everything-claude-code`
+- **`--with-prune` 옵션** — `bash scripts/prune-ecc.sh` 실제 실행
+- **`--with-tob` 옵션** — `claude plugin install trailofbits-skills@trailofbits-skills`
+- **외부 자산 32건 일괄 복원** — bash setup-harness.sh@911c246~1 L791~1067 매트릭스 등가
+  - data Track: polars/dask/python-resource/python-perf/anthropic-data
+  - dev: agent-skills/playwright/find-skills/agent-browser/ADR
+  - csr-supabase: Vercel/Netlify/Supabase CLI + supabase-skills + postgres
+  - csr-fastapi/fastify/ssr-*: Railway plugin + skills
+  - csr-*/ssr-nextjs: react-best-practices/shadcn/web-design/next-skills
+  - executive: anthropic-document-skills/c-level/finance
+  - GSD orchestrator (--with-gsd)
+
+#### HIGH fix (9건)
+- **Router add/update/reinstall 분기** — InstallMode 도입 + 액션별 다른 path
+- **Auto-backup** — update: copy backup (cp -R, 원본 보존) / reinstall: rename backup
+- **Update mode orphan prune + stale hook cleanup** — bash 497-573 (113 LOC) 등가
+- **Codex `~/.codex/skills/` opt-in** — `--with-codex-skills` 명시 동의 후 6 SKILL.md 복사
+- **Codex `~/.codex/config.toml` trust entry** — `--with-codex-trust` 명시 동의 후 `[projects."<dir>"]` 등록 (registerTrustEntry dead code 활성)
+- **`.env.example` 자동 생성** — csr-supabase/full Track에서 Supabase 토큰 가이드
+- **`.gitignore .env` 추가** — secret 보호
+- **`.mcp-allowlist` 자동 생성** — D35 opt-in security gate 활성
+
+### Added — Verification Strategy 강화
+- **9 Track × 5 CLI mode 매트릭스** = 45 시나리오 E2E install 자동 검증
+- **fresh `npx -y github:...` first-run 시뮬레이션** — `prepare` hook으로 dist 자동 빌드 (PR #28에서 추가)
+- **dead option spy 테스트** — 옵션 enable 시 부작용 발화 횟수 assertion
+- **track-matrix unit test** — 9 Track × external asset id 정확 매핑 검증
+
+### CLI 옵션 (신규)
+```
+--with-codex-skills      Codex global opt-in: ~/.codex/skills/uzys-* 복사
+--with-codex-trust       Codex global opt-in: ~/.codex/config.toml trust entry
+```
+
+### Test/Coverage
+- 198 → **413 tests** (+215 누적)
+- Coverage stmt 97.02%, branch 89.81%, lines 97.02%
+- Build 109.51 → 142.08 KB (+32.57 KB external/update-mode/codex-opt-in/env-files)
+
+### DO NOT CHANGE 준수
+- `templates/codex/` + `src/codex/transform.ts` 미수정 (opt-in.ts 추가만)
+- `templates/opencode/` + `src/opencode/` 미수정
+- `~/.claude/`, `~/.codex/`, `~/.opencode/` 글로벌 — 명시 opt-in 후만 수정 (D16)
+
+### NORTH_STAR Phase 1 (어휘 완전성) 목표 달성
+- Promise = Implementation 100% (광고 자산 = 실제 동작)
+- Cross-CLI Parity 100% (Claude/Codex/OpenCode 동등 작동)
+- First-Run Success: 단독 시뮬레이션 100% (Phase 2에서 다중 환경 검증)
+
+### Reference
+- SPEC: `docs/specs/cli-rewrite-completeness.md`
+- Ship report: `docs/evals/cli-completeness-2026-04-25.md`
+- Reviewer 전수 조사: 본 세션 conversation
+- Bash source: setup-harness.sh@911c246~1 (v0.2.0 cutover 직전)
+
 ## [v0.3.0] — 2026-04-25
 
 ### Added — OpenCode CLI 호환 (2차)
