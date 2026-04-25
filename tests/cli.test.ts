@@ -51,30 +51,44 @@ describe("buildCli", () => {
 });
 
 describe("defaultAction", () => {
-  it("logs success message when interactive returns ok=true", async () => {
+  it("calls executeSpec with the captured spec when interactive returns ok=true", async () => {
     const log = vi.fn();
     const err = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
+    const execute = vi.fn();
+    const spec = {
+      tracks: ["tooling"] as const,
+      options: {
+        withTauri: false,
+        withGsd: false,
+        withEcc: false,
+        withPrune: false,
+        withTob: false,
+      },
+      cli: "claude" as const,
+      projectDir: "/p",
+    };
     const run = vi.fn(
       async (): Promise<InteractiveResult> => ({
         ok: true,
-        spec: {
-          tracks: ["tooling"],
-          options: {
-            withTauri: false,
-            withGsd: false,
-            withEcc: false,
-            withPrune: false,
-            withTob: false,
-          },
-          cli: "claude",
-          projectDir: "/p",
-        },
+        spec: { ...spec, tracks: [...spec.tracks] },
       }),
     );
-    await defaultAction({ log, err, exit, run });
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("Phase C"));
+    await defaultAction({ log, err, exit, run, execute });
+    expect(execute).toHaveBeenCalledOnce();
+    expect(execute.mock.calls[0]?.[0]).toMatchObject({ tracks: ["tooling"], cli: "claude" });
     expect(exit).not.toHaveBeenCalled();
+  });
+
+  it("calls err + exit(1) when interactive returns ok=true but no spec (internal error)", async () => {
+    const err = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const execute = vi.fn();
+    const run = vi.fn(async (): Promise<InteractiveResult> => ({ ok: true }));
+    await defaultAction({ err, exit, run, execute });
+    expect(err).toHaveBeenCalledWith(expect.stringContaining("Internal error"));
+    expect(exit).toHaveBeenCalledWith(1);
+    expect(execute).not.toHaveBeenCalled();
   });
 
   it("calls exit(2) on no-tty", async () => {
