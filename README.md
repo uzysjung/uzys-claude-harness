@@ -12,8 +12,7 @@
 
 ```bash
 # in your project directory:
-curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
-  | bash -s -- --track csr-fastapi --project-dir .
+npx -y github:uzysjung/uzys-claude-harness install --track csr-fastapi --project-dir .
 
 # then start Claude Code:
 claude
@@ -22,6 +21,8 @@ claude
 ```
 
 Replace `csr-fastapi` with one of: `csr-supabase`, `csr-fastify`, `ssr-nextjs`, `ssr-htmx`, `data`, `executive`, `tooling`, `full` — see [Tracks](#tracks-full-reference).
+
+> Alternative: `bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)` — backward-compat wrapper for older docs, internally calls the same `npx` command. Use when you don't have `npx` in PATH yet but Node 20+ is installed.
 
 ## Why this?
 
@@ -78,12 +79,12 @@ Built for senior engineers / multi-role users (CEO/CTO/CISO/data scientist) who 
 
 ```bash
 # in your project directory:
-bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)
+npx -y github:uzysjung/uzys-claude-harness
 ```
 
 The installer auto-detects your current state:
 
-- **First time** → walks you through: Track selection → Tauri / GSD / ECC / Trail of Bits options → summary → confirm
+- **First time** → walks you through: Track selection → Tauri / GSD / ECC / Trail of Bits options → CLI target (Claude / Codex / OpenCode / All) → summary → confirm
 - **Existing install detected** → shows a 5-action menu:
   1. Add a new Track
   2. Update policy files (auto-backup)
@@ -93,20 +94,19 @@ The installer auto-detects your current state:
 
 #### Flag mode (CI / automation)
 
-For CI/CD or scripted environments, all flags still work — installer skips interactive when `--track` is provided:
+For CI/CD or scripted environments, use the `install` subcommand with flags:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
-  | bash -s -- --track <TRACK> --project-dir .
+npx -y github:uzysjung/uzys-claude-harness install --track <TRACK> --project-dir .
 ```
 
-In non-TTY environments without `--track`, installer errors out with `--track required in non-interactive mode`.
+`install` requires at least one `--track`; non-TTY environments without `--track` exit with an error.
 
-That single line does:
-1. Shallow-clones the harness to a temp dir
-2. Runs `claude-harness install` (interactive or via flags)
-3. Cleans up the temp dir
-4. Records installed Tracks to `.claude/.installed-tracks` (used for next install detection)
+What the installer does:
+1. Resolves `templates/` from the bundled CLI package (npx fetches latest from GitHub ref)
+2. Copies Track-specific assets to `.claude/`, `.mcp.json`, project root
+3. (Optional) Generates Codex `.codex/` and/or OpenCode `.opencode/` artifacts when `--cli` includes them
+4. Records installed Tracks to `.claude/.installed-tracks` (used for next install state detection)
 
 After install you'll see an Installation Report (`✅` row per category).
 
@@ -127,35 +127,24 @@ claude
 
 Already installed `csr-fastapi`? Want to also add `tooling` (for the harness's own bash/markdown work)?
 
-**Remote (recommended — no clone needed)**:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
-  | bash -s -- --add-track tooling --project-dir .
+npx -y github:uzysjung/uzys-claude-harness
+# → 5-action menu appears (existing install detected)
+# → choose "1) Add a new Track" → pick tracks → confirm
 ```
 
-**From local clone**:
-```bash
-npx -y github:uzysjung/uzys-claude-harness --add-track tooling --project-dir .
-```
-
-`--add-track` preserves existing `.claude/*` and merges new MCPs into `.mcp.json` via `jq` (idempotent).
+The Add Track action preserves existing `.claude/*` and merges new MCPs into `.mcp.json` (idempotent).
 
 ### Update an existing install to the latest harness version
 
 When a new release comes out (check [CHANGELOG.md](./CHANGELOG.md)):
 
-**Remote (recommended)**:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
-  | bash -s -- --update --project-dir .
+npx -y github:uzysjung/uzys-claude-harness
+# → 5-action menu → choose "2) Update policy files (auto-backup)"
 ```
 
-**From local clone**:
-```bash
-npx -y github:uzysjung/uzys-claude-harness --update --project-dir .
-```
-
-What `--update` does:
+What the Update action does:
 1. **Backup** — snapshots current `.claude/` to `.claude.backup-<timestamp>/`
 2. **Overwrite** — replaces `rules/*.md`, `agents/*.md`, `commands/uzys/*.md`, `hooks/*.sh`, `.claude/CLAUDE.md` with latest templates (only files that already exist — no Track creep)
 3. **Prune orphans** — removes files in `.claude/` that no longer exist in templates (e.g., deprecated `ecc-security-common.md`)
@@ -173,13 +162,13 @@ rm -rf .claude && mv .claude.backup-<timestamp> .claude
 ```bash
 git clone https://github.com/uzysjung/uzys-claude-harness.git
 cd uzys-claude-harness
-npx -y github:uzysjung/uzys-claude-harness --track tooling --project-dir .
+npx -y github:uzysjung/uzys-claude-harness install --track tooling --project-dir .
 ```
 
 ### Multi-Track in one go (union)
 
 ```bash
-npx -y github:uzysjung/uzys-claude-harness --track tooling --track csr-fastapi --project-dir .
+npx -y github:uzysjung/uzys-claude-harness install --track tooling --track csr-fastapi --project-dir .
 ```
 
 Use this when you know upfront you need multiple tracks. Faster than two separate runs.
@@ -223,33 +212,32 @@ The global `~/.claude/` is never touched.
 | **`curl … \| bash …` from terminal** | ✅ (via `/dev/tty`) | ✅ |
 | CI runner / SSH `-T` no-tty | ❌ | ❌ (auto-skip; use flags) |
 
-#### `--add-track` and `--update`: prompts are SUPPRESSED by default
+#### Add Track / Update via interactive menu
 
-To avoid re-prompting when augmenting an existing install, ECC/ToB/GSD prompts are **silently skipped** for `--add-track` and `--update`. If you actually want to add ECC/ToB during `--add-track`, use the explicit flag:
+To augment an existing install (Add Track / Update), run the installer with no flags — the 5-action menu detects existing state and routes accordingly. Bash-era `--add-track` / `--update` flags were retired in v0.2.0 in favor of the interactive router.
 
 ```bash
-# Add csr-supabase to existing install AND install ECC at the same time
-curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
-  | bash -s -- --add-track csr-supabase --with-ecc --with-prune --project-dir .
+# Existing install detected → 5-action menu
+npx -y github:uzysjung/uzys-claude-harness
 ```
 
 #### Full unattended install (CI / scripts)
 
+In a TTY environment, the interactive installer asks about each opt-in feature. **In CI / no-TTY**, prompts can't run — those features are silently skipped unless you pass the flag explicitly. Minimum:
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
-  | bash -s -- --track csr-fastapi --project-dir . \
-    --with-ecc \         # install ECC plugin project-scoped (no prompt)
-    --with-prune \       # also prune (implies --with-ecc)
-    --with-tob \         # install Trail of Bits security plugin
-    --gsd                # include GSD orchestrator
+npx -y github:uzysjung/uzys-claude-harness install --track csr-fastapi --project-dir .
 ```
 
-| Flag | Effect |
-|------|--------|
-| `--with-ecc` | Skip "install ECC?" prompt → `y` |
-| `--with-prune` | Skip "prune ECC?" prompt → `y` (auto-enables `--with-ecc`) |
-| `--with-tob` | Skip "Trail of Bits?" prompt → `y` |
-| `--gsd` | Install GSD orchestrator |
+If you want any of the opt-in features in CI, add the flag:
+
+| Flag | What it enables (would otherwise be a prompt in TTY mode) |
+|------|------------------------------------------------------------|
+| `--with-ecc` | Install ECC plugin project-scoped |
+| `--with-prune` | Prune ECC items beyond curated 89 (implies `--with-ecc`) |
+| `--with-tob` | Install Trail of Bits security plugin |
+| `--with-gsd` | Install GSD orchestrator |
+| `--with-tauri` | Include the Tauri desktop rule |
 
 ### Other flags
 
@@ -329,8 +317,7 @@ Building "an internal note-taking app with Postgres + Auth" on `csr-fastapi`:
 ```bash
 # 1. Install harness on a fresh project
 mkdir notes && cd notes && git init
-curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh \
-  | bash -s -- --track csr-fastapi --project-dir .
+npx -y github:uzysjung/uzys-claude-harness install --track csr-fastapi --project-dir .
 
 # 2. Open Claude Code
 claude
@@ -370,7 +357,7 @@ Beyond Claude Code, this harness can install for **OpenAI Codex CLI** (0.124.0+)
 
 Interactive (recommended):
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)
+npx -y github:uzysjung/uzys-claude-harness
 # Pick: ① tooling   |   2c) CLI: ② Codex
 ```
 
@@ -431,7 +418,7 @@ Beyond Claude Code and Codex, this harness can install for **[OpenCode](https://
 
 Interactive (recommended):
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)
+npx -y github:uzysjung/uzys-claude-harness
 # Pick: ① tooling   |   2c) CLI: ③ OpenCode (or ⑤ All)
 ```
 
