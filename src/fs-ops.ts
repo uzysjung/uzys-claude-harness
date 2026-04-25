@@ -37,14 +37,30 @@ export function backupDir(target: string, now: Date = new Date()): string | null
   if (!existsSync(target)) {
     return null;
   }
-  const stamp = now
+  const backup = `${target}.backup-${formatStamp(now)}`;
+  renameSync(target, backup);
+  return backup;
+}
+
+/**
+ * Copy backup — original target preserved (for in-place update mode).
+ * bash setup-harness.sh L477 `cp -R .claude "$BACKUP_DIR"` 등가.
+ */
+export function copyBackupDir(target: string, now: Date = new Date()): string | null {
+  if (!existsSync(target)) {
+    return null;
+  }
+  const backup = `${target}.backup-${formatStamp(now)}`;
+  cpSync(target, backup, { recursive: true });
+  return backup;
+}
+
+function formatStamp(now: Date): string {
+  return now
     .toISOString()
     .replace(/[-:]/g, "")
     .replace(/\.\d+Z$/, "Z")
     .slice(0, 15);
-  const backup = `${target}.backup-${stamp}`;
-  renameSync(target, backup);
-  return backup;
 }
 
 /** Create a project skeleton: <project>/.claude/{commands/{uzys,ecc},rules,skills,agents,hooks}. */

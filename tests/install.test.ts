@@ -13,6 +13,8 @@ const fakeReport: InstallReport = {
   codex: null,
   opencode: null,
   external: null,
+  updateMode: null,
+  mode: "fresh",
   envFiles: {
     envExampleCreated: false,
     gitignoreEnvAdded: false,
@@ -496,6 +498,63 @@ describe("executeSpec", () => {
     expect(log).toHaveBeenCalledWith(expect.stringContaining(".gitignore"));
     expect(log).toHaveBeenCalledWith(expect.stringContaining(".mcp-allowlist"));
     expect(log).toHaveBeenCalledWith(expect.stringContaining("3 servers"));
+  });
+
+  it("renders Update Mode summary when report.updateMode is present", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline: (
+      s: InstallSpec,
+      h: string,
+      m?: import("../src/installer.js").InstallMode,
+    ) => InstallReport = () => ({
+      ...fakeReport,
+      backup: "/p/.claude.backup-2026",
+      mode: "update",
+      updateMode: {
+        updated: { ".claude/rules": 5, ".claude/agents": 0, ".claude/hooks": 2 },
+        pruned: { ".claude/rules": ["orphan.md"], ".claude/hooks": [] },
+        staleHookRefs: ["dead.sh"],
+        claudeMdUpdated: true,
+      },
+    });
+    executeSpec(baseSpec, {
+      log,
+      exit,
+      runPipeline,
+      resolveHarnessRoot: () => "/h",
+      mode: "update",
+    });
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Update Mode"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Update complete"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("5 files updated"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("ROLLBACK"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining(".claude/CLAUDE.md"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("stale hook refs"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("orphan prune"));
+  });
+
+  it("renders 'add' / 'reinstall' header label for those modes", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => fakeReport);
+    executeSpec(baseSpec, {
+      log,
+      exit,
+      runPipeline,
+      resolveHarnessRoot: () => "/h",
+      mode: "add",
+    });
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("uzys-claude-harness · add"));
+
+    executeSpec(baseSpec, {
+      log,
+      exit,
+      runPipeline,
+      resolveHarnessRoot: () => "/h",
+      mode: "reinstall",
+    });
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("uzys-claude-harness · reinstall"));
   });
 
   it("err + exit(1) when pipeline throws", () => {

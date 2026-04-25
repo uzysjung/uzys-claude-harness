@@ -7,11 +7,21 @@ import {
   type ExternalInstallerDeps,
   runExternalInstall,
 } from "./external-installer.js";
-import { backupDir, copyDir, copyFile, ensureProjectSkeleton } from "./fs-ops.js";
+import { backupDir, copyBackupDir, copyDir, copyFile, ensureProjectSkeleton } from "./fs-ops.js";
 import { buildManifest } from "./manifest.js";
 import { composeMcpJson, writeMcpJson } from "./mcp-merge.js";
 import { type OpencodeTransformReport, runOpencodeTransform } from "./opencode/transform.js";
 import type { InstallSpec, OptionFlags, Track } from "./types.js";
+import { type UpdateModeReport, runUpdateMode } from "./update-mode.js";
+
+/**
+ * Install mode — Router action 매핑.
+ *   - "fresh"     : 첫 설치 (기본값)
+ *   - "add"       : 기존 위에 Track union 추가 (backup 없음)
+ *   - "update"    : 정책 파일만 templates로 갱신 (backup + orphan prune + stale hook)
+ *   - "reinstall" : 기존 .claude/ backup 후 처음부터 (backup 강제)
+ */
+export type InstallMode = "fresh" | "add" | "update" | "reinstall";
 
 export interface InstallContext {
   /** Path to the harness repo (where `templates/` lives). */
@@ -19,7 +29,16 @@ export interface InstallContext {
   /** Target project directory. */
   projectDir: string;
   spec: InstallSpec;
-  /** When true, an existing .claude/ is renamed to a timestamped backup before install. */
+  /**
+   * Router action mode. Defaults to "fresh".
+   * - "add"/"update"/"reinstall" trigger different install paths.
+   * - reinstall + update force backup=true.
+   */
+  mode?: InstallMode;
+  /**
+   * When true, an existing .claude/ is renamed to a timestamped backup before install.
+   * Auto-true when mode ∈ {update, reinstall}.
+   */
   backup?: boolean;
   /**
    * External install (claude plugin / npm -g / npx skills) injection point.
@@ -47,6 +66,10 @@ export interface InstallReport {
   opencode: OpencodeTransformReport | null;
   /** External install report (claude plugin / npm -g / npx skills). null when disabled or empty. */
   external: ExternalInstallReport | null;
+  /** Update-mode report (rules/agents/commands/hooks 갱신 + orphan prune + stale hook). null when not update mode. */
+  updateMode: UpdateModeReport | null;
+  /** Install mode dispatched (echo of ctx.mode, default "fresh"). */
+  mode: InstallMode;
   /** Environment file generation results (always present). */
   envFiles: {
     /** true if .env.example was created (csr-supabase/full only). */
@@ -62,7 +85,8 @@ export interface InstallReport {
  * Run the installation pipeline. Pure function modulo filesystem side effects.
  */
 export function runInstall(ctx: InstallContext): InstallReport {
-  const { harnessRoot, projectDir, spec, backup = false } = ctx;
+  const { harnessRoot, projectDir, spec } = ctx;
+  const mode: InstallMode = ctx.mode ?? "fresh";
   const templatesDir = join(harnessRoot, "templates");
 
   if (!existsSync(templatesDir)) {
@@ -70,7 +94,45 @@ export function runInstall(ctx: InstallContext): InstallReport {
   }
 
   const claudeDir = join(projectDir, ".claude");
-  const backupPath = backup ? backupDir(claudeDir) : null;
+
+  // Update mode pre-flight: existing .claude/ 필수. backup 전에 검증.
+  if (mode === "update" && !existsSync(claudeDir)) {
+    throw new Error(`Update mode requires existing .claude/ at ${claudeDir}`);
+  }
+
+  // Backup auto-on for update + reinstall (sourced from router action).
+  // Update: copy backup (preserve original .claude/ for in-place update).
+  // Reinstall + others: rename backup (move .claude/ aside, then full install).
+  const wantBackup = ctx.backup ?? (mode === "update" || mode === "reinstall");
+  const backupPath = wantBackup
+    ? mode === "update"
+      ? copyBackupDir(claudeDir)
+      : backupDir(claudeDir)
+    : null;
+
+  // Update mode 단축 — 정책 파일만 갱신하고 종료 (manifest copy / external 모두 skip)
+  if (mode === "update") {
+    const updateReport = runUpdateMode(projectDir, templatesDir);
+    return {
+      filesCopied: 0,
+      dirsCopied: 0,
+      skipped: 0,
+      backup: backupPath,
+      installedTracks: [...spec.tracks].sort(),
+      mcpServers: [],
+      codex: null,
+      opencode: null,
+      external: null,
+      updateMode: updateReport,
+      mode,
+      envFiles: {
+        envExampleCreated: false,
+        gitignoreEnvAdded: false,
+        mcpAllowlist: null,
+      },
+    };
+  }
+
   ensureProjectSkeleton(projectDir);
 
   const manifest = buildManifest({
@@ -156,6 +218,8 @@ export function runInstall(ctx: InstallContext): InstallReport {
     codex,
     opencode,
     external,
+    updateMode: null,
+    mode,
     envFiles,
   };
 }

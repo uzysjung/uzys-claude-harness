@@ -76,7 +76,11 @@ export interface InstallActionDeps {
   err?: (msg: string) => void;
   exit?: (code: number) => never;
   /** Override the install pipeline (used by tests to avoid real fs side effects). */
-  runPipeline?: (spec: InstallSpec, harnessRoot: string) => InstallReport;
+  runPipeline?: (
+    spec: InstallSpec,
+    harnessRoot: string,
+    mode?: import("../installer.js").InstallMode,
+  ) => InstallReport;
   /** Override the harness root resolver (defaults to a path relative to this file). */
   resolveHarnessRoot?: () => string;
 }
@@ -115,8 +119,14 @@ export interface ExecuteSpecDeps {
   log?: (msg: string) => void;
   err?: (msg: string) => void;
   exit?: (code: number) => never;
-  runPipeline?: (spec: InstallSpec, harnessRoot: string) => InstallReport;
+  runPipeline?: (
+    spec: InstallSpec,
+    harnessRoot: string,
+    mode?: import("../installer.js").InstallMode,
+  ) => InstallReport;
   resolveHarnessRoot?: () => string;
+  /** Router action mode (forwarded to runInstall). Default "fresh". */
+  mode?: import("../installer.js").InstallMode;
 }
 
 /**
@@ -132,8 +142,16 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
   const resolveHarnessRoot = deps.resolveHarnessRoot ?? defaultHarnessRoot;
 
   // ━━━ TARGET ━━━ pre-flight info block ━━━
+  const headerLabel =
+    deps.mode === "update"
+      ? "uzys-claude-harness · update"
+      : deps.mode === "add"
+        ? "uzys-claude-harness · add"
+        : deps.mode === "reinstall"
+          ? "uzys-claude-harness · reinstall"
+          : "uzys-claude-harness · install";
   log("");
-  log(sectionHeader("uzys-claude-harness · install"));
+  log(sectionHeader(headerLabel));
   log("");
   log(infoRow("TARGET", shortenPath(spec.projectDir)));
   log(infoRow("TRACKS", spec.tracks.join(", ")));
@@ -141,18 +159,56 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
   log(infoRow("OPTIONS", formatOptions(spec)));
   log("");
 
-  // ━━━ Phase 1 — Templates ━━━
-  log(phaseHeader(1, "Templates"));
+  // ━━━ Phase 1 — Templates (또는 Update Mode) ━━━
+  log(phaseHeader(1, deps.mode === "update" ? "Update Mode" : "Templates"));
   log("");
 
   let report: InstallReport;
   try {
-    report = runPipeline(spec, resolveHarnessRoot());
+    report = runPipeline(spec, resolveHarnessRoot(), deps.mode);
   } catch (e: unknown) {
     const detail = e instanceof Error ? e.message : String(e);
     log("");
     err(status.failure(c.red(`install failed — ${detail}`)));
     exit(1);
+    return;
+  }
+
+  // Update mode 출력 분기 — manifest copy / external 모두 skip
+  if (report.updateMode) {
+    if (report.backup) {
+      log(assetRow("success", "backup", shortenPath(report.backup)));
+    }
+    for (const [dir, count] of Object.entries(report.updateMode.updated)) {
+      if (count > 0) log(assetRow("success", dir, `${count} files updated`));
+    }
+    for (const [dir, removed] of Object.entries(report.updateMode.pruned)) {
+      if (removed.length > 0) {
+        log(assetRow("skip", `${dir} orphan prune`, `${removed.length} removed`));
+      }
+    }
+    if (report.updateMode.claudeMdUpdated) {
+      log(assetRow("success", ".claude/CLAUDE.md", "refreshed from template"));
+    }
+    if (report.updateMode.staleHookRefs.length > 0) {
+      log(
+        assetRow(
+          "skip",
+          "settings.json stale hook refs",
+          `${report.updateMode.staleHookRefs.length} removed`,
+        ),
+      );
+    }
+    log("");
+    log(sectionHeader("Summary"));
+    log("");
+    log(infoRow("STATUS", c.green("Update complete")));
+    log(infoRow("MODE", "update"));
+    if (report.backup) {
+      log(infoRow("BACKUP", shortenPath(report.backup)));
+      log(infoRow("ROLLBACK", `rm -rf .claude && mv ${shortenPath(report.backup)} .claude`));
+    }
+    log("");
     return;
   }
 
@@ -324,8 +380,18 @@ function formatCliPhaseTitle(cli: Exclude<CliMode, "claude">): string {
   }
 }
 
-function defaultRunPipeline(spec: InstallSpec, harnessRoot: string): InstallReport {
-  return runInstallPipeline({ harnessRoot, projectDir: spec.projectDir, spec, backup: false });
+function defaultRunPipeline(
+  spec: InstallSpec,
+  harnessRoot: string,
+  mode?: import("../installer.js").InstallMode,
+): InstallReport {
+  const ctx: import("../installer.js").InstallContext = {
+    harnessRoot,
+    projectDir: spec.projectDir,
+    spec,
+  };
+  if (mode) ctx.mode = mode;
+  return runInstallPipeline(ctx);
 }
 
 function defaultHarnessRoot(): string {

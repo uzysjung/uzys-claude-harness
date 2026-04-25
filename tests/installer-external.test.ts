@@ -135,3 +135,96 @@ describe("runInstall — external assets integration", () => {
     expect(runExternal.mock.calls[0]?.[0]?.options.withGsd).toBe(true);
   });
 });
+
+describe("runInstall — mode dispatch", () => {
+  let projectDir: string;
+  beforeEach(() => {
+    projectDir = mkdtempSync(join(tmpdir(), "ch-mode-"));
+  });
+  afterEach(() => {
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it("mode=update returns updateMode report + skips manifest copy + auto-backup", async () => {
+    // 첫 install로 .claude/ 만들기
+    runInstall({
+      runExternal: null,
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: spec(["tooling"], {}, projectDir),
+    });
+    // 두 번째: mode=update
+    const report = runInstall({
+      runExternal: null,
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: spec(["tooling"], {}, projectDir),
+      mode: "update",
+    });
+    expect(report.mode).toBe("update");
+    expect(report.updateMode).not.toBeNull();
+    expect(report.backup).toMatch(/\.claude\.backup-/);
+    expect(report.filesCopied).toBe(0); // manifest copy skipped
+    expect(report.envFiles.envExampleCreated).toBe(false);
+  });
+
+  it("mode=update without existing .claude/ throws", () => {
+    expect(() =>
+      runInstall({
+        runExternal: null,
+        harnessRoot: HARNESS_ROOT,
+        projectDir,
+        spec: spec(["tooling"], {}, projectDir),
+        mode: "update",
+      }),
+    ).toThrow(/Update mode requires existing/);
+  });
+
+  it("mode=reinstall auto-creates backup", () => {
+    // baseline install
+    runInstall({
+      runExternal: null,
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: spec(["tooling"], {}, projectDir),
+    });
+    const report = runInstall({
+      runExternal: null,
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: spec(["tooling"], {}, projectDir),
+      mode: "reinstall",
+    });
+    expect(report.mode).toBe("reinstall");
+    expect(report.backup).toMatch(/\.claude\.backup-/);
+  });
+
+  it("mode=add does NOT create backup", () => {
+    runInstall({
+      runExternal: null,
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: spec(["tooling"], {}, projectDir),
+    });
+    const report = runInstall({
+      runExternal: null,
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: spec(["tooling"], {}, projectDir),
+      mode: "add",
+    });
+    expect(report.mode).toBe("add");
+    expect(report.backup).toBeNull();
+  });
+
+  it("default mode=fresh does NOT create backup", () => {
+    const report = runInstall({
+      runExternal: null,
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: spec(["tooling"], {}, projectDir),
+    });
+    expect(report.mode).toBe("fresh");
+    expect(report.backup).toBeNull();
+  });
+});
