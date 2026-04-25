@@ -27,12 +27,12 @@
 
 ## Phase C — Transform 구현
 
-- [ ] **C1** `src/opencode/transform.ts` — SSOT → 4 output 변환
-- [ ] **C2** `src/opencode/skills.ts` — 6 uzys skill 정규화 (Codex 90%+ 공유)
-- [ ] **C3** `src/opencode/mcp.ts` — `.mcp.json` → `mcp.<name>` 매핑
-- [ ] **C4** TS 빌드 + 192 → 200+ test PASS, regression 0
+- [x] **C1** `src/opencode/transform.ts` — orchestrator. AGENTS.md + opencode.json + 6 commands + plugin stub 출력
+- [x] **C2** `src/opencode/commands.ts` — 6 uzys command 정규화 (frontmatter description+agent, slash rename). Codex skills.ts 패턴 답습
+- [x] **C3** `src/opencode/opencode-json.ts` — template + `.mcp.json` → `mcp.<name>` 1:1 변환
+- [x] **C4** TS 빌드 + 198 → 218 test (+20), regression 0, branch coverage 91.06% (≥90%), build 102.55 KB
 
-**Phase C 게이트**: `npm run ci` PASS.
+**Phase C 게이트**: `npm run ci` PASS ✅.
 
 ---
 
