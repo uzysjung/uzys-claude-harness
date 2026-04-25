@@ -63,11 +63,16 @@ export default UzysHarness
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": ["./.opencode/plugin/uzys-harness.ts"]
+  "plugin": ["./.opencode/plugins/uzys-harness.ts"]
 }
 ```
 
-전제: 프로젝트 스코프만 (D16). `OPENCODE_CONFIG_DIR/plugins/`(글로벌) 미수정.
+전제: 프로젝트 스코프만 (D16). `~/.config/opencode/plugins/`(글로벌) 미수정.
+
+**디렉토리/키 명명 규약** (Phase B2 실측):
+- 디렉토리: `.opencode/plugins/` (plural — OpenCode 공식)
+- `opencode.json` 키: `plugin` (singular array key)
+- Commands: `.opencode/commands/<name>.md` (plural directory, 파일명 = 슬래시 커맨드명)
 
 ## Alternatives
 

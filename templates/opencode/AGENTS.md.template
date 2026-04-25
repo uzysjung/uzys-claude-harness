@@ -1,0 +1,106 @@
+# {PROJECT_NAME} — OpenCode Agent Guide
+
+> **Generated from**: `.claude/CLAUDE.md` via TS CLI `src/opencode/transform.ts` (Phase C)
+> **OpenCode Version**: 0.x (anomalyco/opencode)
+> **Linked SPEC**: `docs/specs/opencode-compat.md`
+
+## Identity
+
+{IDENTITY_SECTION}
+
+## Project Direction
+
+{PROJECT_DIRECTION_SECTION}
+
+## Core Principles
+
+{CORE_PRINCIPLES_SECTION}
+
+## Workflow Gates
+
+```
+Define(/uzys-spec) → Plan(/uzys-plan) → Build(/uzys-build) → Verify(/uzys-test) → Review(/uzys-review) → Ship(/uzys-ship)
+```
+
+각 단계 완료 없이 다음 진행 금지. 건너뛰기 시도 시 `tool.execute.before` plugin hook이 throw로 차단.
+
+**Hotfix 단축**: Build → Verify → Ship (긴급 수정에 한함)
+
+**Executive track**: 6단계 게이트 미적용. 자연어 요청 → strategist + document-skills → 산출물 → 검토.
+
+## Session Start
+
+매 세션 시작 시:
+1. `git pull --rebase`
+2. `docs/SPEC.md` 및 `docs/specs/*.md` 재참조 (Persistent Anchor)
+3. `docs/todo.md` 또는 `docs/plans/*-todo.md` 현재 Phase 확인
+
+`sessionCreated` plugin hook이 자동 수행. Hook 실패 시 수동 수행.
+
+## Protected Files (DO NOT EDIT)
+
+OpenCode `permission` 설정 + plugin `tool.execute.before` 검사가 1차 방어. LLM 추가 준수:
+
+- `.env*`
+- `**/credentials.json`
+- `*.lock`, `package-lock.json`, `pnpm-lock.yaml`, `poetry.lock`, `Cargo.lock`, `uv.lock`
+- `.git/` 내부 파일 (커밋 메시지/hook 제외)
+- `~/.opencode/`, `~/.codex/`, `~/.claude/` 글로벌 (D16 보호)
+
+보호 영역 이슈 발견 시 **보고만**. 직접 수정 금지.
+
+## Git Policy
+
+- 코드/문서 변경 시 **즉시 commit**. "나중에 한꺼번에" 금지.
+- `main` 직접 커밋 금지. feature branch 사용.
+- 세션 시작 시 `git pull` 필수.
+- Conventional Commits — `<type>: <description>` (feat, fix, refactor, docs, test, chore, perf, ci)
+
+## Command Reference (OpenCode slash)
+
+| Slash | 용도 |
+|-------|------|
+| `/uzys-spec` | Define — 구조화된 스펙 작성 |
+| `/uzys-plan` | Plan — 검증 가능한 작은 단위로 분해 |
+| `/uzys-build` | Build — TDD 점진적 구현 |
+| `/uzys-test` | Verify — 테스트 실행 + 커버리지 |
+| `/uzys-review` | Review — 5축 리뷰 (correctness, readability, architecture, security, performance) |
+| `/uzys-ship` | Ship — 프리런치 체크리스트 + 배포 |
+
+OpenCode slash 커맨드는 `.opencode/commands/<name>.md` 파일명이 그대로 슬래시 이름. namespace(`:`) 미사용 — Codex 1차 일관성 + filesystem 호환을 위해 hyphen 채택 (Phase B2 결정, 2026-04-25).
+
+## Agents (subagent)
+
+| Agent | Mode | 역할 |
+|-------|------|------|
+| reviewer | subagent | 검증 전용 (SOD). 5축 리뷰 |
+| data-analyst | subagent | Python / DuckDB / Trino / ML / PySide6 |
+| strategist | subagent | 제안서 / DD / PPT / 경쟁분석 / 재무모델 |
+| code-reviewer | subagent | 일상적 코드 리뷰 |
+| security-reviewer | subagent | OWASP Top 10, 보안 패턴 |
+
+`opencode.json` `agent.<name>.mode = "subagent"` 로 정의.
+
+## Hooks (Plugin lifecycle)
+
+OpenCode plugin (`./.opencode/plugin/uzys-harness.ts`)이 다음 3종 hook을 처리:
+
+- **`tool.execute.before`** — Claude `PreToolUse` 매핑. gate-check (단계 위반 차단)
+- **`tool.execute.after`** — Claude `PostToolUse` 매핑. spec-drift-check (산출물 검증)
+- **`messageCreated`** filter `role==="user"` — Claude `UserPromptSubmit` 매핑. HITO 카운터
+
+자세한 매핑: `docs/decisions/ADR-004-opencode-plugin-mapping.md`.
+
+## Experience Accumulation
+
+- 검증된 learning만 Rules 승격
+- HITO 로그: `.claude/evals/hito-YYYY-MM-DD.log` (plugin이 누적)
+
+## Context Management
+
+- SPEC/PRD 매 세션 시작 시 재참조 (Persistent Anchor)
+- `instructions` 키 (`opencode.json`)로 `.claude/rules/*.md` glob 자동 merge
+
+---
+
+*이 문서는 자동 생성됨. 수동 편집 시 transform 재실행이 덮어쓸 수 있음. 원본은 `.claude/CLAUDE.md` 또는 `templates/CLAUDE.md`.*

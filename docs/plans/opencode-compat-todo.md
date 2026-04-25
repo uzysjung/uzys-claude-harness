@@ -17,11 +17,11 @@
 
 ## Phase B — 구조 설계
 
-- [ ] **B1** `templates/opencode/` 스캐폴드 (AGENTS.md / opencode.json.template / .opencode/command/ / plugin/)
-- [ ] **B2** Slash prefix 실측 결정 (OQ2 — `uzys-spec` vs `uzys:spec`)
-- [ ] **B3** `opencode.json` 스키마 고정 ($schema + mcp + command + agent + instructions)
+- [x] **B1** `templates/opencode/` 스캐폴드 — AGENTS.md.template + opencode.json.template + `.opencode/commands/uzys-{spec,plan,build,test,review,ship}.md` (6 stub) + `.opencode/plugins/uzys-harness.ts` (stub) + README.md
+- [x] **B2** Slash prefix — `uzys-spec` 채택 (OQ2 Closed). 근거: OpenCode 파일명=커맨드명, 콜론 namespace 미공식, Codex 일관성, filesystem 호환
+- [x] **B3** `opencode.json` 스키마 고정 — $schema + instructions + mcp + command + agent + plugin + permission
 
-**Phase B 게이트**: OQ2 Closed.
+**Phase B 게이트**: OQ2 Closed ✅. 사용자 검토 대기.
 
 ---
 
@@ -94,7 +94,7 @@
 
 ## Open OQ 추적
 
-- [ ] **OQ2** Slash prefix → Phase B (B2) 결정
+- [x] **OQ2** Slash prefix → `uzys-spec` 채택 (Phase B2, 2026-04-25)
 - [ ] **OQ5** Plugin 배포 형식 → Phase B 또는 E (1차 로컬)
 - [ ] **OQ6** opencode-skills 커뮤니티 plugin 의존 → Phase B (1차 자체 구현)
 

@@ -41,10 +41,10 @@ NORTH_STAR §5 4-gate + CLAUDE.md P2(Simplicity First) 우선.
 | ID | 작업 | 근거 | 우선순위 |
 |----|------|------|---------|
 | **F1** | Claude Code ↔ OpenCode 호환 매트릭스 — `docs/research/opencode-compat-matrix-2026-04-25.md` (Codex matrix와 비교 표 포함) | 리서치 결과 정리 | P0 |
-| **F2** | `templates/opencode/` 디렉토리 설계 — AGENTS.md(Codex 산출물 재사용), `opencode.json` 템플릿, `.opencode/command/*.md`, plugin 번들 위치 | 구조 고정 | P0 |
-| **F3** | Transform 통합 — Codex의 `scripts/claude-to-codex.sh` 패턴을 TS CLI(`src/codex/`)에 추가한 것처럼, **`src/opencode/`** 모듈 신설. 입력: SSOT (CLAUDE.md, .mcp.json, .claude/rules/*, .claude/commands/uzys/*). 출력: `AGENTS.md`(Codex와 동일 형식) + `opencode.json` + `.opencode/command/*.md` + plugin scaffold | Generator 기반 SSOT | P0 |
+| **F2** | `templates/opencode/` 디렉토리 설계 — AGENTS.md(Codex 산출물 재사용), `opencode.json` 템플릿, `.opencode/commands/*.md`, plugin 번들 위치 | 구조 고정 | P0 |
+| **F3** | Transform 통합 — Codex의 `scripts/claude-to-codex.sh` 패턴을 TS CLI(`src/codex/`)에 추가한 것처럼, **`src/opencode/`** 모듈 신설. 입력: SSOT (CLAUDE.md, .mcp.json, .claude/rules/*, .claude/commands/uzys/*). 출력: `AGENTS.md`(Codex와 동일 형식) + `opencode.json` + `.opencode/commands/*.md` + plugin scaffold | Generator 기반 SSOT | P0 |
 | **F4** | TS CLI `--cli` 옵션 확장 — 현재 `claude / codex / both` → `claude / codex / opencode / all`. 기본값 `claude` 유지(regression 0). 인터랙티브 모드에 OpenCode 분기 추가 | 배포 통로 | P1 |
-| **F5** | 6 uzys skill OpenCode 포맷 매핑 — Codex의 `~/.codex/skills/` 패턴 대신 **프로젝트 스코프 `.opencode/command/*.md`**로 슬래시 노출. SKILL.md 본문은 그대로 재사용 | D16 정신 + 글로벌 미수정 | P1 |
+| **F5** | 6 uzys skill OpenCode 포맷 매핑 — Codex의 `~/.codex/skills/` 패턴 대신 **프로젝트 스코프 `.opencode/commands/*.md`**로 슬래시 노출. SKILL.md 본문은 그대로 재사용 | D16 정신 + 글로벌 미수정 | P1 |
 | **F6** | MCP 변환 — `.mcp.json` → `opencode.json` `mcp.<name>` (1:1 가까운 매핑). auth 환경변수 매핑 동일 | MCP 호환 | P1 |
 | **F7** | **Plugin 작성 — `uzys-harness-opencode-plugin`** | 핵심 차별화 | P1 |
 | | (a) `tool.execute.before` → PreToolUse hook 매핑 (gate-check) | | |
@@ -84,7 +84,7 @@ NORTH_STAR §5 4-gate + CLAUDE.md P2(Simplicity First) 우선.
 | **OQ2** Slash prefix | **Open** | (a) `/uzys-spec` (Codex와 동일 — namespace 부재 시 안전) / (b) `/uzys:spec` (OpenCode가 콜론 허용 시). Phase B 실측 후 결정. 1차 가정 (a) |
 | **OQ3** Dogfood 범위 | **Closed — tooling + csr-fastapi** | Codex와 동일 2 Track. 비교 가능성 유지. 사용자 승인 2026-04-25 |
 | **OQ4** SPEC 범위 | **Closed — 풀 하네스 복제** | Codex와 동등 패턴. 사용자 요청 명시. 사용자 승인 2026-04-25 |
-| **OQ5** Plugin 배포 형식 | **Open** | (a) `templates/opencode/plugin/` 로컬 번들 → 설치 시 프로젝트 `.opencode/plugin/`로 복사 / (b) git submodule / (c) npm publish 후 install. 1차 (a). npm은 후속 ADR (Codex OQ8과 동일 패턴) |
+| **OQ5** Plugin 배포 형식 | **Open** | (a) `templates/opencode/.opencode/plugins/` 로컬 번들 → 설치 시 프로젝트 `.opencode/plugins/`로 복사 / (b) git submodule / (c) npm publish 후 install. 1차 (a). npm은 후속 ADR (Codex OQ8과 동일 패턴) |
 | **OQ6** OpenCode-Skills plugin 의존 | **Open** | 커뮤니티 plugin `/malhashemi/opencode-skills`(Anthropic Agent Skills Spec 따름)가 skills 자동 발견. 의존 vs 자체 구현. 1차 자체 구현(uzys 자산만 정확히 노출). 의존은 후속 검토 |
 
 ## 4. Phase 분해
@@ -137,3 +137,4 @@ NORTH_STAR §5 4-gate + CLAUDE.md P2(Simplicity First) 우선.
 ## Changelog
 
 - 2026-04-25: 초안 작성. 근거 — 사용자 요청(OpenCode 2차 진입, Codex 1차 v27.19.0 완료 후속) + Context7 리서치(`/anomalyco/opencode`, `/websites/opencode_ai_plugins`, `/kdcokenny/opencode-workspace`, `/malhashemi/opencode-skills`).
+- 2026-04-25 (Clarification CR): Phase B2 실측 결과 디렉토리명 정정 — `.opencode/command/` → `.opencode/commands/`, `templates/opencode/plugin/` → `templates/opencode/.opencode/plugins/`. OpenCode 공식 규약(plural directory) 일치. 합의된 내용의 구체화이므로 Major CR 불필요.
