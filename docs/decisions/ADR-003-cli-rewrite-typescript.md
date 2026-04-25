@@ -1,6 +1,6 @@
 # ADR-003: CLI 재작성 — TypeScript + Node + clack 채택
 
-- **Status**: Proposed (2026-04-25) — `docs/specs/cli-rewrite.md` Phase G 완료 시 Accepted 전환 예정
+- **Status**: **Accepted** (2026-04-25, Phase G 완료)
 - **Date**: 2026-04-25
 - **PR**: TBD (본 SPEC 동시 PR)
 - **Related**: `docs/specs/cli-rewrite.md`, `docs/decisions/ADR-001-phase2-entry-criteria.md`, `docs/decisions/ADR-002-codex-hook-gap.md`

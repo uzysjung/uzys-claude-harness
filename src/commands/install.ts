@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 import type { Cli } from "../cli.js";
+import { c, header, keyValue, status } from "../design.js";
 import { type InstallReport, runInstall as runInstallPipeline } from "../installer.js";
 import {
   CLI_MODES,
@@ -89,7 +90,7 @@ export function installAction(options: InstallOptions, deps: InstallActionDeps =
 
   const validated = specFromOptions(options);
   if (!validated.ok) {
-    err(`ERROR: ${validated.message}`);
+    err(status.failure(c.red(`ERROR: ${validated.message}`)));
     exit(1);
     return;
   }
@@ -111,25 +112,38 @@ export function installAction(options: InstallOptions, deps: InstallActionDeps =
   try {
     report = runPipeline(spec, resolveHarnessRoot());
   } catch (e: unknown) {
-    err(`ERROR: install failed — ${e instanceof Error ? e.message : String(e)}`);
+    const detail = e instanceof Error ? e.message : String(e);
+    err(status.failure(c.red(`ERROR: install failed — ${detail}`)));
     exit(1);
     return;
   }
 
-  log("Install complete:");
-  log(`  Tracks:        ${report.installedTracks.join(", ")}`);
-  log(`  Files copied:  ${report.filesCopied}`);
-  log(`  Dirs copied:   ${report.dirsCopied}`);
-  log(`  Skipped:       ${report.skipped}`);
+  log("");
+  log(header(`Install — ${spec.tracks.join(", ")}`));
+  log("");
+  log(keyValue("Tracks", report.installedTracks.join(", ")));
+  log(keyValue("CLI", spec.cli));
+  log(keyValue("Target", spec.projectDir));
+  log("");
+  log(status.success(`${keyValue("Files copied", String(report.filesCopied)).trimStart()}`));
+  log(status.success(`${keyValue("Dirs copied", String(report.dirsCopied)).trimStart()}`));
+  if (report.skipped > 0) {
+    log(status.warn(`${keyValue("Skipped", String(report.skipped)).trimStart()}`));
+  }
   if (report.backup) {
-    log(`  Backup:        ${report.backup}`);
+    log(status.info(`${keyValue("Backup", report.backup).trimStart()}`));
   }
-  log(`  MCP servers:   ${report.mcpServers.join(", ") || "(none)"}`);
+  log(
+    status.success(
+      `${keyValue("MCP servers", report.mcpServers.join(", ") || c.dim("(none)")).trimStart()}`,
+    ),
+  );
   if (report.codex) {
-    log(
-      `  Codex:         AGENTS.md + .codex/{config.toml, ${report.codex.hookFiles.length} hooks} + ${report.codex.skillFiles.length} skills`,
-    );
+    const summary = `AGENTS.md + .codex/{config.toml, ${report.codex.hookFiles.length} hooks} + ${report.codex.skillFiles.length} skills`;
+    log(status.success(`${keyValue("Codex", summary).trimStart()}`));
   }
+  log("");
+  log(c.bold(c.green("Install complete.")));
 }
 
 function defaultRunPipeline(spec: InstallSpec, harnessRoot: string): InstallReport {
