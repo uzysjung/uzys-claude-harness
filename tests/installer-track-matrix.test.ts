@@ -1,7 +1,7 @@
 /**
- * Track 매트릭스 검증 — 9 Track × external asset 매핑.
+ * Track 매트릭스 검증 — 11 Track × external asset 매핑 (v0.5.0).
  *
- * SPEC: docs/specs/cli-rewrite-completeness.md F4, AC2
+ * SPEC: docs/specs/new-tracks-pm-growth.md AC3 (이전 docs/specs/cli-rewrite-completeness.md F4, AC2)
  *
  * 각 Track에 대해 runExternalInstall이 정확히 어떤 자산 ID들을 호출하는지 검증.
  * 실제 spawn은 mock으로 차단 (no real `claude plugin install`).

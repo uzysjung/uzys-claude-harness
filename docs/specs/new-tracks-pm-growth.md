@@ -53,7 +53,7 @@ CLAUDE.md Decision Making 메타룰 + NORTH_STAR §5 4-gate(Trend / Persona / Ca
 | **F6** | `tests/installer-track-matrix.test.ts` 신규 Track × 외부 자산 매핑 unit test | AC3 검증 | 4/4 |
 | **F7** | `tests/installer-9-track.test.ts` → `installer-11-track.test.ts` 갱신 (or 동일 파일 11 확장) | regression 0 | 4/4 |
 | **F8** | `README.md` + `README.ko.md` + `docs/USAGE.md` + `docs/REFERENCE.md` Track 표 갱신 | AC5 | 4/4 |
-| **F9** | dogfood 실측 1회 — 신규 2 Track 중 1개 라이브 install (`growth-marketing` 권장 — 자산 수 5종으로 매트릭스 부담 큰 쪽) | E2E Mock 금지 (test-policy.md Dev-Prod Parity 정신) | 4/4 |
+| **F9** ~~(라이브 install)~~ | ~~dogfood 실측 1회 — 신규 2 Track 중 1개 라이브 install~~ → **ADR-005** marketplace verification (`gh api` 8 plugin id 등록 확인) + Mock dogfood (매트릭스 437 PASS). 라이브는 v0.6+/OQ4 이월. | D16 보호 + 검증 누락 0 (marketplace + matrix) | 4/4 (ADR-005) |
 
 ### 3.2 제외 (Non-Goals)
 
@@ -80,7 +80,7 @@ CLAUDE.md Decision Making 메타룰 + NORTH_STAR §5 4-gate(Trend / Persona / Ca
 - **OQ1**: `karpathy-coder` pre-commit hook 자동 와이어링 — 본 SPEC에서는 plugin install까지만. 활성화 자동화는 별도 ADR로? **기본 답**: 사용자 책임(`references/enforcement-patterns.md` 안내). 추가 자동화는 v0.6+ 검토.
 - **OQ2**: `business-growth-skills` condition 확장 시 기존 `executive`+`full` Track에서 동일하게 설치되는지 unit test로 보장 — F4 entry는 condition 합집합으로 표현(예: `any-track` tracks 배열에 `growth-marketing` 추가).
 - **OQ3**: `pm-skills` + `product-skills` 둘 다 `project-management` Track에 들어감. executive-style baseline + dev-style 도구 혼재 — 사용자에게 양쪽 도구 공존 안내 필요? **잠정**: README/USAGE에 안내 문구 1줄.
-- **OQ4**: 신규 Track 2개 dogfood — 둘 다? 1개? **잠정**: F9 — 자산 수 큰 `growth-marketing` 1개 라이브. `project-management`는 매트릭스 통과로 충분.
+- **OQ4**: 신규 Track 2개 dogfood — 둘 다? 1개? ~~잠정: F9 — 자산 수 큰 `growth-marketing` 1개 라이브~~ → **ADR-005 (Accepted 2026-04-26)** — F9 mock + marketplace verification으로 다운그레이드. 라이브 dogfood는 v0.6+ 후속 SPEC에 OQ4 재등장. `project-management`는 매트릭스 통과로 충분.
 
 ### 3.5 외부 자산 4-gate 판정 표 (AC3 8 entries)
 
@@ -129,7 +129,7 @@ vitest threshold 유지: lines/funcs/stmt **90** / branches **89** (핸드오프
 
 | 플로우 | 성공 기준 |
 |--------|----------|
-| `growth-marketing` Track 1회 라이브 install | 5 외부 자산 모두 install 성공 + Phase row 출력 + `.claude/` 구조 검증 |
+| ~~`growth-marketing` Track 1회 라이브 install~~ → **ADR-005 — marketplace verification + Mock dogfood로 다운그레이드** | (라이브는 v0.6+/OQ4 이월) marketplace plugin id 등록 + 매트릭스 PASS |
 | 11 Track × 5 mode 매트릭스 | 55 시나리오 PASS + invariant 6 (예: `~/.claude/` 미수정, manifest 누락 0) |
 
 ### 5.3 Test Types
@@ -187,3 +187,4 @@ vitest threshold 유지: lines/funcs/stmt **90** / branches **89** (핸드오프
 ## Changelog
 
 - 2026-04-25: 초안 작성. 입력 — `docs/dev/session-2026-04-25-tracks-handoff.md` §1~7 + 사용자 결정(2026-04-25 세션) `karpathy-coder` 추가. AC3 외부 자산 8 entries (7 신규 + 1 condition 확장).
+- 2026-04-26: ADR-005 채택 — F9 라이브 install → mock + marketplace verification 다운그레이드 (Major CR). reviewer subagent MEDIUM-1 피드백 반영.

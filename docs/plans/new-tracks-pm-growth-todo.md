@@ -52,7 +52,7 @@
 - [ ] **P4-T2** `README.ko.md` — 영문 동일 갱신
 - [ ] **P4-T3** `docs/USAGE.md` — 신규 Track 시나리오 (PM + Growth Marketing) + pm/product 공존 안내 (OQ3)
 - [ ] **P4-T4** `docs/REFERENCE.md` — Track 표 + 외부 자산 표 갱신 (8 entries)
-- [ ] **P4-T5** dogfood — `growth-marketing` Track 라이브 install (5 외부 자산 모두 install + manifest 검증). 리포트 `docs/dogfood/cli-dogfood-2026-04-XX-growth.md`. CRITICAL/HIGH = 0
+- [x] **P4-T5** dogfood — ~~라이브 install~~ → ADR-005 (Accepted 2026-04-26)로 다운그레이드. marketplace verification (8 plugin id 등록 확인) + Mock dogfood (매트릭스 437 PASS). 리포트 `docs/dogfood/cli-dogfood-2026-04-26-v0.5.0.md`. CRITICAL/HIGH = 0
 
 **Phase 4 검증**: docs grep + dogfood 리포트.
 
@@ -85,7 +85,7 @@
 | OQ1 karpathy hook 자동 활성화 | v0.6+ 별도 ADR | 본 SPEC 범위 외. README enforcement levels 안내만 |
 | OQ2 business-growth 합집합 검증 | P2-T4 | unit test 추가 |
 | OQ3 pm/product 공존 안내 | P4-T3 | USAGE.md 안내 |
-| OQ4 dogfood 범위 | P4-T5 | growth-marketing 1개 라이브 |
+| OQ4 dogfood 범위 | P4-T5 | ~~growth-marketing 1개 라이브~~ → ADR-005로 mock + marketplace verification 다운그레이드. 라이브는 v0.6+ |
 
 ---
 
