@@ -1,0 +1,179 @@
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { runInstall } from "../src/installer.js";
+
+const HARNESS_ROOT = resolve(__dirname, "..");
+
+describe("installer (integration with templates/)", () => {
+  let projectDir: string;
+
+  beforeEach(() => {
+    projectDir = mkdtempSync(join(tmpdir(), "ch-installer-"));
+  });
+
+  afterEach(() => {
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it("tooling track: installs core assets + writes .installed-tracks", () => {
+    const report = runInstall({
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: {
+        tracks: ["tooling"],
+        options: {
+          withTauri: false,
+          withGsd: false,
+          withEcc: false,
+          withPrune: false,
+          withTob: false,
+        },
+        cli: "claude",
+        projectDir,
+      },
+    });
+
+    expect(report.installedTracks).toEqual(["tooling"]);
+    expect(report.filesCopied).toBeGreaterThan(10);
+
+    // Project skeleton exists
+    expect(existsSync(join(projectDir, ".claude/CLAUDE.md"))).toBe(true);
+    expect(existsSync(join(projectDir, ".claude/settings.json"))).toBe(true);
+
+    // Common rules
+    expect(existsSync(join(projectDir, ".claude/rules/git-policy.md"))).toBe(true);
+    expect(existsSync(join(projectDir, ".claude/rules/change-management.md"))).toBe(true);
+    // tooling-specific
+    expect(existsSync(join(projectDir, ".claude/rules/cli-development.md"))).toBe(true);
+
+    // Hooks
+    expect(existsSync(join(projectDir, ".claude/hooks/session-start.sh"))).toBe(true);
+    expect(existsSync(join(projectDir, ".claude/hooks/hito-counter.sh"))).toBe(true);
+
+    // uzys commands (tooling = dev track)
+    expect(existsSync(join(projectDir, ".claude/commands/uzys/spec.md"))).toBe(true);
+    expect(existsSync(join(projectDir, ".claude/commands/uzys/auto.md"))).toBe(true);
+
+    // Project root CLAUDE.md
+    expect(existsSync(join(projectDir, "CLAUDE.md"))).toBe(true);
+
+    // .mcp.json with context7 server
+    const mcpPath = join(projectDir, ".mcp.json");
+    expect(existsSync(mcpPath)).toBe(true);
+    const mcp = JSON.parse(readFileSync(mcpPath, "utf8"));
+    expect(mcp.mcpServers.context7).toBeDefined();
+
+    // .installed-tracks meta
+    const meta = readFileSync(join(projectDir, ".claude/.installed-tracks"), "utf8");
+    expect(meta).toContain("tooling");
+  });
+
+  it("executive track: skips uzys/* commands and dev rules", () => {
+    runInstall({
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: {
+        tracks: ["executive"],
+        options: {
+          withTauri: false,
+          withGsd: false,
+          withEcc: false,
+          withPrune: false,
+          withTob: false,
+        },
+        cli: "claude",
+        projectDir,
+      },
+    });
+    expect(existsSync(join(projectDir, ".claude/commands/uzys/spec.md"))).toBe(false);
+    expect(existsSync(join(projectDir, ".claude/rules/test-policy.md"))).toBe(false);
+    // common rule still installed
+    expect(existsSync(join(projectDir, ".claude/rules/git-policy.md"))).toBe(true);
+  });
+
+  it("multi-track: union of rules + no project-root CLAUDE.md", () => {
+    runInstall({
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: {
+        tracks: ["tooling", "data"],
+        options: {
+          withTauri: false,
+          withGsd: false,
+          withEcc: false,
+          withPrune: false,
+          withTob: false,
+        },
+        cli: "claude",
+        projectDir,
+      },
+    });
+    expect(existsSync(join(projectDir, ".claude/rules/cli-development.md"))).toBe(true);
+    expect(existsSync(join(projectDir, ".claude/rules/data-analysis.md"))).toBe(true);
+    expect(existsSync(join(projectDir, ".claude/rules/pyside6.md"))).toBe(true);
+    // multi-track skips the project-root CLAUDE.md
+    expect(existsSync(join(projectDir, "CLAUDE.md"))).toBe(false);
+  });
+
+  it("backup option moves existing .claude/ aside before install", () => {
+    // Pre-populate a .claude/ to trigger backup
+    runInstall({
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: {
+        tracks: ["tooling"],
+        options: {
+          withTauri: false,
+          withGsd: false,
+          withEcc: false,
+          withPrune: false,
+          withTob: false,
+        },
+        cli: "claude",
+        projectDir,
+      },
+    });
+    const second = runInstall({
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      backup: true,
+      spec: {
+        tracks: ["tooling"],
+        options: {
+          withTauri: false,
+          withGsd: false,
+          withEcc: false,
+          withPrune: false,
+          withTob: false,
+        },
+        cli: "claude",
+        projectDir,
+      },
+    });
+    expect(second.backup).toMatch(/\.claude\.backup-/);
+    expect(existsSync(`${second.backup}`)).toBe(true);
+  });
+
+  it("throws when templates directory missing", () => {
+    expect(() =>
+      runInstall({
+        harnessRoot: "/no/such/root",
+        projectDir,
+        spec: {
+          tracks: ["tooling"],
+          options: {
+            withTauri: false,
+            withGsd: false,
+            withEcc: false,
+            withPrune: false,
+            withTob: false,
+          },
+          cli: "claude",
+          projectDir,
+        },
+      }),
+    ).toThrow(/Templates dir not found/);
+  });
+});

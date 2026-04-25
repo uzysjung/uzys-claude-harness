@@ -1,63 +1,143 @@
 import { describe, expect, it, vi } from "vitest";
-import { installAction, runInstall } from "../src/commands/install.js";
+import { installAction, specFromOptions } from "../src/commands/install.js";
+import type { InstallReport } from "../src/installer.js";
+import type { InstallSpec } from "../src/types.js";
 
-describe("runInstall", () => {
-  it("returns ok=true with default cli=claude when --cli omitted", () => {
-    const result = runInstall({});
+const fakeReport: InstallReport = {
+  filesCopied: 5,
+  dirsCopied: 2,
+  skipped: 0,
+  backup: null,
+  installedTracks: ["tooling"],
+  mcpServers: ["context7"],
+};
+
+describe("specFromOptions", () => {
+  it("returns ok=true with valid options", () => {
+    const result = specFromOptions({ cli: "codex", track: ["tooling"] });
     expect(result.ok).toBe(true);
-    expect(result.cli).toBe("claude");
-    expect(result.message).toContain("placeholder");
+    expect(result.cli).toBe("codex");
   });
 
   it.each(["claude", "codex", "both"] as const)("accepts %s as a valid --cli", (mode) => {
-    const result = runInstall({ cli: mode });
+    const result = specFromOptions({ cli: mode, track: ["tooling"] });
     expect(result.ok).toBe(true);
     expect(result.cli).toBe(mode);
   });
 
   it("rejects an unknown --cli value with ok=false", () => {
-    const result = runInstall({ cli: "rust" });
+    const result = specFromOptions({ cli: "rust", track: ["tooling"] });
     expect(result.ok).toBe(false);
-    expect(result.cli).toBe("claude");
     expect(result.message).toContain("must be one of");
     expect(result.message).toContain("rust");
   });
 
-  it("preserves user-provided options without mutation", () => {
-    const opts = { cli: "codex" as const, track: ["tooling"], withTauri: true };
-    runInstall(opts);
-    expect(opts.cli).toBe("codex");
-    expect(opts.track).toEqual(["tooling"]);
-    expect(opts.withTauri).toBe(true);
+  it("rejects when --track is missing/empty", () => {
+    const noTrack = specFromOptions({ cli: "claude" });
+    expect(noTrack.ok).toBe(false);
+    expect(noTrack.message).toContain("--track is required");
+
+    const empty = specFromOptions({ cli: "claude", track: [] });
+    expect(empty.ok).toBe(false);
+  });
+
+  it("rejects an unknown track name", () => {
+    const result = specFromOptions({ cli: "claude", track: ["bogus"] });
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain("Unknown track");
+  });
+
+  it("defaults --cli to claude when omitted but track is valid", () => {
+    const result = specFromOptions({ track: ["tooling"] });
+    expect(result.ok).toBe(true);
+    expect(result.cli).toBe("claude");
   });
 });
 
 describe("installAction", () => {
-  it("logs success messages on valid options", () => {
+  it("logs install report on success", () => {
     const log = vi.fn();
     const err = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    installAction({ cli: "codex", track: ["tooling"] }, { log, err, exit });
+    const runPipeline = vi.fn((_spec: InstallSpec, _root: string) => fakeReport);
+    installAction(
+      { cli: "codex", track: ["tooling"], projectDir: "/tmp/p" },
+      { log, err, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
     expect(err).not.toHaveBeenCalled();
     expect(exit).not.toHaveBeenCalled();
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("placeholder"));
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("CLI: codex"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Install complete"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("tooling"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Files copied"));
+    expect(runPipeline).toHaveBeenCalledOnce();
   });
 
   it("calls err + exit(1) on invalid --cli", () => {
     const log = vi.fn();
     const err = vi.fn();
     const exit = vi.fn() as unknown as (code: number) => never;
-    installAction({ cli: "rust" }, { log, err, exit });
+    const runPipeline = vi.fn();
+    installAction(
+      { cli: "rust", track: ["tooling"] },
+      { log, err, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
     expect(err).toHaveBeenCalledWith(expect.stringContaining("must be one of"));
     expect(exit).toHaveBeenCalledWith(1);
-    // Success log should NOT have been emitted after the error path
-    expect(log).not.toHaveBeenCalled();
+    expect(runPipeline).not.toHaveBeenCalled();
   });
 
-  it("falls back to console.log/console.error when deps omitted", () => {
-    // Smoke test — we don't capture output, but we verify the call doesn't throw
-    // for the valid path. (Default exit would terminate the process; covered by mock above.)
-    expect(() => installAction({ cli: "claude" })).not.toThrow();
+  it("calls err + exit(1) when pipeline throws", () => {
+    const log = vi.fn();
+    const err = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => {
+      throw new Error("boom");
+    });
+    installAction(
+      { cli: "claude", track: ["tooling"] },
+      { log, err, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    expect(err).toHaveBeenCalledWith(expect.stringContaining("install failed"));
+    expect(err).toHaveBeenCalledWith(expect.stringContaining("boom"));
+    expect(exit).toHaveBeenCalledWith(1);
+  });
+
+  it("normalizes --with-prune → --with-ecc=true in spec", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    let captured: InstallSpec | undefined;
+    const runPipeline = vi.fn((spec: InstallSpec) => {
+      captured = spec;
+      return fakeReport;
+    });
+    installAction(
+      { cli: "claude", track: ["tooling"], withPrune: true, projectDir: "/p" },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    expect(captured?.options.withPrune).toBe(true);
+    expect(captured?.options.withEcc).toBe(true);
+  });
+
+  it("logs backup path when pipeline returns one", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => ({ ...fakeReport, backup: "/backup/.claude.bak" }));
+    installAction(
+      { cli: "claude", track: ["tooling"] },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Backup"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("/backup/.claude.bak"));
+  });
+
+  it("logs '(none)' for MCP servers when list is empty", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline = vi.fn(() => ({ ...fakeReport, mcpServers: [] }));
+    installAction(
+      { cli: "claude", track: ["tooling"] },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("(none)"));
   });
 });

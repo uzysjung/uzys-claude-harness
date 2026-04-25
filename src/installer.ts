@@ -1,0 +1,128 @@
+import { chmodSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { backupDir, copyDir, copyFile, ensureProjectSkeleton } from "./fs-ops.js";
+import { buildManifest } from "./manifest.js";
+import { composeMcpJson, writeMcpJson } from "./mcp-merge.js";
+import type { InstallSpec } from "./types.js";
+
+export interface InstallContext {
+  /** Path to the harness repo (where `templates/` lives). */
+  harnessRoot: string;
+  /** Target project directory. */
+  projectDir: string;
+  spec: InstallSpec;
+  /** When true, an existing .claude/ is renamed to a timestamped backup before install. */
+  backup?: boolean;
+}
+
+export interface InstallReport {
+  filesCopied: number;
+  dirsCopied: number;
+  skipped: number;
+  backup: string | null;
+  installedTracks: string[];
+  mcpServers: string[];
+}
+
+/**
+ * Run the installation pipeline. Pure function modulo filesystem side effects.
+ */
+export function runInstall(ctx: InstallContext): InstallReport {
+  const { harnessRoot, projectDir, spec, backup = false } = ctx;
+  const templatesDir = join(harnessRoot, "templates");
+
+  if (!existsSync(templatesDir)) {
+    throw new Error(`Templates dir not found: ${templatesDir}`);
+  }
+
+  const claudeDir = join(projectDir, ".claude");
+  const backupPath = backup ? backupDir(claudeDir) : null;
+  ensureProjectSkeleton(projectDir);
+
+  const manifest = buildManifest({
+    tracks: spec.tracks,
+    withTauri: spec.options.withTauri,
+  });
+
+  let filesCopied = 0;
+  let dirsCopied = 0;
+  let skipped = 0;
+  for (const entry of manifest) {
+    if (!entry.applies({ tracks: spec.tracks, withTauri: spec.options.withTauri })) {
+      continue;
+    }
+    const source = join(templatesDir, entry.source);
+    const target = join(projectDir, entry.target);
+    if (!existsSync(source)) {
+      skipped += 1;
+      continue;
+    }
+    if (entry.type === "file") {
+      copyFile(source, target);
+      filesCopied += 1;
+    } else {
+      copyDir(source, target);
+      dirsCopied += 1;
+    }
+  }
+
+  // chmod +x on hook scripts (cp does not preserve exec bit when source is non-exec)
+  const hookDir = join(projectDir, ".claude/hooks");
+  if (existsSync(hookDir)) {
+    chmodHooksSync(hookDir);
+  }
+
+  // Compose .mcp.json from template + track-mcp-map.tsv
+  const mcpResult = composeAndWriteMcp(harnessRoot, projectDir, spec);
+  // Write metadata file used by detect_install_state on next run
+  writeInstalledTracks(projectDir, spec.tracks);
+
+  return {
+    filesCopied,
+    dirsCopied,
+    skipped,
+    backup: backupPath,
+    installedTracks: [...spec.tracks].sort(),
+    mcpServers: Object.keys(mcpResult.mcpServers).sort(),
+  };
+}
+
+function composeAndWriteMcp(
+  harnessRoot: string,
+  projectDir: string,
+  spec: InstallSpec,
+): { mcpServers: Record<string, unknown> } {
+  const mcpPath = join(projectDir, ".mcp.json");
+  const composed = composeMcpJson({
+    templateMcpPath: join(harnessRoot, "templates/mcp.json"),
+    trackMapPath: join(harnessRoot, "templates/track-mcp-map.tsv"),
+    existingPath: mcpPath,
+    tracks: spec.tracks,
+  });
+  writeMcpJson(mcpPath, composed);
+  return composed;
+}
+
+function writeInstalledTracks(projectDir: string, tracks: ReadonlyArray<string>): void {
+  const path = join(projectDir, ".claude/.installed-tracks");
+  mkdirSync(dirname(path), { recursive: true });
+  const sorted = [...new Set(tracks)].sort().join("\n");
+  writeFileSync(path, `${sorted}\n`);
+}
+
+function chmodHooksSync(hookDir: string): void {
+  for (const file of listHookFiles(hookDir)) {
+    try {
+      chmodSync(file, 0o755);
+    } catch {
+      // Best-effort; many platforms (Windows in particular) ignore mode bits.
+    }
+  }
+}
+
+function listHookFiles(hookDir: string): string[] {
+  // Hooks are flat shell scripts — avoid pulling glob deps.
+  return readdirSync(hookDir, { withFileTypes: true })
+    .filter((e) => e.isFile() && e.name.endsWith(".sh"))
+    .map((e) => resolve(hookDir, e.name));
+}
