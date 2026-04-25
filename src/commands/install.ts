@@ -108,6 +108,29 @@ export function installAction(options: InstallOptions, deps: InstallActionDeps =
     projectDir: resolve(options.projectDir ?? process.cwd()),
   };
 
+  executeSpec(spec, { log, err, exit, runPipeline, resolveHarnessRoot });
+}
+
+export interface ExecuteSpecDeps {
+  log?: (msg: string) => void;
+  err?: (msg: string) => void;
+  exit?: (code: number) => never;
+  runPipeline?: (spec: InstallSpec, harnessRoot: string) => InstallReport;
+  resolveHarnessRoot?: () => string;
+}
+
+/**
+ * Run the install pipeline for a fully-validated InstallSpec and render the
+ * report. Shared by the `install` flag-mode command and the default
+ * (interactive) action so both have identical post-install output.
+ */
+export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void {
+  const log = deps.log ?? console.log;
+  const err = deps.err ?? console.error;
+  const exit = deps.exit ?? ((code: number) => process.exit(code) as never);
+  const runPipeline = deps.runPipeline ?? defaultRunPipeline;
+  const resolveHarnessRoot = deps.resolveHarnessRoot ?? defaultHarnessRoot;
+
   let report: InstallReport;
   try {
     report = runPipeline(spec, resolveHarnessRoot());
@@ -158,6 +181,8 @@ function defaultHarnessRoot(): string {
   // The bundled CLI lives at <root>/dist/index.js. import.meta.url + ../ resolves to <root>.
   return resolve(new URL(".", import.meta.url).pathname, "..");
 }
+
+export { defaultHarnessRoot };
 
 export function registerInstallCommand(cli: Cli): void {
   cli

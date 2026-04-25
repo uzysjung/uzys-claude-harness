@@ -1,8 +1,12 @@
 import { cac } from "cac";
-import { registerInstallCommand } from "./commands/install.js";
+import {
+  type ExecuteSpecDeps,
+  executeSpec,
+  registerInstallCommand,
+} from "./commands/install.js";
 import { type InteractiveResult, runInteractive } from "./interactive.js";
 
-export const VERSION = "0.2.0";
+export const VERSION = "0.3.0";
 
 export type Cli = ReturnType<typeof cac>;
 
@@ -11,17 +15,21 @@ export interface DefaultActionDeps {
   err?: (msg: string) => void;
   exit?: (code: number) => never;
   run?: (cwd: string) => Promise<InteractiveResult>;
+  /** Override the install pipeline + report renderer (used by tests). */
+  execute?: (spec: NonNullable<InteractiveResult["spec"]>, deps: ExecuteSpecDeps) => void;
 }
 
 /**
- * Pure default action handler. Easy to test directly.
- * The cac action callback delegates here.
+ * Default action — runs the interactive flow, then executes the install
+ * pipeline with the captured spec. Mirrors the `install` flag-mode command's
+ * post-install report.
  */
 export async function defaultAction(deps: DefaultActionDeps = {}): Promise<void> {
   const log = deps.log ?? console.log;
   const err = deps.err ?? console.error;
   const exit = deps.exit ?? ((code: number) => process.exit(code) as never);
   const run = deps.run ?? ((cwd: string) => runInteractive(cwd));
+  const execute = deps.execute ?? executeSpec;
 
   const result = await run(process.cwd());
   if (!result.ok) {
@@ -32,8 +40,12 @@ export async function defaultAction(deps: DefaultActionDeps = {}): Promise<void>
     exit(result.reason === "no-tty" ? 2 : 0);
     return;
   }
-  // ok=true; Phase C wires the install pipeline here.
-  log("Spec captured (Phase B). Phase C will run the install pipeline.");
+  if (!result.spec) {
+    err("Internal error: interactive returned ok=true without a spec.");
+    exit(1);
+    return;
+  }
+  execute(result.spec, { log, err, exit });
 }
 
 export function buildCli(): Cli {

@@ -118,7 +118,7 @@ export async function runInteractive(
     return { ok: false, reason: "cancelled" };
   }
 
-  prompts.outro("Spec captured. Installation pipeline runs in Phase C.");
+  prompts.outro("Running install pipeline...");
   return {
     ok: true,
     spec: { tracks, options, cli, projectDir },
