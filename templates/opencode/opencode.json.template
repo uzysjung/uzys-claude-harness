@@ -1,0 +1,42 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    ".claude/rules/*.md",
+    "docs/SPEC.md",
+    "docs/specs/*.md"
+  ],
+  "mcp": {},
+  "command": {},
+  "agent": {
+    "build": {
+      "mode": "primary",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    },
+    "plan": {
+      "mode": "primary",
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": false
+      }
+    },
+    "code-reviewer": {
+      "mode": "subagent",
+      "description": "5축 리뷰 (correctness/readability/architecture/security/performance)",
+      "tools": {
+        "write": false,
+        "edit": false
+      }
+    }
+  },
+  "plugin": [
+    "./.opencode/plugins/uzys-harness.ts"
+  ],
+  "permission": {
+    "question": "allow"
+  }
+}

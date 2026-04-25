@@ -142,6 +142,10 @@ export function installAction(options: InstallOptions, deps: InstallActionDeps =
     const summary = `AGENTS.md + .codex/{config.toml, ${report.codex.hookFiles.length} hooks} + ${report.codex.skillFiles.length} skills`;
     log(status.success(`${keyValue("Codex", summary).trimStart()}`));
   }
+  if (report.opencode) {
+    const summary = `AGENTS.md + opencode.json + .opencode/{${report.opencode.commandFiles.length} commands, plugin}`;
+    log(status.success(`${keyValue("OpenCode", summary).trimStart()}`));
+  }
   log("");
   log(c.bold(c.green("Install complete.")));
 }
@@ -159,7 +163,9 @@ export function registerInstallCommand(cli: Cli): void {
   cli
     .command("install", "Install harness assets into a project")
     .option("--track <name>", "Track to install (repeatable)", { type: [String] })
-    .option("--cli <mode>", "Target CLI: claude | codex | both", { default: "claude" })
+    .option("--cli <mode>", "Target CLI: claude | codex | opencode | both | all", {
+      default: "claude",
+    })
     .option("--project-dir <path>", "Target project directory", { default: process.cwd() })
     .option("--with-tauri", "Include tauri.md rule")
     .option("--with-gsd", "Include GSD orchestrator")

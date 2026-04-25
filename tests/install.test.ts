@@ -11,6 +11,7 @@ const fakeReport: InstallReport = {
   installedTracks: ["tooling"],
   mcpServers: ["context7"],
   codex: null,
+  opencode: null,
 };
 
 describe("specFromOptions", () => {
@@ -20,11 +21,14 @@ describe("specFromOptions", () => {
     expect(result.cli).toBe("codex");
   });
 
-  it.each(["claude", "codex", "both"] as const)("accepts %s as a valid --cli", (mode) => {
-    const result = specFromOptions({ cli: mode, track: ["tooling"] });
-    expect(result.ok).toBe(true);
-    expect(result.cli).toBe(mode);
-  });
+  it.each(["claude", "codex", "opencode", "both", "all"] as const)(
+    "accepts %s as a valid --cli",
+    (mode) => {
+      const result = specFromOptions({ cli: mode, track: ["tooling"] });
+      expect(result.ok).toBe(true);
+      expect(result.cli).toBe(mode);
+    },
+  );
 
   it("rejects an unknown --cli value with ok=false", () => {
     const result = specFromOptions({ cli: "rust", track: ["tooling"] });

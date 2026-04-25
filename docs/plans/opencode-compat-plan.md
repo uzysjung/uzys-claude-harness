@@ -53,8 +53,8 @@
 
 | Task | 산출 | AC |
 |------|------|-----|
-| **B1** `templates/opencode/` 스캐폴드 | `templates/opencode/AGENTS.md`(Codex AGENTS.md 재사용) + `opencode.json.template` + `.opencode/command/` 디렉토리 + `plugin/` 디렉토리 | OpenCode CLI 0.x 호환 `$schema` 고정 |
-| **B2** Slash prefix 실측 결정 (OQ2) | `templates/opencode/.opencode/command/uzys-spec.md` (또는 `uzys:spec.md`) | OpenCode CLI 실측 — 콜론 허용 여부 확인 후 결정. ADR-004에 기록 |
+| **B1** `templates/opencode/` 스캐폴드 | `templates/opencode/AGENTS.md`(Codex AGENTS.md 재사용) + `opencode.json.template` + `.opencode/commands/` 디렉토리 + `plugin/` 디렉토리 | OpenCode CLI 0.x 호환 `$schema` 고정 |
+| **B2** Slash prefix 실측 결정 (OQ2) | `templates/opencode/.opencode/commands/uzys-spec.md` (또는 `uzys:spec.md`) | OpenCode CLI 실측 — 콜론 허용 여부 확인 후 결정. ADR-004에 기록 |
 | **B3** `opencode.json` 스키마 고정 | `templates/opencode/opencode.json.template` | `mcp` + `command` + `agent` + `instructions` 4개 키 검증. `$schema: https://opencode.ai/config.json` |
 
 **Phase B 종료 게이트**: B1~B3 산출 + OQ2 Closed.
@@ -63,8 +63,8 @@
 
 | Task | 산출 | AC |
 |------|------|-----|
-| **C1** TS 모듈 `src/opencode/transform.ts` | input SSOT (CLAUDE.md, `.mcp.json`, `.claude/rules/*`, `.claude/commands/uzys/*`) → output 4종 (AGENTS.md, opencode.json, .opencode/command/*.md, plugin scaffold) | `src/codex/transform.ts` 패턴 일관 + unit test 6+ |
-| **C2** `src/opencode/skills.ts` | 6 uzys skill을 `.opencode/command/uzys-*.md` 포맷으로 정규화 | Codex `src/codex/skills.ts`와 90%+ 본문 공유 (CLI별 prefix 분기만) |
+| **C1** TS 모듈 `src/opencode/transform.ts` | input SSOT (CLAUDE.md, `.mcp.json`, `.claude/rules/*`, `.claude/commands/uzys/*`) → output 4종 (AGENTS.md, opencode.json, .opencode/commands/*.md, plugin scaffold) | `src/codex/transform.ts` 패턴 일관 + unit test 6+ |
+| **C2** `src/opencode/skills.ts` | 6 uzys skill을 `.opencode/commands/uzys-*.md` 포맷으로 정규화 | Codex `src/codex/skills.ts`와 90%+ 본문 공유 (CLI별 prefix 분기만) |
 | **C3** `src/opencode/mcp.ts` | `.mcp.json` → `opencode.json` `mcp.<name>` 변환 | 1:1 매핑 unit test (context7, github 2종 최소) |
 | **C4** TS 빌드 + 기존 테스트 보존 | `npm run ci` + `npm run build` | 192 → 200+ tests, 모두 PASS, regression 0 |
 
@@ -76,7 +76,7 @@
 |------|------|-----|
 | **D1** TS CLI `--cli` 옵션 확장 | `src/cli.ts` + `src/commands/install.ts` — `--cli=opencode` + `--cli=all` 추가 | 기존 `claude / codex / both` regression 0. `--cli=opencode` 단독 실행 + `--cli=all`이 3 CLI 전부 생성 |
 | **D2** 인터랙티브 모드 OpenCode 분기 | `src/interactive.ts` — Codex 분기 패턴 답습 | 인터랙티브 prompt에 OpenCode 옵션 추가 + 무인 모드 회귀 0 |
-| **D3** Install pipeline 통합 테스트 | `tests/install.test.ts` (또는 신규 `tests/opencode-install.test.ts`) | tooling Track 무인 설치 → AGENTS.md + opencode.json + .opencode/command/* + plugin 생성 검증 |
+| **D3** Install pipeline 통합 테스트 | `tests/install.test.ts` (또는 신규 `tests/opencode-install.test.ts`) | tooling Track 무인 설치 → AGENTS.md + opencode.json + .opencode/commands/* + plugin 생성 검증 |
 
 **Phase D 종료 게이트**: D1~D3 + AC1 (무인 설치 exit=0) 임시 검증.
 
@@ -165,7 +165,7 @@ docs/decisions/ADR-004-opencode-plugin-mapping.md      [A3 v1, E3 v2]
 templates/opencode/                                    [B1, B3, E1]
   AGENTS.md
   opencode.json.template
-  .opencode/command/uzys-{spec,plan,build,test,review,ship}.md
+  .opencode/commands/uzys-{spec,plan,build,test,review,ship}.md
   plugin/uzys-harness.ts
 src/opencode/                                          [C1, C2, C3]
   transform.ts

@@ -5,6 +5,61 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.3.0] — 2026-04-25
+
+### Added — OpenCode CLI 호환 (2차)
+
+OpenCode CLI ([anomalyco/opencode](https://opencode.ai)) 풀 하네스 복제. Claude SSOT, OpenCode는 transform + plugin으로 파생. Codex 1차(v0.2.0 / v27.19.0)와 독립 SPEC.
+
+- **Phase A**: Plugin lifecycle 정밀 리서치 + 호환 매트릭스 + ADR-004 v1 (Proposed) (PR #24)
+- **Phase B**: `templates/opencode/` 스캐폴드 — AGENTS.md.template + opencode.json.template + 6 commands stub + plugin stub. **OQ2 Closed** = `/uzys-spec` (hyphen) 채택. Clarification CR — `commands/`/`plugins/` plural 정정
+- **Phase C**: TS 모듈 `src/opencode/` 4종 — transform / agents-md / opencode-json / commands. 198 → 218 tests
+- **Phase D**: TS CLI `--cli` 확장 — `["claude","codex","opencode","both","all"]`. 인터랙티브 모드 OpenCode 분기 자동 반영. 218 → 226 tests
+- **Phase E1**: Plugin 본문 작성 — `templates/opencode/.opencode/plugins/uzys-harness.ts` (110줄, self-contained). 3 hook 매핑 (`tool.execute.before` / `tool.execute.after` / `messageCreated`). `src/opencode/plugin-helpers.ts` 테스트 미러. 226 → 248 tests
+- **Phase E3**: ADR-004 Status: Proposed → Accepted (사용자 승인)
+- **Phase F**: Dogfood 2 Track (tooling + csr-fastapi) 무인 설치 100% (`docs/evals/opencode-install-2026-04-25.md`)
+- **Phase G**: README en/ko OpenCode 섹션 + USAGE.md 시나리오 + stale `setup-harness.sh` 26곳 일괄 청소
+
+### Changed — README/USAGE stale 청소 (v0.2.0 누락분 일괄 처리)
+
+`scripts/setup-harness.sh` 폐기 후 누락된 26곳 텍스트 정리:
+- `README.md` 9곳 → `claude-harness install` 또는 generic "the installer"
+- `README.ko.md` 10곳 동일
+- `docs/USAGE.md` 7곳 동일
+- `claude-to-codex.sh` 2곳 → `src/codex/transform.ts`
+
+### Hook 매핑 (3종)
+
+| Claude hook | OpenCode plugin hook | 동작 |
+|-------------|----------------------|------|
+| `PreToolUse` (gate-check) | `tool.execute.before` | 게이트 위반 시 throw |
+| `PostToolUse` (spec-drift) | `tool.execute.after` | spec 편집 시 로그 |
+| `UserPromptSubmit` (HITO) | `messageCreated` filter user | HITO 카운터 |
+
+Codex 1차의 shell wrapper 우회와 달리 OpenCode plugin은 **직접 1:1 매핑**.
+
+### CLI 옵션
+
+```
+--cli=claude    Claude only (default)
+--cli=codex     Claude + Codex
+--cli=opencode  Claude + OpenCode (NEW)
+--cli=both      Claude + Codex (Codex 1차 호환 유지)
+--cli=all       Claude + Codex + OpenCode (NEW)
+```
+
+### Test/Coverage
+
+- 198 → 248 tests (+50, regression 0 — Codex 14 + Claude 184 모두 유지)
+- Coverage stmt 97.0%, branch 91.73% (≥90% threshold)
+- Build 102.55 → 109.01 KB (+6.46 KB OpenCode 모듈)
+
+### DO NOT CHANGE 준수
+
+- `templates/codex/` + `src/codex/` 미수정 (Codex 1차 산출물 보호)
+- `~/.claude/`, `~/.codex/`, `~/.opencode/` 글로벌 미터치 (D16)
+- `docs/SPEC.md` Phase 1 Finalization 영역 미변경
+
 ## [v0.2.0] — 2026-04-25
 
 ### Changed (CLI rewrite — bash → TypeScript, cutover)

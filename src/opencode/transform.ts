@@ -1,0 +1,115 @@
+/**
+ * OpenCode transform orchestrator — SSOT (templates/CLAUDE.md, .mcp.json,
+ * templates/commands/uzys/*.md) → OpenCode 자산 4종.
+ *
+ * Inputs:
+ *   - harnessRoot:  repository root (templates/ + .mcp.json)
+ *   - projectDir:   target project to receive AGENTS.md + opencode.json + .opencode/
+ *
+ * Outputs (under projectDir):
+ *   - AGENTS.md
+ *   - opencode.json
+ *   - .opencode/commands/uzys-{phase}.md   (6 commands)
+ *   - .opencode/plugins/uzys-harness.ts    (1 plugin stub, Phase E1에서 본문 작성)
+ *
+ * SPEC: docs/specs/opencode-compat.md
+ * Phase: C1 (transform orchestrator)
+ */
+
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, join } from "node:path";
+import { ensureDir } from "../fs-ops.js";
+import type { McpJson } from "../mcp-merge.js";
+import { renderAgentsMd } from "./agents-md.js";
+import { renderCommand } from "./commands.js";
+import { renderOpencodeJson } from "./opencode-json.js";
+
+export interface OpencodeTransformParams {
+  harnessRoot: string;
+  projectDir: string;
+}
+
+export interface OpencodeTransformReport {
+  agentsMdPath: string;
+  opencodeJsonPath: string;
+  commandFiles: string[];
+  pluginPath: string;
+}
+
+const PHASES = ["spec", "plan", "build", "test", "review", "ship"];
+
+export function runOpencodeTransform(params: OpencodeTransformParams): OpencodeTransformReport {
+  const { harnessRoot, projectDir } = params;
+
+  const claudeMd = readRequired(join(harnessRoot, "templates/CLAUDE.md"));
+  const agentsTemplate = readRequired(join(harnessRoot, "templates/opencode/AGENTS.md.template"));
+  const opencodeTemplate = readRequired(
+    join(harnessRoot, "templates/opencode/opencode.json.template"),
+  );
+  const projectName = basename(projectDir);
+  const mcp = readOptionalJson(join(harnessRoot, ".mcp.json"));
+
+  // 1. AGENTS.md
+  ensureDir(projectDir);
+  const agentsMdPath = join(projectDir, "AGENTS.md");
+  writeFileSync(agentsMdPath, renderAgentsMd({ template: agentsTemplate, claudeMd, projectName }));
+
+  // 2. opencode.json
+  const opencodeJsonPath = join(projectDir, "opencode.json");
+  writeFileSync(opencodeJsonPath, renderOpencodeJson({ template: opencodeTemplate, mcp }));
+
+  // 3. .opencode/commands/uzys-{phase}.md
+  const cmdDir = join(projectDir, ".opencode/commands");
+  ensureDir(cmdDir);
+  const commandFiles: string[] = [];
+  for (const phase of PHASES) {
+    const cmdSrc = join(harnessRoot, "templates/commands/uzys", `${phase}.md`);
+    let source = "";
+    if (existsSync(cmdSrc)) {
+      source = readFileSync(cmdSrc, "utf8");
+    } else {
+      const fallback = join(
+        harnessRoot,
+        "templates/opencode/.opencode/commands",
+        `uzys-${phase}.md`,
+      );
+      if (existsSync(fallback)) {
+        source = readFileSync(fallback, "utf8");
+      }
+    }
+    const target = join(cmdDir, `uzys-${phase}.md`);
+    writeFileSync(target, renderCommand({ source, phase }));
+    commandFiles.push(target);
+  }
+
+  // 4. .opencode/plugins/uzys-harness.ts (static copy from template; Phase E1 fills body)
+  const pluginDir = join(projectDir, ".opencode/plugins");
+  ensureDir(pluginDir);
+  const pluginPath = join(pluginDir, "uzys-harness.ts");
+  const pluginSrc = join(harnessRoot, "templates/opencode/.opencode/plugins/uzys-harness.ts");
+  if (existsSync(pluginSrc)) {
+    copyFileSync(pluginSrc, pluginPath);
+  } else {
+    writeFileSync(pluginPath, "// uzys-harness plugin stub (template missing)\n");
+  }
+
+  return { agentsMdPath, opencodeJsonPath, commandFiles, pluginPath };
+}
+
+function readRequired(path: string): string {
+  if (!existsSync(path)) {
+    throw new Error(`OpenCode transform: required source missing: ${path}`);
+  }
+  return readFileSync(path, "utf8");
+}
+
+function readOptionalJson(path: string): McpJson | null {
+  if (!existsSync(path)) {
+    return null;
+  }
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as McpJson;
+  } catch {
+    return null;
+  }
+}

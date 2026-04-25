@@ -104,7 +104,7 @@ In non-TTY environments without `--track`, installer errors out with `--track re
 
 That single line does:
 1. Shallow-clones the harness to a temp dir
-2. Runs `setup-harness.sh` (interactive or via flags)
+2. Runs `claude-harness install` (interactive or via flags)
 3. Cleans up the temp dir
 4. Records installed Tracks to `.claude/.installed-tracks` (used for next install detection)
 
@@ -186,7 +186,7 @@ Use this when you know upfront you need multiple tracks. Faster than two separat
 
 ### Optional — install ECC plugin project-scoped
 
-In an **interactive terminal** (or `curl | bash` — works via `/dev/tty`), `setup-harness.sh` asks:
+In an **interactive terminal** (or `curl | bash` — works via `/dev/tty`), the installer asks:
 
 ```
 [ECC] Install ECC plugin project-scoped (copy)? [y/N]
@@ -205,7 +205,7 @@ The global `~/.claude/` is never touched.
 
 ### Interactive prompts — what asks, when, how to skip
 
-`setup-harness.sh` has 4 optional prompts. Each has an explicit flag for unattended/CI use.
+`claude-harness install` has 4 optional prompts. Each has an explicit flag for unattended/CI use.
 
 | Prompt | When does it appear? | Auto-y flag |
 |--------|---------------------|-------------|
@@ -219,7 +219,7 @@ The global `~/.claude/` is never touched.
 
 | Environment | TTY available? | Prompts shown? |
 |-------------|:-:|:-:|
-| Local terminal `bash setup-harness.sh ...` | ✅ | ✅ |
+| Local terminal `claude-harness install ...` | ✅ | ✅ |
 | **`curl … \| bash …` from terminal** | ✅ (via `/dev/tty`) | ✅ |
 | CI runner / SSH `-T` no-tty | ❌ | ❌ (auto-skip; use flags) |
 
@@ -379,11 +379,11 @@ Flag mode (CI / automation):
 npx -y github:uzysjung/uzys-claude-harness --track tooling --cli codex --project-dir .
 ```
 
-`--cli` accepts `claude` (default), `codex`, or `both`. Default is `claude` so existing flows are unaffected.
+`--cli` accepts `claude` (default), `codex`, `opencode`, `both` (Claude+Codex), or `all` (Claude+Codex+OpenCode). Default is `claude` so existing flows are unaffected.
 
 ### What gets installed
 
-For `--cli=codex` or `--cli=both`, after the standard install completes the harness runs `scripts/claude-to-codex.sh` to generate:
+For `--cli=codex`, `--cli=both`, or `--cli=all`, after the standard install completes the harness runs `src/codex/transform.ts` to generate:
 
 ```
 <project>/
@@ -423,6 +423,82 @@ Both default to **No**. Decline = no global mutation. Accept on the second one i
 - Compatibility matrix: [`docs/research/codex-compat-matrix-2026-04-24.md`](./docs/research/codex-compat-matrix-2026-04-24.md)
 - Dogfood verification: [`docs/evals/codex-install-2026-04-25.md`](./docs/evals/codex-install-2026-04-25.md)
 
+## OpenCode CLI support
+
+Beyond Claude Code and Codex, this harness can install for **[OpenCode](https://opencode.ai)** (anomalyco/opencode 0.x). Claude Code remains the SSOT — OpenCode assets are derived via TS transform + a JS/TS plugin for hook lifecycle.
+
+### Install for OpenCode
+
+Interactive (recommended):
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)
+# Pick: ① tooling   |   2c) CLI: ③ OpenCode (or ⑤ All)
+```
+
+Flag mode (CI / automation):
+```bash
+npx -y github:uzysjung/uzys-claude-harness install --track tooling --cli opencode --project-dir .
+```
+
+`--cli=all` installs Claude + Codex + OpenCode in one command.
+
+### What gets installed
+
+For `--cli=opencode` or `--cli=all`, after the standard install completes the harness runs `src/opencode/transform.ts` to generate:
+
+```
+<project>/
+├── AGENTS.md                                      # generated from .claude/CLAUDE.md (slash rename)
+├── opencode.json                                  # $schema + mcp + command + agent + plugin + permission
+└── .opencode/
+    ├── commands/
+    │   ├── uzys-spec.md                          # frontmatter: description + agent
+    │   ├── uzys-plan.md
+    │   ├── uzys-build.md
+    │   ├── uzys-test.md
+    │   ├── uzys-review.md
+    │   └── uzys-ship.md
+    └── plugins/
+        └── uzys-harness.ts                       # 3 hook plugin (TS, self-contained)
+```
+
+No global mutation — `~/.opencode/` is never touched (D16).
+
+### Hook lifecycle (3 hook mapping)
+
+OpenCode plugin API supports rich lifecycle hooks. The bundled `uzys-harness.ts` plugin maps Claude Code hooks 1:1:
+
+| Claude hook | OpenCode plugin hook | Behavior |
+|-------------|----------------------|----------|
+| `PreToolUse` (gate-check) | `tool.execute.before` | Throws if `/uzys-<phase>` runs before its prerequisite gate is complete |
+| `PostToolUse` (spec-drift) | `tool.execute.after` | Logs to `.claude/evals/spec-drift-YYYY-MM-DD.log` when `docs/SPEC.md` or `docs/specs/*.md` is edited |
+| `UserPromptSubmit` (HITO) | `messageCreated` (filter `role==="user"`) | Appends timestamp to `.claude/evals/hito-YYYY-MM-DD.log` (privacy: prompt body never logged) |
+
+Slash commands: filename = command name (`uzys-spec.md` → `/uzys-spec`). Hyphenated for filesystem compatibility (Phase B2 decision).
+
+### Slash commands
+
+```
+/uzys-spec     Define
+/uzys-plan     Plan
+/uzys-build    Build
+/uzys-test     Verify
+/uzys-review   Review
+/uzys-ship     Ship
+```
+
+### Known limitations (Phase F dogfood — live verification pending)
+
+- Plugin runtime (Bun vs Node) — `node:fs` + `@opencode-ai/plugin` 1.14.24 used; both runtimes supported.
+- Live `tool.execute.before` argument signature — 3 fallback paths in plugin (`input.command` / `input.tool` / `input.args.command`); confirmed via static tests, live signature verification pending.
+
+### References
+
+- Full SPEC: [`docs/specs/opencode-compat.md`](./docs/specs/opencode-compat.md)
+- Plugin mapping ADR: [`docs/decisions/ADR-004-opencode-plugin-mapping.md`](./docs/decisions/ADR-004-opencode-plugin-mapping.md) (Accepted)
+- Compatibility matrix: [`docs/research/opencode-compat-matrix-2026-04-25.md`](./docs/research/opencode-compat-matrix-2026-04-25.md)
+- Dogfood verification: [`docs/evals/opencode-install-2026-04-25.md`](./docs/evals/opencode-install-2026-04-25.md)
+
 ## 11 Behavioral Principles
 
 Distilled from Karpathy's LLM observations + Anthropic Harness Design + production agent operations:
@@ -453,7 +529,7 @@ Plus a **Decision Making meta-rule**: every value judgment must be backed by an 
 
 ## Optional ECC integration
 
-[Everything-Claude-Code (ECC)](https://github.com/affaan-m/everything-claude-code) bundles 300+ skills/agents/commands. The `scripts/setup-harness.sh` end-of-flow offers a 2-step prompt:
+[Everything-Claude-Code (ECC)](https://github.com/affaan-m/everything-claude-code) bundles 300+ skills/agents/commands. The `claude-harness install` end-of-flow offers a 2-step prompt:
 
 ```
 [ECC] Plugin 프로젝트 스코프 설치 (선택사항)
@@ -466,7 +542,7 @@ Run with `claude --plugin-dir .claude/local-plugins/ecc` afterwards. Global `~/.
 
 ## Installation report
 
-After `scripts/setup-harness.sh` completes you get a verification table:
+After `claude-harness install` completes you get a verification table:
 
 ```
 │ Category         │ Found  │ Expected │ Status │
@@ -504,7 +580,7 @@ Locally modified cherry-picks are marked `modified: true` and **never** overwrit
 ## Security model
 
 - **MCP allowlist**: `.mcp-allowlist` file gates every MCP call via `mcp-pre-exec.sh` hook
-- **D16 protection**: `setup-harness.sh --project-dir` blocks `~/.claude/*`, `/etc/*`, system bins
+- **D16 protection**: `claude-harness install --project-dir` blocks `~/.claude/*`, `/etc/*`, system bins
 - **`.env` / credentials shielded**: `protect-files.sh` hook blocks Write/Edit on protected paths
 - **Pre-ship security gate**: `agentshield-gate.sh` runs `npx ecc-agentshield scan` before `/uzys:ship`
 - See [docs/REFERENCE.md §8](./docs/REFERENCE.md#8-보안--신뢰-정책) for the full security policy
@@ -523,7 +599,7 @@ This harness is built around three commitments (see `templates/CLAUDE.md`):
 A. macOS + Linux (incl. WSL) are tested in CI. Native Windows shell is not supported — use WSL.
 
 **Q. Will it touch my global `~/.claude/`?**
-A. No. `setup-harness.sh --project-dir` blocks `~/.claude/*`, `/etc/*`, `/usr/bin/*` etc. (D16 protection). All installation is project-scoped.
+A. No. `claude-harness install --project-dir` blocks `~/.claude/*`, `/etc/*`, `/usr/bin/*` etc. (D16 protection). All installation is project-scoped.
 
 **Q. What if I already installed an older version?**
 A. `npx -y github:uzysjung/uzys-claude-harness --update --project-dir .` — backs up `.claude/` to `.claude.backup-<ts>/`, overwrites only existing files with latest templates, prunes orphans (e.g., deprecated rule files), cleans stale hook references in `settings.json`.
@@ -541,7 +617,7 @@ A. See [CONTRIBUTING.md](./CONTRIBUTING.md) — step-by-step guide for each.
 A. Not yet. Hooks and `settings.json` syntax are Claude Code specific. Most agent-skills (npx skills) work cross-host (Agent Skills standard), but the harness orchestration is Claude-specific.
 
 **Q. The harness feels opinionated. Can I override?**
-A. Yes. After `--update` the harness regenerates files; before, you can edit any `.claude/rules/*.md` or `templates/*` and they stick. `setup-harness.sh` only overwrites on `--update`.
+A. Yes. The interactive installer detects existing installs and prompts before overwriting. You can edit any `.claude/rules/*.md` or `templates/*` and they stick — re-running `claude-harness install` only overwrites when you explicitly choose the "update / 재설치" action.
 
 ## License
 

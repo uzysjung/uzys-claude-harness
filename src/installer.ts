@@ -4,6 +4,7 @@ import { type CodexTransformReport, runCodexTransform } from "./codex/transform.
 import { backupDir, copyDir, copyFile, ensureProjectSkeleton } from "./fs-ops.js";
 import { buildManifest } from "./manifest.js";
 import { composeMcpJson, writeMcpJson } from "./mcp-merge.js";
+import { type OpencodeTransformReport, runOpencodeTransform } from "./opencode/transform.js";
 import type { InstallSpec } from "./types.js";
 
 export interface InstallContext {
@@ -23,8 +24,10 @@ export interface InstallReport {
   backup: string | null;
   installedTracks: string[];
   mcpServers: string[];
-  /** Present when CLI ∈ {codex, both}. */
+  /** Present when CLI ∈ {codex, both, all}. */
   codex: CodexTransformReport | null;
+  /** Present when CLI ∈ {opencode, all}. */
+  opencode: OpencodeTransformReport | null;
 }
 
 /**
@@ -80,10 +83,16 @@ export function runInstall(ctx: InstallContext): InstallReport {
   // Write metadata file used by detect_install_state on next run
   writeInstalledTracks(projectDir, spec.tracks);
 
-  // Codex transform when --cli ∈ {codex, both}
+  // Codex transform when --cli ∈ {codex, both, all}
   let codex: CodexTransformReport | null = null;
-  if (spec.cli === "codex" || spec.cli === "both") {
+  if (spec.cli === "codex" || spec.cli === "both" || spec.cli === "all") {
     codex = runCodexTransform({ harnessRoot, projectDir });
+  }
+
+  // OpenCode transform when --cli ∈ {opencode, all}
+  let opencode: OpencodeTransformReport | null = null;
+  if (spec.cli === "opencode" || spec.cli === "all") {
+    opencode = runOpencodeTransform({ harnessRoot, projectDir });
   }
 
   return {
@@ -94,6 +103,7 @@ export function runInstall(ctx: InstallContext): InstallReport {
     installedTracks: [...spec.tracks].sort(),
     mcpServers: Object.keys(mcpResult.mcpServers).sort(),
     codex,
+    opencode,
   };
 }
 
