@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { executeSpec, installAction, specFromOptions } from "../src/commands/install.js";
 import type { InstallReport } from "../src/installer.js";
-import type { InstallSpec } from "../src/types.js";
+import type { InstallSpec, Track } from "../src/types.js";
 
 const fakeReport: InstallReport = {
   filesCopied: 5,
@@ -12,6 +12,7 @@ const fakeReport: InstallReport = {
   mcpServers: ["context7"],
   codex: null,
   opencode: null,
+  external: null,
 };
 
 describe("specFromOptions", () => {
@@ -353,6 +354,125 @@ describe("executeSpec", () => {
     expect(optsCall?.[0]).toContain("tauri");
     expect(optsCall?.[0]).toContain("ecc");
     expect(optsCall?.[0]).toContain("tob");
+  });
+
+  it("renders Phase 2 (External Assets) when report.external has attempted entries", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline: (s: InstallSpec, h: string) => InstallReport = () => ({
+      ...fakeReport,
+      external: {
+        attempted: [
+          {
+            asset: {
+              id: "test-skill",
+              description: "test",
+              condition: { kind: "any-track" as const, tracks: ["tooling"] as Track[] },
+              method: { kind: "skill", source: "owner/repo", skill: "react" } as const,
+            },
+            ok: true,
+          },
+          {
+            asset: {
+              id: "test-plugin",
+              description: "plugin",
+              condition: { kind: "any-track" as const, tracks: ["tooling"] as Track[] },
+              method: { kind: "plugin", marketplace: "ms/foo", pluginId: "foo@ms" } as const,
+            },
+            ok: true,
+          },
+          {
+            asset: {
+              id: "test-npm",
+              description: "npm pkg",
+              condition: { kind: "any-track" as const, tracks: ["tooling"] as Track[] },
+              method: { kind: "npm-global", pkg: "vercel" } as const,
+            },
+            ok: true,
+          },
+          {
+            asset: {
+              id: "test-npx",
+              description: "npx",
+              condition: { kind: "any-track" as const, tracks: ["tooling"] as Track[] },
+              method: { kind: "npx-run", cmd: "gsd@latest" } as const,
+            },
+            ok: true,
+          },
+          {
+            asset: {
+              id: "test-shell",
+              description: "shell",
+              condition: { kind: "any-track" as const, tracks: ["tooling"] as Track[] },
+              method: {
+                kind: "shell-script",
+                script: "scripts/x.sh",
+                args: [],
+              } as const,
+            },
+            ok: false,
+            message: "script missing",
+          },
+        ],
+        succeeded: 4,
+        skipped: 1,
+      },
+    });
+    executeSpec(baseSpec, { log, exit, runPipeline, resolveHarnessRoot: () => "/h" });
+    // Each asset id rendered
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("test-skill"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("test-plugin"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("test-npm"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("test-npx"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("test-shell"));
+    // formatAssetMeta covered each kind
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("owner/repo · react"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("foo@ms"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("npm install -g vercel"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("npx gsd@latest"));
+    // failed asset shows error message
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("script missing"));
+    // Phase 2 header rendered
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Phase 2"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("External Assets"));
+    // Summary WARN line for skipped
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("1 external asset"));
+  });
+
+  it("renders Phase 3 (instead of 2) for codex when external assets phase is rendered", () => {
+    const log = vi.fn();
+    const exit = vi.fn() as unknown as (code: number) => never;
+    const runPipeline: (s: InstallSpec, h: string) => InstallReport = () => ({
+      ...fakeReport,
+      external: {
+        attempted: [
+          {
+            asset: {
+              id: "x",
+              description: "x",
+              condition: { kind: "any-track" as const, tracks: ["tooling"] as Track[] },
+              method: { kind: "skill", source: "owner/repo" } as const,
+            },
+            ok: true,
+          },
+        ],
+        succeeded: 1,
+        skipped: 0,
+      },
+      codex: {
+        agentsMdPath: "/p/AGENTS.md",
+        configTomlPath: "/p/.codex/config.toml",
+        hookFiles: [],
+        skillFiles: [],
+      },
+    });
+    executeSpec(
+      { ...baseSpec, cli: "codex" },
+      { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
+    );
+    // Phase 2 (external) + Phase 3 (codex)
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Phase 2"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Phase 3"));
   });
 
   it("err + exit(1) when pipeline throws", () => {
