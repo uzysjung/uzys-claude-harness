@@ -12,7 +12,8 @@
 
 ```bash
 # in your project directory:
-npx -y github:uzysjung/uzys-claude-harness install --track csr-fastapi --project-dir .
+npx -y github:uzysjung/uzys-claude-harness
+# → interactive prompts: Track, options, CLI target. project-dir defaults to cwd.
 
 # then start Claude Code:
 claude
@@ -20,9 +21,9 @@ claude
 > /uzys:auto    # run the full pipeline (Plan → Build → Test → Review → Ship)
 ```
 
-Replace `csr-fastapi` with one of: `csr-supabase`, `csr-fastify`, `ssr-nextjs`, `ssr-htmx`, `data`, `executive`, `tooling`, `full` — see [Tracks](#tracks-full-reference).
+Tracks available in the prompt: `csr-supabase`, `csr-fastify`, `csr-fastapi`, `ssr-nextjs`, `ssr-htmx`, `data`, `executive`, `tooling`, `full` — see [Tracks](#tracks-full-reference).
 
-> Alternative: `bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)` — backward-compat wrapper for older docs, internally calls the same `npx` command. Use when you don't have `npx` in PATH yet but Node 20+ is installed.
+> Alternative: `bash <(curl -fsSL https://raw.githubusercontent.com/uzysjung/uzys-claude-harness/main/install.sh)` — backward-compat wrapper. Internally calls the same `npx` command. Use when you don't have `npx` in PATH yet but Node 20+ is installed. For CI / unattended scripts, see [Flag mode](#flag-mode-ci--automation).
 
 ## Why this?
 
@@ -97,7 +98,7 @@ The installer auto-detects your current state:
 For CI/CD or scripted environments, use the `install` subcommand with flags:
 
 ```bash
-npx -y github:uzysjung/uzys-claude-harness install --track <TRACK> --project-dir .
+npx -y github:uzysjung/uzys-claude-harness install --track <TRACK>
 ```
 
 `install` requires at least one `--track`; non-TTY environments without `--track` exit with an error.
@@ -162,13 +163,15 @@ rm -rf .claude && mv .claude.backup-<timestamp> .claude
 ```bash
 git clone https://github.com/uzysjung/uzys-claude-harness.git
 cd uzys-claude-harness
-npx -y github:uzysjung/uzys-claude-harness install --track tooling --project-dir .
+npx -y github:uzysjung/uzys-claude-harness
+# → pick `tooling` in the Track prompt
 ```
 
 ### Multi-Track in one go (union)
 
 ```bash
-npx -y github:uzysjung/uzys-claude-harness install --track tooling --track csr-fastapi --project-dir .
+npx -y github:uzysjung/uzys-claude-harness
+# → in the Track prompt, press <space> on multiple Tracks (e.g. tooling + csr-fastapi)
 ```
 
 Use this when you know upfront you need multiple tracks. Faster than two separate runs.
@@ -226,7 +229,7 @@ npx -y github:uzysjung/uzys-claude-harness
 In a TTY environment, the interactive installer asks about each opt-in feature. **In CI / no-TTY**, prompts can't run — those features are silently skipped unless you pass the flag explicitly. Minimum:
 
 ```bash
-npx -y github:uzysjung/uzys-claude-harness install --track csr-fastapi --project-dir .
+npx -y github:uzysjung/uzys-claude-harness install --track csr-fastapi
 ```
 
 If you want any of the opt-in features in CI, add the flag:
@@ -317,7 +320,8 @@ Building "an internal note-taking app with Postgres + Auth" on `csr-fastapi`:
 ```bash
 # 1. Install harness on a fresh project
 mkdir notes && cd notes && git init
-npx -y github:uzysjung/uzys-claude-harness install --track csr-fastapi --project-dir .
+npx -y github:uzysjung/uzys-claude-harness
+# → pick `csr-fastapi` in the Track prompt
 
 # 2. Open Claude Code
 claude
@@ -424,7 +428,7 @@ npx -y github:uzysjung/uzys-claude-harness
 
 Flag mode (CI / automation):
 ```bash
-npx -y github:uzysjung/uzys-claude-harness install --track tooling --cli opencode --project-dir .
+npx -y github:uzysjung/uzys-claude-harness install --track tooling --cli opencode
 ```
 
 `--cli=all` installs Claude + Codex + OpenCode in one command.
