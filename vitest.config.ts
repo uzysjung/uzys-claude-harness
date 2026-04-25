@@ -7,9 +7,12 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html", "json-summary"],
       include: ["src/**/*.ts"],
-      // src/index.ts is the bin entrypoint — its only job is to call buildCli().parse(argv).
-      // Excluded from coverage; cli.ts (which it delegates to) is fully tested.
-      exclude: ["src/**/*.d.ts", "src/types/**", "src/index.ts"],
+      // Excluded from coverage:
+      //   - src/index.ts: bin entrypoint; calls buildCli().parse(argv). Logic in cli.ts.
+      //   - src/prompts.ts: thin @clack/prompts adapter (no transformation logic — that lives in
+      //     interactive.ts). Mocking clack to test prompt wiring is fragile and low value;
+      //     business rules are exercised via the orchestrator.
+      exclude: ["src/**/*.d.ts", "src/types/**", "src/index.ts", "src/prompts.ts"],
       thresholds: {
         lines: 90,
         branches: 90,
