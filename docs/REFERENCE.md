@@ -32,8 +32,9 @@
 | **supabase agent-skills** | [supabase/agent-skills](https://github.com/supabase/agent-skills) | ✅ | csr-supabase, full | `claude plugin install supabase@supabase-agent-skills` | Auth/Realtime/Storage/RLS |
 | **postgres-best-practices** | supabase/agent-skills | ✅ | csr-supabase, full | `claude plugin install postgres-best-practices@supabase-agent-skills` | Postgres 쿼리 최적화 |
 | **document-skills** | [anthropics/skills](https://github.com/anthropics/skills) | ✅ | executive, full | `claude plugin install document-skills@anthropic-agent-skills` | docx/pptx/xlsx/pdf/canvas-design 등 |
-| **c-level-skills** | [alirezarezvani/c-level-skills](https://github.com/alirezarezvani/c-level-skills) | 🟡 | executive, full | `claude plugin install c-level-skills@c-level-skills` | CEO/CTO 의사결정 프레임워크 |
-| **finance-skills** | [alirezarezvani/finance-skills](https://github.com/alirezarezvani/finance-skills) | 🟡 | executive, full | `claude plugin install finance-skills@finance-skills` | 재무 모델링/분석 |
+| **c-level-skills** | [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | 🟡 | executive, full | `claude plugin install c-level-skills@claude-code-skills` | 28 C-level advisory: virtual board (CEO/CTO/COO/CPO/CMO/CFO/CRO/CISO/CHRO), executive mentor, board deck builder, scenario war room, M&A playbook |
+| **business-growth-skills** | [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | 🟡 | executive, full | `claude plugin install business-growth-skills@claude-code-skills` | 4 customer success / sales engineer / revenue operations / contract & proposal writer |
+| **finance-skills** | [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | 🟡 | executive, full | `claude plugin install finance-skills@claude-code-skills` | 3 financial analyst (DCF/ratio), SaaS metrics coach (ARR/MRR/CAC/LTV), business investment advisor |
 | **data plugin** | [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) | ✅ | data, full | `claude plugin install data@knowledge-work-plugins` | SQL 탐색 + matplotlib/seaborn/plotly visualization |
 
 ### Optional Plugins (대화형 프롬프트)
@@ -178,7 +179,7 @@ $ bash scripts/setup-harness.sh --track <track> --project-dir .
   - ssr-htmx: htmx rule
   - ssr-nextjs: next-skills + nextjs rule
   - data: polars + dask + python-resource/performance + Anthropic data plugin
-  - executive: c-level + finance + document-skills
+  - executive: c-level + business-growth + finance + document-skills (모두 alirezarezvani/claude-skills marketplace + Anthropic)
   - tooling: cli-development rule
   ↓
 [Optional 프롬프트]
