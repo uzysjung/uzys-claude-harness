@@ -1,4 +1,4 @@
-/** Available installation tracks (parity with setup-harness.sh:580 TRACKS array). */
+/** Available installation tracks. v0.5.0 — 11 Track (PM/Growth Marketing 추가). */
 export const TRACKS = [
   "tooling",
   "csr-supabase",
@@ -9,6 +9,8 @@ export const TRACKS = [
   "data",
   "executive",
   "full",
+  "project-management",
+  "growth-marketing",
 ] as const;
 export type Track = (typeof TRACKS)[number];
 

@@ -22,7 +22,12 @@ describe("isCliMode", () => {
 });
 
 describe("TRACKS array", () => {
-  it("has the documented 9 tracks", () => {
-    expect(TRACKS).toHaveLength(9);
+  it("has 11 tracks (v0.5.0 — added project-management, growth-marketing)", () => {
+    expect(TRACKS).toHaveLength(11);
+  });
+
+  it("includes the two v0.5.0 tracks", () => {
+    expect(TRACKS).toContain("project-management");
+    expect(TRACKS).toContain("growth-marketing");
   });
 });

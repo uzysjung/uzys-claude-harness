@@ -39,6 +39,8 @@ const TRACKS: ReadonlyArray<Track> = [
   "data",
   "executive",
   "full",
+  "project-management",
+  "growth-marketing",
 ];
 
 /** Per-track expected files (subset — proves Track-pattern routing in manifest.ts). */
@@ -52,13 +54,16 @@ const TRACK_EXPECTATIONS: Record<Track, { rules: string[]; mcp?: string[] }> = {
   data: { rules: ["pyside6", "data-analysis"] },
   executive: { rules: ["git-policy"] },
   full: { rules: ["nextjs", "htmx", "data-analysis", "design-workflow"] },
+  // v0.5.0 — executive-style baselines (common rules only).
+  "project-management": { rules: ["git-policy", "change-management"] },
+  "growth-marketing": { rules: ["git-policy", "change-management"] },
 };
 
-describe("9-track install (E2E vs templates/)", () => {
+describe("11-track install (E2E vs templates/)", () => {
   let projectDir: string;
 
   beforeEach(() => {
-    projectDir = mkdtempSync(join(tmpdir(), "ch-9track-"));
+    projectDir = mkdtempSync(join(tmpdir(), "ch-11track-"));
   });
 
   afterEach(() => {
