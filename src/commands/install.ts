@@ -20,6 +20,8 @@ export interface InstallOptions {
   withEcc?: boolean;
   withPrune?: boolean;
   withTob?: boolean;
+  withCodexSkills?: boolean;
+  withCodexTrust?: boolean;
 }
 
 export type CliMode_ = CliMode;
@@ -107,6 +109,8 @@ export function installAction(options: InstallOptions, deps: InstallActionDeps =
       withEcc: options.withEcc === true || options.withPrune === true,
       withPrune: options.withPrune === true,
       withTob: options.withTob === true,
+      withCodexSkills: options.withCodexSkills === true,
+      withCodexTrust: options.withCodexTrust === true,
     },
     cli: validated.cli,
     projectDir: resolve(options.projectDir ?? process.cwd()),
@@ -271,6 +275,29 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
           `${report.codex.skillFiles.length} skills`,
         ),
       );
+      // Codex global opt-in (D16) — only when explicitly enabled
+      if (report.codexOptIn) {
+        if (report.codexOptIn.skillsInstalled.enabled) {
+          log(
+            assetRow(
+              "success",
+              "~/.codex/skills/uzys-*",
+              `${report.codexOptIn.skillsInstalled.count} copied (global opt-in)`,
+            ),
+          );
+        }
+        if (report.codexOptIn.trustEntry.enabled) {
+          const trust = report.codexOptIn.trustEntry;
+          const kind = trust.status === "error" ? "skip" : "success";
+          const meta =
+            trust.status === "registered"
+              ? '[projects."<dir>"] trust_level="trusted"'
+              : trust.status === "already-present"
+                ? "already present"
+                : (trust.message ?? "error");
+          log(assetRow(kind, "~/.codex/config.toml trust entry", meta));
+        }
+      }
     }
     if (report.opencode) {
       log(assetRow("success", "opencode.json", "$schema + 5 keys"));
@@ -414,5 +441,13 @@ export function registerInstallCommand(cli: Cli): void {
     .option("--with-ecc", "Install ECC plugin (project-scoped)")
     .option("--with-prune", "Prune ECC items beyond curated 89 (implies --with-ecc)")
     .option("--with-tob", "Install Trail of Bits security plugin")
+    .option(
+      "--with-codex-skills",
+      "Codex global opt-in: copy uzys-* skills to ~/.codex/skills/ (cli=codex/both/all only)",
+    )
+    .option(
+      "--with-codex-trust",
+      'Codex global opt-in: register [projects."..."] trust entry in ~/.codex/config.toml',
+    )
     .action((options: InstallOptions) => installAction(options));
 }

@@ -67,6 +67,8 @@ describe("runInteractive", () => {
         withEcc: false,
         withPrune: false,
         withTob: false,
+        withCodexSkills: false,
+        withCodexTrust: false,
       },
       cli: "claude",
       projectDir: "/tmp/proj",
@@ -98,6 +100,50 @@ describe("runInteractive", () => {
     expect(result.ok).toBe(false);
     expect(result.reason).toBe("disabled-action");
     expect(prompts.cancel).toHaveBeenCalledOnce();
+  });
+
+  it("existing install: action=update returns spec with mode=update + Track preservation", async () => {
+    const prompts = makePrompts({
+      selectAction: vi.fn(async () => "update" as const),
+      confirmInstall: vi.fn(async () => true),
+    });
+    const result = await runInteractive("/tmp/proj", {
+      prompts,
+      detect: () => existingState,
+      isTty: () => true,
+    });
+    expect(result.ok).toBe(true);
+    expect(result.mode).toBe("update");
+    expect(result.spec?.tracks).toEqual(existingState.tracks);
+    // selectTracks NOT called — update preserves existing
+    expect(prompts.selectTracks).not.toHaveBeenCalled();
+  });
+
+  it("existing install: action=update + user declines confirm returns cancelled", async () => {
+    const prompts = makePrompts({
+      selectAction: vi.fn(async () => "update" as const),
+      confirmInstall: vi.fn(async () => false),
+    });
+    const result = await runInteractive("/tmp/proj", {
+      prompts,
+      detect: () => existingState,
+      isTty: () => true,
+    });
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe("cancelled");
+  });
+
+  it("existing install: action=reinstall passes through to track prompts (mode=reinstall)", async () => {
+    const prompts = makePrompts({
+      selectAction: vi.fn(async () => "reinstall" as const),
+    });
+    const result = await runInteractive("/tmp/proj", {
+      prompts,
+      detect: () => existingState,
+      isTty: () => true,
+    });
+    expect(result.ok).toBe(true);
+    expect(result.mode).toBe("reinstall");
   });
 
   it("existing install: action=add seeds initialTracks from detected", async () => {
@@ -185,6 +231,8 @@ describe("formatSummary", () => {
         withEcc: true,
         withPrune: false,
         withTob: false,
+        withCodexSkills: false,
+        withCodexTrust: false,
       },
       cli: "codex",
       projectDir: "/proj",
@@ -204,6 +252,8 @@ describe("formatSummary", () => {
         withEcc: false,
         withPrune: false,
         withTob: false,
+        withCodexSkills: false,
+        withCodexTrust: false,
       },
       cli: "claude",
       projectDir: "/p",
@@ -220,6 +270,8 @@ describe("toOptionFlags", () => {
       withEcc: false,
       withPrune: false,
       withTob: false,
+      withCodexSkills: false,
+      withCodexTrust: false,
     });
   });
 
@@ -230,6 +282,8 @@ describe("toOptionFlags", () => {
       withEcc: false,
       withPrune: false,
       withTob: true,
+      withCodexSkills: false,
+      withCodexTrust: false,
     });
   });
 });
@@ -242,6 +296,8 @@ describe("applyOptionRules", () => {
       withEcc: false,
       withPrune: true,
       withTob: false,
+      withCodexSkills: false,
+      withCodexTrust: false,
     });
     expect(result.withEcc).toBe(true);
     expect(result.withPrune).toBe(true);
@@ -254,6 +310,8 @@ describe("applyOptionRules", () => {
       withEcc: false,
       withPrune: false,
       withTob: false,
+      withCodexSkills: false,
+      withCodexTrust: false,
     };
     expect(applyOptionRules(flags)).toEqual(flags);
   });
@@ -265,6 +323,8 @@ describe("applyOptionRules", () => {
       withEcc: true,
       withPrune: true,
       withTob: false,
+      withCodexSkills: false,
+      withCodexTrust: false,
     };
     expect(applyOptionRules(flags)).toEqual(flags);
   });

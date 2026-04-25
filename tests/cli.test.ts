@@ -64,6 +64,8 @@ describe("defaultAction", () => {
         withEcc: false,
         withPrune: false,
         withTob: false,
+        withCodexSkills: false,
+        withCodexTrust: false,
       },
       cli: "claude" as const,
       projectDir: "/p",
