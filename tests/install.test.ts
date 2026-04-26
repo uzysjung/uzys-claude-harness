@@ -51,6 +51,7 @@ const fakeReport: InstallReport = {
   opencode: null,
   external: null,
   updateMode: null,
+  karpathyHook: null,
   mode: "fresh",
   envFiles: {
     envExampleCreated: false,

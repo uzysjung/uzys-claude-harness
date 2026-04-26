@@ -7,8 +7,10 @@ describe("addPreToolUseHook", () => {
   it("creates hooks.PreToolUse when settings has no hooks key", () => {
     const settings: ClaudeSettings = { statusLine: { type: "command", command: "echo" } };
     const result = addPreToolUseHook(settings, "Write|Edit", KARPATHY_CMD);
-    expect(result.hooks?.PreToolUse).toHaveLength(1);
-    expect(result.hooks?.PreToolUse?.[0]).toEqual({
+    const preToolUse = result.hooks?.PreToolUse;
+    expect(preToolUse).toBeDefined();
+    expect(preToolUse).toHaveLength(1);
+    expect(preToolUse?.[0]).toEqual({
       matcher: "Write|Edit",
       hooks: [{ type: "command", command: KARPATHY_CMD }],
     });
@@ -20,8 +22,9 @@ describe("addPreToolUseHook", () => {
     const settings: ClaudeSettings = {};
     const once = addPreToolUseHook(settings, "Write|Edit", KARPATHY_CMD);
     const twice = addPreToolUseHook(once, "Write|Edit", KARPATHY_CMD);
-    expect(twice.hooks?.PreToolUse).toHaveLength(1);
-    expect(twice.hooks?.PreToolUse?.[0].hooks).toHaveLength(1);
+    const preToolUse = twice.hooks?.PreToolUse;
+    expect(preToolUse).toHaveLength(1);
+    expect(preToolUse?.[0]?.hooks).toHaveLength(1);
   });
 
   it("appends to existing matcher entry without removing other hooks", () => {
@@ -41,11 +44,12 @@ describe("addPreToolUseHook", () => {
       },
     };
     const result = addPreToolUseHook(existing, "Write|Edit", KARPATHY_CMD);
-    expect(result.hooks?.PreToolUse).toHaveLength(1);
-    expect(result.hooks?.PreToolUse?.[0].hooks).toHaveLength(2);
-    expect(result.hooks?.PreToolUse?.[0].hooks.map((h) => h.command)).toContain(KARPATHY_CMD);
+    const preToolUse = result.hooks?.PreToolUse;
+    expect(preToolUse).toHaveLength(1);
+    expect(preToolUse?.[0]?.hooks).toHaveLength(2);
+    expect(preToolUse?.[0]?.hooks.map((h) => h.command)).toContain(KARPATHY_CMD);
     // 기존 protect-files hook 보존
-    expect(result.hooks?.PreToolUse?.[0].hooks[0].command).toContain("protect-files.sh");
+    expect(preToolUse?.[0]?.hooks[0]?.command).toContain("protect-files.sh");
   });
 
   it("preserves other matcher entries (e.g. Skill, mcp__.*)", () => {

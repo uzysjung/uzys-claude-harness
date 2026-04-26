@@ -1,4 +1,11 @@
-import { chmodSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { type CodexOptInReport, runCodexOptIn } from "./codex/opt-in.js";
 import { type CodexTransformReport, runCodexTransform } from "./codex/transform.js";
@@ -13,8 +20,12 @@ import { backupDir, copyBackupDir, copyDir, copyFile, ensureProjectSkeleton } fr
 import { buildManifest } from "./manifest.js";
 import { composeMcpJson, writeMcpJson } from "./mcp-merge.js";
 import { type OpencodeTransformReport, runOpencodeTransform } from "./opencode/transform.js";
+import { type ClaudeSettings, addPreToolUseHook } from "./settings-merge.js";
 import type { InstallSpec, OptionFlags, Track } from "./types.js";
 import { type UpdateModeReport, runUpdateMode } from "./update-mode.js";
+
+/** karpathy-coder hook command — `.claude/settings.json` PreToolUse Write|Edit matcher entry. */
+const KARPATHY_HOOK_COMMAND = 'bash "$CLAUDE_PROJECT_DIR/.claude/hooks/karpathy-gate.sh"';
 
 /**
  * Install mode — Router action 매핑.
@@ -71,6 +82,18 @@ export type ProgressEvent =
   /** External install phase finished (with report). */
   | { type: "external-complete"; report: ExternalInstallReport };
 
+/** karpathy-coder hook auto-wire 결과 (v0.6.0). */
+export interface KarpathyHookReport {
+  /** withKarpathyHook=true && karpathy-coder install 성공 시 true. */
+  wired: boolean;
+  /** wired=false 시 사유. */
+  reason?: "opt-out" | "plugin-install-failed" | "external-skipped";
+  /** wired=true 시 settings.json 갱신 여부 (idempotent skip 시 false). */
+  settingsUpdated?: boolean;
+  /** wired=true 시 hook script 복사 여부. */
+  hookScriptCopied?: boolean;
+}
+
 /** Baseline phase result (everything except external assets). */
 export interface BaselineReport {
   filesCopied: number;
@@ -108,6 +131,8 @@ export interface InstallReport {
   external: ExternalInstallReport | null;
   /** Update-mode report (rules/agents/commands/hooks 갱신 + orphan prune + stale hook). null when not update mode. */
   updateMode: UpdateModeReport | null;
+  /** karpathy-coder hook auto-wire 결과 (v0.6.0). null when withKarpathyHook=false. */
+  karpathyHook: KarpathyHookReport | null;
   /** Install mode dispatched (echo of ctx.mode, default "fresh"). */
   mode: InstallMode;
   /** Environment file generation results (always present). */
@@ -172,7 +197,7 @@ export function runInstall(ctx: InstallContext): InstallReport {
       },
     };
     ctx.onProgress?.({ type: "baseline-complete", baseline });
-    return { ...baseline, external: null };
+    return { ...baseline, external: null, karpathyHook: null };
   }
 
   ensureProjectSkeleton(projectDir);
@@ -287,7 +312,71 @@ export function runInstall(ctx: InstallContext): InstallReport {
     ctx.onProgress?.({ type: "external-complete", report: external });
   }
 
-  return { ...baseline, external };
+  // ━━━ karpathy-coder hook auto-wire (v0.6.0) ━━━
+  // SPEC: docs/specs/karpathy-hook-autowire.md AC2 — opt-in 강제 + install 성공 후에만.
+  const karpathyHook = wireKarpathyHook(spec.options, external, harnessRoot, projectDir);
+
+  return { ...baseline, external, karpathyHook };
+}
+
+/**
+ * karpathy-coder pre-commit hook auto-wire (v0.6.0).
+ *
+ * 활성화 조건 (AND):
+ *   1. spec.options.withKarpathyHook === true (opt-in 강제)
+ *   2. external.attempted에 karpathy-coder ok=true (plugin install 성공)
+ *
+ * 동작:
+ *   - templates/hooks/karpathy-gate.sh → <projectDir>/.claude/hooks/karpathy-gate.sh 복사
+ *   - .claude/settings.json PreToolUse Write|Edit matcher에 hook entry 추가 (idempotent)
+ */
+function wireKarpathyHook(
+  options: OptionFlags,
+  external: ExternalInstallReport | null,
+  harnessRoot: string,
+  projectDir: string,
+): KarpathyHookReport | null {
+  if (!options.withKarpathyHook) {
+    return null;
+  }
+  if (external === null) {
+    return { wired: false, reason: "external-skipped" };
+  }
+  const karpathyResult = external.attempted.find((r) => r.asset.id === "karpathy-coder");
+  if (!karpathyResult || !karpathyResult.ok) {
+    return { wired: false, reason: "plugin-install-failed" };
+  }
+
+  // Hook script 복사 (manifest에 없는 v0.6.0 신규 — opt-in 시에만)
+  const sourceHook = join(harnessRoot, "templates/hooks/karpathy-gate.sh");
+  const targetHook = join(projectDir, ".claude/hooks/karpathy-gate.sh");
+  let hookScriptCopied = false;
+  if (existsSync(sourceHook)) {
+    copyFile(sourceHook, targetHook);
+    try {
+      chmodSync(targetHook, 0o755);
+    } catch {
+      // best-effort
+    }
+    hookScriptCopied = true;
+  }
+
+  // settings.json PreToolUse Write|Edit entry 추가 (idempotent)
+  const settingsPath = join(projectDir, ".claude/settings.json");
+  let settingsUpdated = false;
+  if (existsSync(settingsPath)) {
+    const raw = readFileSync(settingsPath, "utf8");
+    const before: ClaudeSettings = JSON.parse(raw);
+    const after = addPreToolUseHook(before, "Write|Edit", KARPATHY_HOOK_COMMAND);
+    const beforeStr = JSON.stringify(before);
+    const afterStr = JSON.stringify(after);
+    if (beforeStr !== afterStr) {
+      writeFileSync(settingsPath, `${JSON.stringify(after, null, 2)}\n`);
+      settingsUpdated = true;
+    }
+  }
+
+  return { wired: true, settingsUpdated, hookScriptCopied };
 }
 
 function composeAndWriteMcp(
