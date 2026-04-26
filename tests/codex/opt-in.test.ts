@@ -10,9 +10,9 @@ describe("runCodexOptIn — skills copy", () => {
   beforeEach(() => {
     projectDir = mkdtempSync(join(tmpdir(), "ch-cox-proj-"));
     codexHome = mkdtempSync(join(tmpdir(), "ch-cox-home-"));
-    // Synthesize .codex-skills/uzys-{spec,plan} from a Codex transform
+    // Synthesize .agents/skills/uzys-{spec,plan} from a Codex transform
     for (const phase of ["spec", "plan", "build"]) {
-      const skillDir = join(projectDir, ".codex-skills", `uzys-${phase}`);
+      const skillDir = join(projectDir, ".agents/skills", `uzys-${phase}`);
       mkdirSync(skillDir, { recursive: true });
       writeFileSync(join(skillDir, "SKILL.md"), `# uzys-${phase}\n`);
     }
@@ -48,8 +48,8 @@ describe("runCodexOptIn — skills copy", () => {
     expect(existsSync(join(codexHome, "skills"))).toBe(false);
   });
 
-  it("returns count=0 when source .codex-skills/ missing", () => {
-    rmSync(join(projectDir, ".codex-skills"), { recursive: true });
+  it("returns count=0 when source .agents/skills/ missing", () => {
+    rmSync(join(projectDir, ".agents/skills"), { recursive: true });
     const report = runCodexOptIn({
       projectDir,
       codexHome,
@@ -61,8 +61,8 @@ describe("runCodexOptIn — skills copy", () => {
 
   it("forward-compat: copies extra uzys-<phase> not in standard PHASES list", () => {
     // Add uzys-newphase (not in [spec, plan, build, test, review, ship])
-    mkdirSync(join(projectDir, ".codex-skills", "uzys-newphase"), { recursive: true });
-    writeFileSync(join(projectDir, ".codex-skills", "uzys-newphase", "SKILL.md"), "# new\n");
+    mkdirSync(join(projectDir, ".agents/skills", "uzys-newphase"), { recursive: true });
+    writeFileSync(join(projectDir, ".agents/skills", "uzys-newphase", "SKILL.md"), "# new\n");
     const report = runCodexOptIn({
       projectDir,
       codexHome,
@@ -154,8 +154,11 @@ describe("runCodexOptIn — both flags", () => {
     projectDir = mkdtempSync(join(tmpdir(), "ch-both-proj-"));
     codexHome = mkdtempSync(join(tmpdir(), "ch-both-home-"));
     for (const phase of ["spec", "plan"]) {
-      mkdirSync(join(projectDir, ".codex-skills", `uzys-${phase}`), { recursive: true });
-      writeFileSync(join(projectDir, ".codex-skills", `uzys-${phase}`, "SKILL.md"), `# ${phase}\n`);
+      mkdirSync(join(projectDir, ".agents/skills", `uzys-${phase}`), { recursive: true });
+      writeFileSync(
+        join(projectDir, ".agents/skills", `uzys-${phase}`, "SKILL.md"),
+        `# ${phase}\n`,
+      );
     }
   });
   afterEach(() => {

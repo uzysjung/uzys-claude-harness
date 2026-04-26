@@ -11,7 +11,7 @@
  *   3. .mcp.json 생성 + Track별 MCP 포함
  *   4. CLI mode별 추가 산출물:
  *      - claude: .claude/만
- *      - codex/both: + AGENTS.md + .codex/{config.toml, hooks/, } + .codex-skills/
+ *      - codex/both: + AGENTS.md + .codex/{config.toml, hooks/, } + .agents/skills/uzys-*
  *      - opencode: + AGENTS.md + opencode.json + .opencode/{commands/, plugins/}
  *      - all: 위 모두 동시
  *   5. installedTracks 정합성

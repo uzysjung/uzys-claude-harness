@@ -251,7 +251,7 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
       log(
         assetRow(
           "success",
-          ".codex-skills/uzys-*/SKILL.md",
+          ".agents/skills/uzys-*/SKILL.md",
           `${report.codex.skillFiles.length} skills`,
         ),
       );

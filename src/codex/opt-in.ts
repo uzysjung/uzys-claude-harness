@@ -31,7 +31,7 @@ export interface CodexOptInReport {
 }
 
 export interface CodexOptInContext {
-  /** 사용자 프로젝트 root (.codex-skills/ 소스). */
+  /** 사용자 프로젝트 root (.agents/skills/ 소스, v0.6.4+). */
   projectDir: string;
   /** 글로벌 ~/.codex/ 경로 (테스트 override 가능). */
   codexHome?: string;
@@ -85,11 +85,12 @@ export function runCodexOptIn(ctx: CodexOptInContext): CodexOptInReport {
 }
 
 /**
- * 프로젝트의 .codex-skills/uzys-{phase}/ 6 폴더를 ~/.codex/skills/ 로 복사.
+ * 프로젝트의 .agents/skills/uzys-{phase}/ 6 폴더를 ~/.codex/skills/ 로 복사.
+ * v0.6.4+ — source 디렉토리 .codex-skills → .agents/skills (Codex 공식 표준).
  * @returns 복사된 폴더 갯수
  */
 function copyCodexSkills(projectDir: string, skillsTarget: string): number {
-  const sourceDir = join(projectDir, ".codex-skills");
+  const sourceDir = join(projectDir, ".agents", "skills");
   if (!existsSync(sourceDir)) {
     return 0;
   }
