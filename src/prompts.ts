@@ -41,6 +41,11 @@ const OPTION_DEFS: ReadonlyArray<{ key: keyof OptionFlags; label: string; hint: 
   { key: "withEcc", label: "ECC plugin (project-scoped)", hint: "everything-claude-code" },
   { key: "withPrune", label: "Prune ECC items beyond curated 89", hint: "Implies ECC" },
   { key: "withTob", label: "Trail of Bits security plugin", hint: "CodeQL + Semgrep" },
+  {
+    key: "withKarpathyHook",
+    label: "karpathy-coder pre-commit hook (opt-in)",
+    hint: "Claude Code Write|Edit gate · Python 3 권장 · 비차단 (warn-only)",
+  },
 ];
 
 export const defaultPrompts: Prompts = {

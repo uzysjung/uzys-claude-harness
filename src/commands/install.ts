@@ -22,6 +22,7 @@ export interface InstallOptions {
   withTob?: boolean;
   withCodexSkills?: boolean;
   withCodexTrust?: boolean;
+  withKarpathyHook?: boolean;
 }
 
 export type CliMode_ = CliMode;
@@ -121,6 +122,7 @@ export function installAction(options: InstallOptions, deps: InstallActionDeps =
       withTob: options.withTob === true,
       withCodexSkills: options.withCodexSkills === true,
       withCodexTrust: options.withCodexTrust === true,
+      withKarpathyHook: options.withKarpathyHook === true,
     },
     cli: validated.cli,
     projectDir: resolve(options.projectDir ?? process.cwd()),
@@ -405,6 +407,7 @@ function formatOptions(spec: InstallSpec): string {
   if (spec.options.withEcc) flags.push("ecc");
   if (spec.options.withPrune) flags.push("prune");
   if (spec.options.withTob) flags.push("tob");
+  if (spec.options.withKarpathyHook) flags.push("karpathy-hook");
   return flags.length > 0 ? flags.join(", ") : c.dim("(defaults only)");
 }
 
@@ -494,6 +497,10 @@ export function registerInstallCommand(cli: Cli): void {
     .option(
       "--with-codex-trust",
       'Codex global opt-in: register [projects."..."] trust entry in ~/.codex/config.toml',
+    )
+    .option(
+      "--with-karpathy-hook",
+      "karpathy-coder pre-commit hook auto-wire (.claude/settings.json PreToolUse Write|Edit). karpathy-coder plugin install 성공 시에만 활성화. opt-in.",
     )
     .action((options: InstallOptions) => installAction(options));
 }
