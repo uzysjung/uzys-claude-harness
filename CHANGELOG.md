@@ -5,6 +5,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.6.3] — 2026-04-27
+
+### Fixed — railway-plugin / vercel-labs source URL (사용자 install 실패 보고)
+
+사용자 실측 install 시 2건 외부 자산 실패. 외부 검증 후 fix.
+
+#### railway-plugin entry 제거
+- `repos/railwayapp/railway-plugin` 자체 **404 Not Found** — repo 존재 안 함.
+- 공식 docs ([railway claude-code-plugin](https://docs.railway.com/ai/claude-code-plugin))는 `railwayapp/railway-skills` marketplace + `railway@railway-skills` plugin만 명시. 별도 `railway-plugin` 없음.
+- catalog의 `railway-plugin` entry는 환각/오타. 즉시 제거. `railway-skills` entry로 단일화.
+
+#### vercel-labs/agent-skills source URL 수정
+- 사용자 보고: `npx exited 1`
+- 공식 형식 (사용자 확인): `npx skills add https://github.com/vercel-labs/agent-skills --skill <name>`
+- catalog는 short form `vercel-labs/agent-skills` 사용 — full HTTPS URL 필요
+- 영향 entries:
+  - `react-best-practices` — source `https://github.com/vercel-labs/agent-skills`
+  - `web-design-guidelines` — 동일
+
+#### 다른 자산 일괄 검증 (모두 PASS)
+- K-Dense-AI/scientific-agent-skills, wshobson/agents, addyosmani/agent-skills, anthropics/skills, anthropics/knowledge-work-plugins, supabase/agent-skills, vercel-labs/skills, vercel-labs/next-skills, pbakaus/impeccable, testdino-hq/playwright-skill, yonatangross/orchestkit, alirezarezvani/claude-skills (10 entries v0.5.0 검증 완료), trailofbits/skills, affaan-m/everything-claude-code, shadcn-ui/ui — repo 모두 존재.
+
+#### Internal
+- tests/installer-track-matrix.test.ts — railway-plugin 검증 행 제거 + railway-skills로 대체
+- tests/external-assets.test.ts — 동일
+- docs/REFERENCE.md — railway-plugin 행 삭제, react/web-design source URL full HTTPS로 갱신, 공식 railway docs URL 인용
+
+#### 검증
+- vitest 451 tests PASS
+- coverage threshold 충족
+- npm run ci PASS
+
+#### Driver
+사용자 실측 보고 (2026-04-27) + Railway 공식 docs URL 명시 + vercel-labs install 형식 명시.
+
 ## [v0.6.2] — 2026-04-26
 
 ### Improved — Phase 1 names 전체 표시 (압축 제거)

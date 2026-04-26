@@ -14,7 +14,7 @@ describe("external-assets EXTERNAL_ASSETS catalog", () => {
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids).toContain("polars-K-Dense");
     expect(ids).toContain("anthropic-data-plugin");
-    expect(ids).toContain("railway-plugin");
+    expect(ids).toContain("railway-skills");
     expect(ids).toContain("ecc-plugin");
     expect(ids).toContain("ecc-prune");
     expect(ids).toContain("trailofbits-skills");
@@ -136,7 +136,7 @@ describe("filterApplicableAssets", () => {
         "agent-browser",
       ]),
     );
-    expect(ids).not.toContain("railway-plugin"); // not in data
+    expect(ids).not.toContain("railway-skills"); // not in data
   });
 
   it("full track activates everything except option-gated", () => {
@@ -150,7 +150,7 @@ describe("filterApplicableAssets", () => {
     expect(ids).not.toContain("trailofbits-skills");
     // Track 매트릭스의 모든 다른 자산은 포함
     expect(ids).toContain("polars-K-Dense");
-    expect(ids).toContain("railway-plugin");
+    expect(ids).toContain("railway-skills");
     expect(ids).toContain("vercel-cli");
     expect(ids).toContain("anthropic-document-skills");
   });

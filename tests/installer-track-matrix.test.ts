@@ -73,10 +73,11 @@ describe("Track matrix — assets called per track", () => {
     ]);
   });
 
-  it("csr-fastapi: dev baseline + Railway 2종 + UI(react+shadcn+web-design) + impeccable", () => {
+  it("csr-fastapi: dev baseline + Railway + UI(react+shadcn+web-design) + impeccable", () => {
     const { ids } = runForTrack(["csr-fastapi"]);
-    expect(ids).toContain("railway-plugin");
+    // v0.6.3 — railway-plugin entry 제거. railway-skills만 남음.
     expect(ids).toContain("railway-skills");
+    expect(ids).not.toContain("railway-plugin");
     expect(ids).toContain("addy-agent-skills");
     expect(ids).toContain("impeccable");
     // csr-* matches CSR_SSR_NEXTJS_FULL set → react/shadcn/web-design applies
@@ -111,7 +112,6 @@ describe("Track matrix — assets called per track", () => {
     const { ids } = runForTrack(["ssr-nextjs"]);
     expect(ids).toEqual(
       expect.arrayContaining([
-        "railway-plugin",
         "railway-skills",
         "react-best-practices",
         "shadcn-ui",
@@ -124,7 +124,7 @@ describe("Track matrix — assets called per track", () => {
 
   it("ssr-htmx: Railway only (no React stack)", () => {
     const { ids } = runForTrack(["ssr-htmx"]);
-    expect(ids).toContain("railway-plugin");
+    expect(ids).toContain("railway-skills");
     expect(ids).toContain("impeccable");
     expect(ids).not.toContain("react-best-practices");
     expect(ids).not.toContain("next-skills");
@@ -141,7 +141,7 @@ describe("Track matrix — assets called per track", () => {
     // No dev-track assets
     expect(ids).not.toContain("addy-agent-skills");
     expect(ids).not.toContain("polars-K-Dense");
-    expect(ids).not.toContain("railway-plugin");
+    expect(ids).not.toContain("railway-skills");
   });
 
   it("full: all Track-conditional assets active", () => {
@@ -151,7 +151,7 @@ describe("Track matrix — assets called per track", () => {
       expect.arrayContaining([
         "polars-K-Dense",
         "addy-agent-skills",
-        "railway-plugin",
+        "railway-skills", // v0.6.3 — railway-plugin entry 제거
         "vercel-cli",
         "impeccable",
         "supabase-agent-skills",
