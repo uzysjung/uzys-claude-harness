@@ -231,7 +231,7 @@ describe("executeSpec", () => {
         agentsMdPath: "/p/AGENTS.md",
         configTomlPath: "/p/.codex/config.toml",
         hookFiles: ["/p/.codex/hooks/a.sh", "/p/.codex/hooks/b.sh"],
-        skillFiles: ["/p/.codex-skills/uzys-spec/SKILL.md"],
+        skillFiles: ["/p/.agents/skills/uzys-spec/SKILL.md"],
       },
     });
     executeSpec(

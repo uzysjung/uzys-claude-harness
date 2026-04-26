@@ -5,6 +5,47 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.6.4] — 2026-04-27
+
+### Fixed — Codex skills 출력 경로 (사용자 보고: `/uzys-spec` slash 동작 안 함)
+
+사용자 실측 보고 — Codex CLI에서 `/uzys-spec` 등 slash command 인식 못 함.
+
+#### 원인
+- 우리 `runCodexTransform`이 skills를 **`<projectDir>/.codex-skills/uzys-<phase>/SKILL.md`** 에 작성
+- Codex 공식 표준 ([developers.openai.com/codex/skills](https://developers.openai.com/codex/skills)): repo-level scope는 **`.agents/skills/`** (자동 인식)
+- `.codex-skills/`는 비표준 — Codex가 인식 안 함 → slash 등록 실패
+
+#### Fix
+- `src/codex/transform.ts`: skill 출력 경로 `.codex-skills/uzys-<phase>` → **`.agents/skills/uzys-<phase>`**
+- `src/codex/opt-in.ts`: `~/.codex/skills/` 복사 source `.codex-skills/` → `.agents/skills/`
+- `src/commands/install.ts`: install report row 경로 표시 갱신
+- tests/codex/opt-in.test.ts (9 case) + tests/install.test.ts + tests/installer-cli-matrix.test.ts 갱신
+
+#### 영향 (기존 사용자)
+
+v0.2.0~v0.6.3으로 Codex 설치한 프로젝트는 `.codex-skills/` 디렉토리를 보유. v0.6.4로 재설치 시 `.agents/skills/uzys-*`가 새로 생성. 기존 `.codex-skills/`는 dead — 수동 삭제 권장:
+
+```bash
+# v0.6.4 재설치 후
+rm -rf .codex-skills
+npx -y github:uzysjung/uzys-claude-harness#main install --track <track> --cli codex
+# → .agents/skills/uzys-{spec,plan,build,test,review,ship}/SKILL.md 생성됨
+# → Codex 재시작 시 /uzys-spec ... slash 자동 등록
+```
+
+#### 검증
+- vitest 451 tests PASS
+- coverage 96.2/88.71/95.38/96.2 (threshold 90/88/90/90)
+- npm run ci PASS
+
+#### Driver
+사용자 실측 보고 (2026-04-27, AutoBlogEngine 환경) — Codex `/uzys-spec` slash 동작 안 함. `gh api` + 공식 docs로 표준 위치 확인 후 fix.
+
+#### 후속 (별도 트래킹)
+- **#2 .claude/ dead weight (Codex 단독 설치 시)** — design 결정. v0.7+ 별도 SPEC에서 옵션 검토 (CLI=codex 단독 시 .claude/ 미생성)
+- **#3 .factory/, .goose/ 자동 생성** — `npx skills add`의 multi-CLI universal install 동작. 외부 도구 control. v0.7+ 별도 분석
+
 ## [v0.6.3] — 2026-04-27
 
 ### Fixed — railway-plugin / vercel-labs source URL (사용자 install 실패 보고)

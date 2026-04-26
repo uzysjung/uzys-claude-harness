@@ -5,13 +5,18 @@
  *
  * Inputs:
  *   - harnessRoot:  repository root (templates/ + .mcp.json)
- *   - projectDir:   target project to receive AGENTS.md + .codex/ + .codex-skills/
+ *   - projectDir:   target project to receive AGENTS.md + .codex/ + .agents/skills/
  *
  * Outputs (under projectDir):
  *   - AGENTS.md
  *   - .codex/config.toml
  *   - .codex/hooks/*.sh                      (3 hooks ported from templates/hooks/)
- *   - .codex-skills/uzys-{phase}/SKILL.md    (6 skills, slash-renamed)
+ *   - .agents/skills/uzys-{phase}/SKILL.md   (6 skills, slash-renamed)
+ *
+ * v0.6.4 — skill 출력 경로 수정 `.codex-skills/` → `.agents/skills/`.
+ *   사유: Codex 공식 표준은 `.agents/skills/<name>/SKILL.md` (repo-level scope).
+ *   `.codex-skills/`는 비표준 — Codex가 인식 안 함 → /uzys-* slash 동작 안 함.
+ *   참조: https://developers.openai.com/codex/skills
  */
 
 import { chmodSync, existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -82,10 +87,10 @@ export function runCodexTransform(params: CodexTransformParams): CodexTransformR
     hookFiles.push(target);
   }
 
-  // 4. .codex-skills/uzys-{phase}/SKILL.md
+  // 4. .agents/skills/uzys-{phase}/SKILL.md (v0.6.4 — Codex 공식 repo-level skill scope)
   const skillFiles: string[] = [];
   for (const phase of PHASES) {
-    const skillDir = join(projectDir, ".codex-skills", `uzys-${phase}`);
+    const skillDir = join(projectDir, ".agents", "skills", `uzys-${phase}`);
     ensureDir(skillDir);
     const cmdSrc = join(harnessRoot, "templates/commands/uzys", `${phase}.md`);
     let source = "";
