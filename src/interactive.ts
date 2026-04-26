@@ -14,6 +14,7 @@ export function toOptionFlags(keys: ReadonlyArray<keyof OptionFlags>): OptionFla
     withTob: picked.has("withTob"),
     withCodexSkills: picked.has("withCodexSkills"),
     withCodexTrust: picked.has("withCodexTrust"),
+    withKarpathyHook: picked.has("withKarpathyHook"),
   };
 }
 

@@ -66,6 +66,7 @@ describe("defaultAction", () => {
         withTob: false,
         withCodexSkills: false,
         withCodexTrust: false,
+        withKarpathyHook: false,
       },
       cli: "claude" as const,
       projectDir: "/p",

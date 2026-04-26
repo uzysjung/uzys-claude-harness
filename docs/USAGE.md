@@ -470,6 +470,77 @@ claude
 "CRO 가설 + AB 테스트 설계"         # → marketing-skills (CRO)
 ```
 
+### karpathy-coder Enforcement (4 Level — v0.6.0)
+
+karpathy-coder plugin은 4 enforcement level 제공. upstream `enforcement-patterns.md`은 **incremental adoption** 권장 (L1 → L4 점진적). 본 installer는 L1 자동 + L3 opt-in 자동화 지원.
+
+| Level | 방식 | 활성화 | 본 installer |
+|-------|------|------|------|
+| **L1 Passive** | plugin install 시 SKILL.md context fork | 자동 (모든 dev Track) | ✅ 자동 |
+| **L2 Active review** | `/karpathy-check` 슬래시 명령 수동 호출 | 사용자가 commit 전 직접 | ✅ plugin 설치만으로 사용 가능 |
+| **L3 Automated gate** | Claude Code PreToolUse Write\|Edit hook | **`--with-karpathy-hook` opt-in** | ✅ v0.6.0 자동 와이어링 |
+| L4 CI integration | GitHub Actions workflow | 사용자 직접 작성 | ❌ (사용자 책임) |
+
+#### L3 활성화 — `--with-karpathy-hook` opt-in
+
+```bash
+# Flag 모드
+npx -y github:uzysjung/uzys-claude-harness install --track tooling --with-karpathy-hook
+
+# 인터랙티브 모드 (Optional features에서 "karpathy-coder pre-commit hook" 체크)
+npx -y github:uzysjung/uzys-claude-harness
+```
+
+활성화 조건 (AND):
+1. `--with-karpathy-hook` 플래그 또는 인터랙티브 선택
+2. `karpathy-coder` plugin install 성공 (`alirezarezvani/claude-skills` marketplace, has-dev-track Track만)
+
+활성화 결과:
+- `templates/hooks/karpathy-gate.sh` → `<projectDir>/.claude/hooks/karpathy-gate.sh` 복사 (chmod +x)
+- `.claude/settings.json` PreToolUse `Write|Edit` matcher에 hook entry 추가 (idempotent)
+- Claude Code가 코드 작성/수정 시 hook 발동 → 4 원칙 reminder + (Python 3 가용 시) `complexity_checker.py` warn
+
+#### Python 3 부재 시 동작
+
+`karpathy-gate.sh`는 `command -v python3` 체크 후 graceful exit (warn-only, **commit/edit 차단 안 함**). 즉:
+- Python 3 설치 → complexity 검사 실행
+- Python 3 부재 → reminder 메시지만 출력
+- L3 자체가 upstream "warn, doesn't reject" 비차단 설계
+
+#### v0.6.0 한계 — PreToolUse vs PostToolUse
+
+본 installer의 L3 자동 와이어링은 `PreToolUse Write|Edit` matcher 사용. 이는 **코드 작성 직전** 발동:
+
+- **4 원칙 reminder** (printf 메시지) — 의미 있음 (작성 직전 환기)
+- **`complexity_checker.py` 검사** — file_path가 가리키는 **현재 파일**(작성 전 상태)을 검사. 새 파일(`Write`) 시 file_path 미존재, 기존 파일 `Edit` 시 pre-edit 내용 검사 → 본래 의도와 차이
+
+upstream `enforcement-patterns.md` 예제는 `PostToolUse Bash` matcher로 git commit을 가로채는 패턴. 본 installer는 Claude Code 컨텍스트 한정으로 **`PreToolUse Write|Edit` reminder + best-effort complexity warn** 채택.
+
+**v0.7+ 후속 ADR 검토 항목**: PostToolUse 전환 시 reminder 의미는 사후로 이동, complexity_checker는 정확도 향상. 사용자/팀 합의 필요.
+
+#### 비활성화 / 제거
+
+```bash
+# settings.json에서 직접 제거 — PreToolUse Write|Edit hooks 배열에서 karpathy-gate.sh 항목 삭제
+```
+
+또는 `--reinstall` 모드로 재설치 시 `--with-karpathy-hook` 미지정 → 기존 hook 유지 안 됨 (settings.json templates에서 재복사).
+
+#### L4 (CI) 활성화
+
+본 installer는 L4 자동 설정 미지원. 사용자가 `.github/workflows/karpathy-review.yml` 직접 작성 — upstream README 예제 참조 ([alirezarezvani/claude-skills/engineering/karpathy-coder](https://github.com/alirezarezvani/claude-skills/tree/main/engineering/karpathy-coder)).
+
+#### 권장 도입 경로 (upstream 정합)
+
+1. **Week 1** — L1만 (plugin install). 4 원칙을 일상 작업에서 경험.
+2. **Week 2-3** — L2 (`/karpathy-check`) commit 전 manual 호출.
+3. **Week 4+** — L3 (`--with-karpathy-hook`) 활성화. 본 installer가 자동 와이어링.
+4. **이후** — 팀 합의 시 L4 (CI gate).
+
+upstream 권장: "팀이 원칙 경험 후 enforcement". 본 installer의 opt-in 강제는 이 정신과 정합.
+
+---
+
 ## OpenCode 시나리오
 
 ### Install (단독 OpenCode)

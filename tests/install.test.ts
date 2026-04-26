@@ -51,6 +51,7 @@ const fakeReport: InstallReport = {
   opencode: null,
   external: null,
   updateMode: null,
+  karpathyHook: null,
   mode: "fresh",
   envFiles: {
     envExampleCreated: false,
@@ -203,6 +204,7 @@ describe("executeSpec", () => {
       withTob: false,
       withCodexSkills: false,
       withCodexTrust: false,
+      withKarpathyHook: false,
     },
     cli: "claude",
     projectDir: "/p",
@@ -391,6 +393,7 @@ describe("executeSpec", () => {
           withTob: true,
           withCodexSkills: false,
           withCodexTrust: false,
+          withKarpathyHook: false,
         },
       },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },

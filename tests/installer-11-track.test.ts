@@ -15,6 +15,7 @@ const NO_OPTS: OptionFlags = {
   withTob: false,
   withCodexSkills: false,
   withCodexTrust: false,
+  withKarpathyHook: false,
 };
 
 function buildSpec(tracks: Track[], projectDir: string): InstallSpec {

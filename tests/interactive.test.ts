@@ -69,6 +69,7 @@ describe("runInteractive", () => {
         withTob: false,
         withCodexSkills: false,
         withCodexTrust: false,
+        withKarpathyHook: false,
       },
       cli: "claude",
       projectDir: "/tmp/proj",
@@ -233,6 +234,7 @@ describe("formatSummary", () => {
         withTob: false,
         withCodexSkills: false,
         withCodexTrust: false,
+        withKarpathyHook: false,
       },
       cli: "codex",
       projectDir: "/proj",
@@ -254,6 +256,7 @@ describe("formatSummary", () => {
         withTob: false,
         withCodexSkills: false,
         withCodexTrust: false,
+        withKarpathyHook: false,
       },
       cli: "claude",
       projectDir: "/p",
@@ -272,6 +275,7 @@ describe("toOptionFlags", () => {
       withTob: false,
       withCodexSkills: false,
       withCodexTrust: false,
+      withKarpathyHook: false,
     });
   });
 
@@ -284,6 +288,7 @@ describe("toOptionFlags", () => {
       withTob: true,
       withCodexSkills: false,
       withCodexTrust: false,
+      withKarpathyHook: false,
     });
   });
 });
@@ -298,6 +303,7 @@ describe("applyOptionRules", () => {
       withTob: false,
       withCodexSkills: false,
       withCodexTrust: false,
+      withKarpathyHook: false,
     });
     expect(result.withEcc).toBe(true);
     expect(result.withPrune).toBe(true);
@@ -312,6 +318,7 @@ describe("applyOptionRules", () => {
       withTob: false,
       withCodexSkills: false,
       withCodexTrust: false,
+      withKarpathyHook: false,
     };
     expect(applyOptionRules(flags)).toEqual(flags);
   });
@@ -325,6 +332,7 @@ describe("applyOptionRules", () => {
       withTob: false,
       withCodexSkills: false,
       withCodexTrust: false,
+      withKarpathyHook: false,
     };
     expect(applyOptionRules(flags)).toEqual(flags);
   });
