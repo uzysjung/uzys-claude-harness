@@ -87,12 +87,15 @@ export interface KarpathyHookReport {
   /** withKarpathyHook=true && karpathy-coder install 성공 시 true. */
   wired: boolean;
   /** wired=false 시 사유. */
-  reason?: "opt-out" | "plugin-install-failed" | "external-skipped";
+  reason?: "opt-out" | "plugin-install-failed" | "external-skipped" | "settings-parse-error";
   /** wired=true 시 settings.json 갱신 여부 (idempotent skip 시 false). */
   settingsUpdated?: boolean;
   /** wired=true 시 hook script 복사 여부. */
   hookScriptCopied?: boolean;
 }
+
+/** karpathy-coder asset ID — SSOT (external-assets.ts entry id와 일치 강제). */
+const KARPATHY_ASSET_ID = "karpathy-coder";
 
 /** Baseline phase result (everything except external assets). */
 export interface BaselineReport {
@@ -342,7 +345,7 @@ function wireKarpathyHook(
   if (external === null) {
     return { wired: false, reason: "external-skipped" };
   }
-  const karpathyResult = external.attempted.find((r) => r.asset.id === "karpathy-coder");
+  const karpathyResult = external.attempted.find((r) => r.asset.id === KARPATHY_ASSET_ID);
   if (!karpathyResult || !karpathyResult.ok) {
     return { wired: false, reason: "plugin-install-failed" };
   }
@@ -362,11 +365,17 @@ function wireKarpathyHook(
   }
 
   // settings.json PreToolUse Write|Edit entry 추가 (idempotent)
+  // HIGH-2 fix: JSON.parse try/catch — add mode에서 사용자 손상 settings.json 시 install 중단 방지
   const settingsPath = join(projectDir, ".claude/settings.json");
   let settingsUpdated = false;
   if (existsSync(settingsPath)) {
     const raw = readFileSync(settingsPath, "utf8");
-    const before: ClaudeSettings = JSON.parse(raw);
+    let before: ClaudeSettings;
+    try {
+      before = JSON.parse(raw);
+    } catch {
+      return { wired: false, reason: "settings-parse-error", hookScriptCopied };
+    }
     const after = addPreToolUseHook(before, "Write|Edit", KARPATHY_HOOK_COMMAND);
     const beforeStr = JSON.stringify(before);
     const afterStr = JSON.stringify(after);

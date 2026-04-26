@@ -5,6 +5,55 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.6.0] — 2026-04-26
+
+### Added — karpathy-coder hook auto-wire (opt-in)
+
+v0.5.0에서 plugin install까지만 제공된 `karpathy-coder`의 **pre-commit hook 자동 등록 (A 경로)** 구현. 사용자 명시 opt-in 후에만 `.claude/settings.json` PreToolUse Write|Edit matcher에 hook entry 등록.
+
+#### 신규 옵션
+- **`--with-karpathy-hook`** CLI flag + 인터랙티브 prompt entry — `OptionFlags.withKarpathyHook` (default false, opt-in 강제).
+- 활성화 조건 (AND): flag 명시 + `karpathy-coder` plugin install 성공.
+
+#### 신규 자산
+- `templates/hooks/karpathy-gate.sh` — alirezarezvani/claude-skills@f567c61 cherry-pick + Claude Code PreToolUse 컨텍스트 adapt. stdin tool_input JSON에서 `file_path` 추출 (jq 우선, grep 폴백) → Python 3 + plugin scripts 가용 시 `complexity_checker.py` warn. 비차단 (`exit 0` 항상).
+- `src/settings-merge.ts` (62줄) — `addPreToolUseHook` idempotent helper. 기존 hook 보존 + 다른 matcher entries 보존.
+
+#### Internal
+- `src/installer.ts` `wireKarpathyHook` — opt-in 강제 + plugin install 성공 후에만 활성화. settings.json JSON.parse try/catch (HIGH-2 fix) — `add` mode에서 사용자 손상 settings.json 시 graceful degradation (`reason="settings-parse-error"`).
+- `KarpathyHookReport` interface — wired/reason/settingsUpdated/hookScriptCopied 4 필드.
+- `KARPATHY_ASSET_ID` const — external-assets와 SSOT 통일 (MEDIUM-3 fix).
+
+#### Documentation
+- `docs/USAGE.md` "karpathy-coder Enforcement (4 Level)" 섹션 — L1~L4 + 활성화 절차 + Python 3 부재 시 동작 + v0.6.0 PreToolUse 한계 명시 + upstream incremental adoption 권장 (Week 1 L1 → Week 4+ L3).
+- `docs/decisions/ADR-005-v0.5.0-f9-mock-dogfood.md` (v0.5.0 ADR-005 정신 유지) + `docs/decisions/ADR-006-karpathy-hook-pretooluse-vs-posttooluse.md` (HIGH-1 후속, v0.7+ 재평가 트리거 명시).
+- `docs/research/karpathy-hook-autowire-2026-04-26.md` — deep-research 14 sources. upstream `enforcement-patterns.md` 권장 검증 → 4-gate Modified Go (5 조건 충족).
+
+#### 검증
+- vitest **451 tests PASS** (이전 437 + 신규 14: settings-merge 5 + install-karpathy-hook 5 + fixture 4).
+- coverage stmt 96.89% / branch 88.53% / funcs 96.09% / lines 96.89% — threshold 90/88/90/90 충족.
+- npm run ci PASS (typecheck + lint + test:coverage + build).
+- shellcheck `templates/hooks/karpathy-gate.sh` PASS / smoke test exit 0 + reminder 출력.
+- alirezarezvani/claude-skills marketplace 등록 + cherry-pick commit pin (`f567c61def3fb86046d7242b4bf27fceb63ad8b4`) `cherrypicks.lock`에 기록.
+
+#### Reviewer 결과 (5축)
+- **CRITICAL: 0** — Ship 가능.
+- HIGH 2 / MEDIUM 4 / LOW 2:
+  - HIGH-2 (settings.json parse 무방어) — 본 PR fix.
+  - MEDIUM-3 (asset ID hardcode) — 본 PR fix (`KARPATHY_ASSET_ID` const).
+  - MEDIUM-4 (file_path 추출 fragile) — 본 PR fix (jq 우선 + grep 폴백).
+  - HIGH-1 (PreToolUse vs PostToolUse 의미) — ADR-006 채택 + USAGE.md 한계 명시 + v0.7+ 재평가.
+  - MEDIUM-1, MEDIUM-2, LOW-1~3 — 후속 PR.
+
+#### Driver
+v0.5.0 SPEC §3.4 OQ1 (karpathy hook 자동 와이어링 결정) → 사용자 결정 (2026-04-26): A 경로 채택 + opt-in 강제. deep-research로 외부 검증 (4-gate 4/4 정합) 후 진행.
+
+#### Reference
+- SPEC `docs/specs/karpathy-hook-autowire.md` (Accepted)
+- Plan `docs/plans/karpathy-hook-autowire-plan.md`
+- Dogfood `docs/dogfood/karpathy-hook-2026-04-26.md`
+- ADR-006 `docs/decisions/ADR-006-karpathy-hook-pretooluse-vs-posttooluse.md`
+
 ## [v0.5.0] — 2026-04-26
 
 ### Added — 신규 Track 2개 + karpathy-coder

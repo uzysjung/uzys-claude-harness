@@ -20,8 +20,13 @@ set +e
 # stdin tool_input JSON 읽기 (Claude Code hook spec: PreToolUse 시 자동 주입)
 INPUT=$(cat 2>/dev/null || echo "")
 
-# file_path 추출 (Write/Edit tool의 첫 인자)
-FILE_PATH=$(printf '%s' "$INPUT" | grep -o '"file_path":"[^"]*"' | head -1 | sed 's/"file_path":"//; s/"$//')
+# file_path 추출 — jq 우선, grep 폴백 (cli-development.md hook 컨벤션)
+# jq 가용 시: escape 처리 정확. 미설치 시: grep+sed (단순 케이스만)
+if command -v jq >/dev/null 2>&1; then
+  FILE_PATH=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null || echo "")
+else
+  FILE_PATH=$(printf '%s' "$INPUT" | grep -o '"file_path":"[^"]*"' | head -1 | sed 's/"file_path":"//; s/"$//')
+fi
 
 # 짧은 reminder — 모든 Write|Edit 시점에 출력 (4 원칙 환기)
 printf '[karpathy] Think Before / Simplicity / Surgical / Goal-Driven\n' >&2

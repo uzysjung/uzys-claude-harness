@@ -507,6 +507,17 @@ npx -y github:uzysjung/uzys-claude-harness
 - Python 3 부재 → reminder 메시지만 출력
 - L3 자체가 upstream "warn, doesn't reject" 비차단 설계
 
+#### v0.6.0 한계 — PreToolUse vs PostToolUse
+
+본 installer의 L3 자동 와이어링은 `PreToolUse Write|Edit` matcher 사용. 이는 **코드 작성 직전** 발동:
+
+- **4 원칙 reminder** (printf 메시지) — 의미 있음 (작성 직전 환기)
+- **`complexity_checker.py` 검사** — file_path가 가리키는 **현재 파일**(작성 전 상태)을 검사. 새 파일(`Write`) 시 file_path 미존재, 기존 파일 `Edit` 시 pre-edit 내용 검사 → 본래 의도와 차이
+
+upstream `enforcement-patterns.md` 예제는 `PostToolUse Bash` matcher로 git commit을 가로채는 패턴. 본 installer는 Claude Code 컨텍스트 한정으로 **`PreToolUse Write|Edit` reminder + best-effort complexity warn** 채택.
+
+**v0.7+ 후속 ADR 검토 항목**: PostToolUse 전환 시 reminder 의미는 사후로 이동, complexity_checker는 정확도 향상. 사용자/팀 합의 필요.
+
 #### 비활성화 / 제거
 
 ```bash
