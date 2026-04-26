@@ -126,19 +126,13 @@ export const EXTERNAL_ASSETS: ReadonlyArray<ExternalAsset> = [
   },
 
   // === Railway (csr-fastify|csr-fastapi|ssr-*|full) ===
-  {
-    id: "railway-plugin",
-    description: "Railway plugin (deploy commands)",
-    condition: { kind: "any-track", tracks: RAILWAY_TRACKS },
-    method: {
-      kind: "plugin",
-      marketplace: "railwayapp/railway-plugin",
-      pluginId: "railway-plugin@railway-plugin",
-    },
-  },
+  // v0.6.3 — railway-plugin entry 제거. railwayapp/railway-plugin repo 자체 존재 안 함
+  // (404 Not Found). 공식 docs (https://docs.railway.com/ai/claude-code-plugin) 형식은
+  // marketplace add `railwayapp/railway-skills` + plugin install `railway@railway-skills`만.
+  // → 아래 railway-skills entry로 단일화.
   {
     id: "railway-skills",
-    description: "Railway agent-skills",
+    description: "Railway agent-skills (deploy + project/service/env management)",
     condition: { kind: "any-track", tracks: RAILWAY_TRACKS },
     method: {
       kind: "plugin",
@@ -228,13 +222,15 @@ export const EXTERNAL_ASSETS: ReadonlyArray<ExternalAsset> = [
   },
 
   // === React + Next UI tracks ===
+  // v0.6.3 — vercel-labs/agent-skills source는 short form 안 됨. full HTTPS URL 필요.
+  // 사용자 확인 형식: `npx skills add https://github.com/vercel-labs/agent-skills --skill <name>`.
   {
     id: "react-best-practices",
-    description: "react-best-practices (vercel-labs)",
+    description: "react-best-practices (vercel-labs/agent-skills)",
     condition: { kind: "any-track", tracks: CSR_SSR_NEXTJS_FULL },
     method: {
       kind: "skill",
-      source: "vercel-labs/agent-skills",
+      source: "https://github.com/vercel-labs/agent-skills",
       skill: "react-best-practices",
     },
   },
@@ -246,11 +242,11 @@ export const EXTERNAL_ASSETS: ReadonlyArray<ExternalAsset> = [
   },
   {
     id: "web-design-guidelines",
-    description: "web-design-guidelines (vercel-labs)",
+    description: "web-design-guidelines (vercel-labs/agent-skills)",
     condition: { kind: "any-track", tracks: CSR_SSR_NEXTJS_FULL },
     method: {
       kind: "skill",
-      source: "vercel-labs/agent-skills",
+      source: "https://github.com/vercel-labs/agent-skills",
       skill: "web-design-guidelines",
     },
   },

@@ -27,8 +27,7 @@
 | 이름 | 출처 | Tier | Track | 설치 명령 | 용도 |
 |------|------|:-:|------|---------|------|
 | **agent-skills** | [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | 🟢 | dev tracks | `claude plugin install agent-skills@addy-agent-skills` | spec-driven development 8단계 워크플로우 |
-| **railway-plugin** | [railwayapp/railway-plugin](https://github.com/railwayapp/railway-plugin) | ✅ | csr-fastify, csr-fastapi, ssr-*, full | `claude plugin install railway-plugin@railway-plugin` | Railway 배포/로그/환경변수 (csr-supabase 제외 — Vercel/Netlify 사용) |
-| **railway-skills** | [railwayapp/railway-skills](https://github.com/railwayapp/railway-skills) | ✅ | csr-fastify, csr-fastapi, ssr-*, full | `claude plugin install railway@railway-skills` | Railway 프로젝트/서비스/배포 관리 (railway-mcp 짝) |
+| **railway-skills** | [railwayapp/railway-skills](https://github.com/railwayapp/railway-skills) | ✅ | csr-fastify, csr-fastapi, ssr-*, full | `claude plugin marketplace add railwayapp/railway-skills` + `claude plugin install railway@railway-skills` | Railway 배포/프로젝트/서비스/환경변수 관리 ([공식 docs](https://docs.railway.com/ai/claude-code-plugin)). v0.6.3에서 `railway-plugin` 잘못된 entry 제거 (repo 부재) — 본 entry로 단일화 |
 | **Vercel CLI** | [vercel/vercel](https://github.com/vercel/vercel) | ✅ | csr-supabase, full | `npm install -g vercel` | 프론트엔드 배포 (JAMstack) |
 | **Netlify CLI** | [netlify/cli](https://github.com/netlify/cli) | ✅ | csr-supabase, full | `npm install -g netlify-cli` | 프론트엔드 배포 (JAMstack) |
 | **supabase agent-skills** | [supabase/agent-skills](https://github.com/supabase/agent-skills) | ✅ | csr-supabase, full | `claude plugin install supabase@supabase-agent-skills` | Auth/Realtime/Storage/RLS |
@@ -64,9 +63,9 @@
 | **playwright-skill** | [testdino-hq/playwright-skill](https://github.com/testdino-hq/playwright-skill) | 🟡 | dev tracks | `npx skills add testdino-hq/playwright-skill --yes` | Playwright E2E 테스트 |
 | **find-skills** | [vercel-labs/skills](https://github.com/vercel-labs/skills) | 🟢 | dev tracks | `npx skills add vercel-labs/skills --skill find-skills --yes` | 적합한 스킬 검색/추천 |
 | **architecture-decision-record** | [yonatangross/orchestkit](https://github.com/yonatangross/orchestkit) | 🟡 | dev tracks | `npx skills add yonatangross/orchestkit --skill architecture-decision-record --yes` | ADR 템플릿/작성 |
-| **react-best-practices** | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | 🟢 | csr-*, ssr-nextjs, full | `npx skills add vercel-labs/agent-skills --skill react-best-practices --yes` | React 패턴 |
+| **react-best-practices** | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | 🟢 | csr-*, ssr-nextjs, full | `npx skills add https://github.com/vercel-labs/agent-skills --skill react-best-practices --yes` | React 패턴. v0.6.3 — source URL을 full HTTPS로 수정 |
 | **shadcn/ui** | [shadcn/ui](https://github.com/shadcn-ui/ui) | ✅ | csr-*, ssr-nextjs, full | `npx skills add shadcn/ui --yes` | shadcn 컴포넌트 |
-| **web-design-guidelines** | vercel-labs/agent-skills | 🟢 | csr-*, ssr-*, full | `npx skills add vercel-labs/agent-skills --skill web-design-guidelines --yes` | 웹 UI 가이드라인 |
+| **web-design-guidelines** | vercel-labs/agent-skills | 🟢 | csr-*, ssr-*, full | `npx skills add https://github.com/vercel-labs/agent-skills --skill web-design-guidelines --yes` | 웹 UI 가이드라인. v0.6.3 — source URL을 full HTTPS로 수정 |
 | **next-skills** | [vercel-labs/next-skills](https://github.com/vercel-labs/next-skills) | 🟢 | ssr-nextjs, full | `npx skills add vercel-labs/next-skills --yes` | Next.js 패턴 |
 | **polars** | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) | 🟢 | data, full | `npx skills add K-Dense-AI/scientific-agent-skills --skill polars --yes` | polars lazy/expression deep guide |
 | **dask** | K-Dense-AI/scientific-agent-skills | 🟢 | data, full | `npx skills add K-Dense-AI/scientific-agent-skills --skill dask --yes` | larger-than-RAM 분산 (선택) |
