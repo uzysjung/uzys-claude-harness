@@ -433,16 +433,12 @@ function renderPhase1Rows(
 }
 
 /**
- * Names 배열을 "name1, name2, name3 + N more (X total)" 형식으로 압축.
- * 첫 3개까지만 names 표시, 나머지는 "+ N more". 카운트는 끝에.
+ * Names 배열을 "name1, name2, ... (N)" 형식으로 표시. 전체 names 노출 (압축 없음).
+ * 사용자 피드백 v0.6.2 — Phase 1 names 풀어서 다 보이게.
  */
 function formatNamesWithCount(names: ReadonlyArray<string>): string {
   if (names.length === 0) return "0";
-  if (names.length <= 3) {
-    return `${names.join(", ")} (${names.length})`;
-  }
-  const head = names.slice(0, 3).join(", ");
-  return `${head} + ${names.length - 3} more (${names.length})`;
+  return `${names.join(", ")} (${names.length})`;
 }
 
 function formatOptions(spec: InstallSpec): string {

@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.6.2] — 2026-04-26
+
+### Improved — Phase 1 names 전체 표시 (압축 제거)
+
+사용자 피드백 — `+ N more` 압축 표기 제거. 카테고리별 모든 names 풀어서 출력.
+
+이전 (v0.6.1):
+```
+✓ rules    change-management, cli-development, code-style + 5 more (8)
+```
+
+v0.6.2:
+```
+✓ rules    change-management, cli-development, code-style, error-handling, gates-taxonomy, git-policy, ship-checklist, test-policy (8)
+```
+
+`formatNamesWithCount` 함수 단순화 — head 3개 + "+ N more" 로직 제거. terminal 너비 초과 시 자연 wrap.
+
 ## [v0.6.1] — 2026-04-26
 
 ### Improved — Install output verbosity (Phase 1 + Phase 2)
