@@ -479,8 +479,9 @@ describe("executeSpec", () => {
     // formatAssetMeta covered each kind
     expect(log).toHaveBeenCalledWith(expect.stringContaining("owner/repo · react"));
     expect(log).toHaveBeenCalledWith(expect.stringContaining("foo@ms"));
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("npm install -g vercel"));
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("npx gsd@latest"));
+    // v0.6.1 — formatAssetMeta now prefixes with "npm -g · " / "npx · " etc.
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("npm -g · vercel"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("npx · gsd@latest"));
     // failed asset shows error message
     expect(log).toHaveBeenCalledWith(expect.stringContaining("script missing"));
     // Phase 2 header rendered

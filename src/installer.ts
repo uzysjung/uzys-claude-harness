@@ -97,6 +97,23 @@ export interface KarpathyHookReport {
 /** karpathy-coder asset ID — SSOT (external-assets.ts entry id와 일치 강제). */
 const KARPATHY_ASSET_ID = "karpathy-coder";
 
+/**
+ * v0.6.1 — Phase 1 output 카테고리별 분류. install renderer가 각 카테고리별로 row를 출력한다.
+ * Names는 description용 (display only); 빈 배열이면 row 출력 skip.
+ */
+export interface BaselineCategoryCounts {
+  /** rule 파일 names (확장자 제외) — git-policy, change-management 등 */
+  rules: string[];
+  /** agent 파일 names */
+  agents: string[];
+  /** hook 파일 names (확장자 제외) */
+  hooks: string[];
+  /** commands 디렉토리 카운트 (uzys + ecc) — names는 디렉토리라 무의미 */
+  commands: number;
+  /** skill 디렉토리 names */
+  skills: string[];
+}
+
 /** Baseline phase result (everything except external assets). */
 export interface BaselineReport {
   filesCopied: number;
@@ -115,6 +132,8 @@ export interface BaselineReport {
     gitignoreEnvAdded: boolean;
     mcpAllowlist: string[] | null;
   };
+  /** v0.6.1 — Phase 1 카테고리별 카운트 + names. Update mode에서는 빈 객체. */
+  categories?: BaselineCategoryCounts;
 }
 
 export interface InstallReport {
@@ -213,6 +232,13 @@ export function runInstall(ctx: InstallContext): InstallReport {
   let filesCopied = 0;
   let dirsCopied = 0;
   let skipped = 0;
+  const categories: BaselineCategoryCounts = {
+    rules: [],
+    agents: [],
+    hooks: [],
+    commands: 0,
+    skills: [],
+  };
   for (const entry of manifest) {
     if (!entry.applies({ tracks: spec.tracks, withTauri: spec.options.withTauri })) {
       continue;
@@ -230,6 +256,7 @@ export function runInstall(ctx: InstallContext): InstallReport {
       copyDir(source, target);
       dirsCopied += 1;
     }
+    accumulateCategory(categories, entry);
   }
 
   // chmod +x on hook scripts (cp does not preserve exec bit when source is non-exec)
@@ -284,6 +311,7 @@ export function runInstall(ctx: InstallContext): InstallReport {
     updateMode: null,
     mode,
     envFiles,
+    categories,
   };
 
   // ━━━ Baseline complete — emit progress event so renderer can show Phase 1 rows ━━━
@@ -402,6 +430,32 @@ function composeAndWriteMcp(
   });
   writeMcpJson(mcpPath, composed);
   return composed;
+}
+
+/**
+ * v0.6.1 — manifest entry를 카테고리별로 누적. install renderer Phase 1 row 출력에 사용.
+ * `entry.target` prefix로 분류. file은 basename(.확장자 제거), dir은 dir name.
+ */
+function accumulateCategory(
+  cats: BaselineCategoryCounts,
+  entry: import("./manifest.js").AssetEntry,
+): void {
+  const target = entry.target;
+  if (target.startsWith(".claude/rules/") && target.endsWith(".md")) {
+    const name = target.replace(/^\.claude\/rules\//, "").replace(/\.md$/, "");
+    cats.rules.push(name);
+  } else if (target.startsWith(".claude/agents/") && target.endsWith(".md")) {
+    const name = target.replace(/^\.claude\/agents\//, "").replace(/\.md$/, "");
+    cats.agents.push(name);
+  } else if (target.startsWith(".claude/hooks/") && target.endsWith(".sh")) {
+    const name = target.replace(/^\.claude\/hooks\//, "").replace(/\.sh$/, "");
+    cats.hooks.push(name);
+  } else if (target.startsWith(".claude/commands/")) {
+    cats.commands += 1;
+  } else if (target.startsWith(".claude/skills/") && entry.type === "dir") {
+    const name = target.replace(/^\.claude\/skills\//, "").replace(/\/?$/, "");
+    cats.skills.push(name);
+  }
 }
 
 function writeInstalledTracks(projectDir: string, tracks: ReadonlyArray<string>): void {

@@ -320,19 +320,31 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
 }
 
 function formatAssetMeta(asset: import("../external-assets.js").ExternalAsset): string {
+  // v0.6.1 — kind + method + description 보강. install 시 무엇이 들어왔는지 명시적.
   const m = asset.method;
+  let methodPart: string;
   switch (m.kind) {
     case "skill":
-      return m.skill ? `${m.source} · ${m.skill}` : m.source;
+      methodPart = m.skill ? `skill · ${m.source} · ${m.skill}` : `skill · ${m.source}`;
+      break;
     case "plugin":
-      return m.pluginId;
+      methodPart = `plugin · ${m.pluginId}`;
+      break;
     case "npm-global":
-      return `npm install -g ${m.pkg}`;
+      methodPart = `npm -g · ${m.pkg}`;
+      break;
     case "npx-run":
-      return `npx ${m.cmd}`;
+      methodPart = `npx · ${m.cmd}`;
+      break;
     case "shell-script":
-      return `bash ${m.script}`;
+      methodPart = `bash · ${m.script}`;
+      break;
   }
+  // description은 asset.description (예: "karpathy-coder (4 Python tool + reviewer + ...)")
+  // ID와 중복 prefix 제거
+  const desc = asset.description.replace(new RegExp(`^${asset.id}\\s*[—\\-]?\\s*`), "").trim();
+  const descPart = desc && desc !== asset.id ? ` — ${desc}` : "";
+  return `${methodPart}${descPart}`;
 }
 
 /**
@@ -371,9 +383,29 @@ function renderPhase1Rows(
     return;
   }
 
-  // Fresh / add / reinstall — Phase 1 rows
-  log(assetRow("success", "rules + hooks + commands + agents", `${baseline.filesCopied} files`));
-  log(assetRow("success", "skeleton + project-claude/<track>.md", `${baseline.dirsCopied} dirs`));
+  // Fresh / add / reinstall — Phase 1 rows (v0.6.1: 카테고리별 분리 + names 일부 표시)
+  const cats = baseline.categories;
+  if (cats) {
+    if (cats.rules.length > 0) {
+      log(assetRow("success", "rules", formatNamesWithCount(cats.rules)));
+    }
+    if (cats.agents.length > 0) {
+      log(assetRow("success", "agents", formatNamesWithCount(cats.agents)));
+    }
+    if (cats.hooks.length > 0) {
+      log(assetRow("success", "hooks", formatNamesWithCount(cats.hooks)));
+    }
+    if (cats.commands > 0) {
+      log(assetRow("success", "commands", `${cats.commands} entries (uzys + ecc)`));
+    }
+    if (cats.skills.length > 0) {
+      log(assetRow("success", "skills", formatNamesWithCount(cats.skills)));
+    }
+  } else {
+    // v0.6.0 backwards compat — categories 없는 fakeReport 등
+    log(assetRow("success", "rules + hooks + commands + agents", `${baseline.filesCopied} files`));
+    log(assetRow("success", "skeleton + project-claude/<track>.md", `${baseline.dirsCopied} dirs`));
+  }
   if (baseline.skipped > 0) {
     log(assetRow("skip", "manifest entries (applies → false)", `${baseline.skipped} skipped`));
   }
@@ -398,6 +430,19 @@ function renderPhase1Rows(
     log(assetRow("success", ".gitignore", "+ .env"));
   }
   log("");
+}
+
+/**
+ * Names 배열을 "name1, name2, name3 + N more (X total)" 형식으로 압축.
+ * 첫 3개까지만 names 표시, 나머지는 "+ N more". 카운트는 끝에.
+ */
+function formatNamesWithCount(names: ReadonlyArray<string>): string {
+  if (names.length === 0) return "0";
+  if (names.length <= 3) {
+    return `${names.join(", ")} (${names.length})`;
+  }
+  const head = names.slice(0, 3).join(", ");
+  return `${head} + ${names.length - 3} more (${names.length})`;
 }
 
 function formatOptions(spec: InstallSpec): string {

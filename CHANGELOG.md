@@ -5,6 +5,50 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.6.1] — 2026-04-26
+
+### Improved — Install output verbosity (Phase 1 + Phase 2)
+
+`install` 명령 출력에서 **무엇이 설치됐는지** 명시적 노출. 이전 한 줄 묶음(`rules + hooks + commands + agents — N files`)에서 카테고리별 분리 + names 일부 표시.
+
+#### Phase 1 (Templates) — 카테고리별 row + names
+이전:
+```
+✓ rules + hooks + commands + agents    24 files
+✓ skeleton + project-claude/...        8 dirs
+```
+v0.6.1:
+```
+✓ rules         change-management, cli-development, code-style + 5 more (8)
+✓ agents        reviewer, data-analyst, strategist + 5 more (8)
+✓ hooks         session-start, protect-files, gate-check + 5 more (8)
+✓ commands      8 entries (uzys + ecc)
+✓ skills        continuous-learning-v2, strategic-compact, north-star + 5 more (8)
+```
+
+#### Phase 2 (External Assets) — method + description prefix
+이전:
+```
+✓ karpathy-coder    karpathy-coder@claude-code-skills
+```
+v0.6.1:
+```
+✓ karpathy-coder    plugin · karpathy-coder@claude-code-skills — (4 Python tool + reviewer agent + /karpathy-check + pre-commit hook)
+```
+
+formatAssetMeta가 method kind prefix(`plugin · / skill · / npm -g · / npx · / bash ·`) + asset.description 추가 (id 중복 제거).
+
+#### Internal
+- `BaselineReport.categories` (optional) — `{ rules, agents, hooks, commands, skills }` names + count.
+- `accumulateCategory` helper — manifest entry `target` prefix로 분류 (basename 추출).
+- `formatNamesWithCount` helper — 첫 3개 names + "+ N more (total)" 압축 표기.
+- backwards compat: `categories` undefined 시 v0.6.0 출력 형식 fallback (test fakeReport 영향 없음).
+
+#### 검증
+- vitest 451 tests PASS (테스트 1개 fixture 갱신 — `npm install -g vercel` → `npm -g · vercel` prefix 변경 반영).
+- coverage threshold 충족.
+- 실측 install 출력 — 5 카테고리 row + 7 external assets description 모두 표시.
+
 ## [v0.6.0] — 2026-04-26
 
 ### Added — karpathy-coder hook auto-wire (opt-in)
