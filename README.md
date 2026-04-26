@@ -278,7 +278,7 @@ Installed regardless of track (executive gets a subset):
 | Category | Item | Purpose |
 |----------|------|---------|
 | Plugin | `addy-agent-skills`, `Impeccable` | 6-gate workflow backbone + design quality |
-| Plugin (v0.5.0) | `karpathy-coder` | 4 Python tool + reviewer agent + `/karpathy-check` + pre-commit hook — CLAUDE.md P1-P4 enforcement |
+| Plugin (v0.5.0) | `karpathy-coder` | 4 Python tool + reviewer agent + `/karpathy-check` + pre-commit hook — CLAUDE.md P1-P4 enforcement. v0.6.0+ `--with-karpathy-hook` opt-in 시 PreToolUse 자동 와이어링 (USAGE 4 level 가이드) |
 | Skill (cherry-pick) | `deep-research` | Multi-source research (firecrawl + exa) — all dev tracks |
 | Skill (cherry-pick) | `market-research` | Competitive / TAM research — `executive` only |
 | Skill (npx) | `find-skills` (vercel-labs) | On-demand skill discovery |

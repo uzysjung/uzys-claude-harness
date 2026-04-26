@@ -303,7 +303,7 @@ executive는 `market-research` 중심 서브셋.
 | 분류 | 항목 | 용도 |
 |------|------|------|
 | Plugin | `addy-agent-skills`, `Impeccable` | 6-gate 워크플로우 + 디자인 품질 |
-| Plugin (v0.5.0) | `karpathy-coder` | 4 Python 도구 + reviewer 에이전트 + `/karpathy-check` + pre-commit hook — CLAUDE.md P1-P4 enforcement |
+| Plugin (v0.5.0) | `karpathy-coder` | 4 Python 도구 + reviewer 에이전트 + `/karpathy-check` + pre-commit hook — CLAUDE.md P1-P4 enforcement. v0.6.0+ `--with-karpathy-hook` opt-in 시 PreToolUse 자동 와이어링 (USAGE 4 level 가이드) |
 | Skill (cherry-pick) | `deep-research` | firecrawl + exa 멀티 소스 조사 — 전체 dev |
 | Skill (cherry-pick) | `market-research` | 경쟁/TAM 조사 — `executive` 한정 |
 | Skill (npx) | `find-skills` (vercel-labs) | 필요 시점 skill 검색/설치 |
