@@ -48,11 +48,14 @@ while [ $# -gt 0 ]; do
 done
 
 # v26.11.1 — DEST 경계 검증: 글로벌 ~/.claude/ 또는 시스템 경로 차단 (path traversal 방어)
+# v0.6.6 — dirname 디렉토리 미존재 시 pwd 기준으로 fallback (이전엔 상대경로 그대로 잔존 → pwd 검증 실패)
 DEST_PARENT="$(cd "$(dirname "$DEST")" 2>/dev/null && pwd)" || DEST_PARENT=""
 if [ -n "$DEST_PARENT" ]; then
   DEST_ABS="$DEST_PARENT/$(basename "$DEST")"
-else
+elif [[ "$DEST" = /* ]]; then
   DEST_ABS="$DEST"
+else
+  DEST_ABS="$(pwd)/$DEST"
 fi
 case "$DEST_ABS" in
   "$HOME/.claude"|"$HOME/.claude/"*)
