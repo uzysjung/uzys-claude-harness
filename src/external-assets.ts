@@ -226,12 +226,14 @@ export const EXTERNAL_ASSETS: ReadonlyArray<ExternalAsset> = [
   // 사용자 확인 형식: `npx skills add https://github.com/vercel-labs/agent-skills --skill <name>`.
   {
     id: "react-best-practices",
-    description: "react-best-practices (vercel-labs/agent-skills)",
+    description: "vercel-react-best-practices (vercel-labs/agent-skills)",
     condition: { kind: "any-track", tracks: CSR_SSR_NEXTJS_FULL },
     method: {
       kind: "skill",
       source: "https://github.com/vercel-labs/agent-skills",
-      skill: "react-best-practices",
+      // v0.6.5 — skills.sh registry name. GitHub dir 이름(react-best-practices)과 다름.
+      // skills.sh: 대부분 vercel- prefix (web-design-guidelines, deploy-to-vercel만 예외).
+      skill: "vercel-react-best-practices",
     },
   },
   {
