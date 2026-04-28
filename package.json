@@ -1,6 +1,6 @@
 {
   "name": "@uzysjung/claude-harness",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "description": "TypeScript CLI for uzys-claude-harness — install, update, and manage Claude Code / Codex CLI assets",
   "type": "module",
   "engines": {
@@ -12,6 +12,7 @@
   "files": [
     "dist",
     "templates",
+    "scripts/prune-ecc.sh",
     "README.md",
     "LICENSE"
   ],

@@ -5,6 +5,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.6.5] — 2026-04-28
+
+### Fixed — vercel-react-best-practices skill name + ecc-prune script 누락
+
+#### A. react-best-practices skill name (skills.sh registry 기준)
+
+사용자 보고 — `npx exited 1`. skills.sh 사이트(https://skills.sh/vercel-labs/agent-skills/vercel-react-best-practices) 확인 결과 registry name은 **`vercel-react-best-practices`** (vercel- prefix 있음). GitHub 디렉토리 이름(`react-best-practices`)과 다름.
+
+- skills.sh registry 명명 규칙: 같은 repo 내에서도 prefix 일관 X
+  - `vercel-react-best-practices`, `vercel-composition-patterns`, `vercel-react-native-skills`, `vercel-cli-with-tokens`, `vercel-react-view-transitions`, `vercel-deploy` (prefix 있음)
+  - `web-design-guidelines`, `deploy-to-vercel` (prefix 없음)
+- catalog `--skill react-best-practices` → `vercel-react-best-practices`로 수정
+- web-design-guidelines는 prefix 없으므로 그대로 정확
+
+#### B. ecc-prune script not found
+
+사용자 보고 — `script not found: /Users/.../node_modules/@uzysjung/claude-harness/scripts/prune-ecc.sh`.
+
+- 원인: `package.json` `files` field가 npm package 포함 항목 한정 — `["dist", "templates", "README.md", "LICENSE"]`. `scripts/` 미포함
+- Fix: `files`에 `"scripts/prune-ecc.sh"` 명시 추가 (해당 파일 1개만)
+
+#### Driver
+사용자 실측 install 보고 (2026-04-28, AutoBlogEngine 환경) — Codex 설치 후 2건 외부 자산 실패. skills.sh URL 직접 명시 + prune script not found 에러 메시지 직접 캡처.
+
+#### 검증
+- vitest 451 tests PASS (변경 없음)
+- npm run ci PASS
+
 ## [v0.6.4] — 2026-04-27
 
 ### Fixed — Codex skills 출력 경로 (사용자 보고: `/uzys-spec` slash 동작 안 함)
