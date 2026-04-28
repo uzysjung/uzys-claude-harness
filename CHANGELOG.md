@@ -5,6 +5,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.6.6] — 2026-04-28
+
+### Fixed — prune-ecc.sh 상대경로 dest 변환 버그
+
+사용자 보고:
+```
+⊘ ecc-prune    bash exited 1: ERROR: --dest는 현재 프로젝트 디렉토리 하위만 허용
+   입력: .claude/local-plugins/ecc (절대: .claude/local-plugins/ecc)
+   현재 pwd: /Users/.../AutoBlogEngine
+```
+
+원인: `scripts/prune-ecc.sh` L51-56 절대경로 변환 로직 결함.
+- default `DEST=".claude/local-plugins/ecc"` (상대)
+- `dirname "$DEST"` = `.claude/local-plugins` — install 시점에는 **미존재** 디렉토리
+- `cd "$(dirname...)"` 실패 → `DEST_PARENT=""` → else 분기에서 `DEST_ABS="$DEST"` (상대 그대로)
+- L68 pwd 검증: `case "$DEST_ABS" in "$(pwd)"|"$(pwd)/"*)` 절대 vs 상대 mismatch → ERROR
+
+Fix: dirname 디렉토리 미존재 + DEST가 상대경로면 `pwd` prefix 적용.
+```bash
+elif [[ "$DEST" = /* ]]; then
+  DEST_ABS="$DEST"   # 이미 절대
+else
+  DEST_ABS="$(pwd)/$DEST"   # 상대 → pwd 기준 절대
+fi
+```
+
+검증:
+- shellcheck PASS (기존 info 경고 2건은 pre-existing, 본 fix와 무관)
+- smoke test (tmp dir에서 `--apply --force` 실행) → dest validation 통과 + 최종 메시지 도달
+
+#### Driver
+사용자 실측 install (2026-04-28 AutoBlogEngine, v0.6.5 환경) — ecc-prune skip. 첫 install부터 dirname 디렉토리 미존재 시나리오에서 발생하는 100% 재현 버그.
+
 ## [v0.6.5] — 2026-04-28
 
 ### Fixed — vercel-react-best-practices skill name + ecc-prune script 누락
