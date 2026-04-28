@@ -62,13 +62,19 @@ function parseSource(source: string): ParsedSource {
           .replace(/^\n+/, ""),
       };
     }
+    // Malformed frontmatter (no closing `---`) — 첫 라인 `---` 자체를 description으로 쓰지 않음.
+    // body는 첫 라인 제외하고 그대로 (renderSkill 동일 패턴).
+    return {
+      description: "",
+      body: lines.slice(1).join("\n"),
+    };
   }
-  // Frontmatter 부재 — 첫 비공백 라인을 description 후보, 전체를 body
-  const firstNonEmpty = lines.find((l) => l.trim().length > 0) ?? "";
-  return {
-    description: firstNonEmpty.replace(/^#+\s*/, "").slice(0, 200),
-    body: source,
-  };
+  // Frontmatter 부재 — 첫 비공백 라인을 description으로 + body는 첫 라인 제외 (중복 방지).
+  // Reviewer HIGH-1 fix: 이전엔 body=source 그대로 → description 라인 중복.
+  const firstLine = lines[0] ?? "";
+  const description = firstLine.replace(/^#+\s*/, "").slice(0, 200);
+  const body = lines.slice(1).join("\n").replace(/^\n+/, "");
+  return { description, body };
 }
 
 export const CODEX_PROMPT_PHASES = ["spec", "plan", "build", "test", "review", "ship"] as const;

@@ -118,6 +118,14 @@ export function installAction(options: InstallOptions, deps: InstallActionDeps =
   for (const w of validated.warnings) {
     err(c.yellow(`[WARN] ${w}`));
   }
+  // v0.7.0 — withCodexPrompts는 cli에 codex 포함 시에만 의미. 누락 시 stderr warning.
+  if (validated.ok && options.withCodexPrompts === true && !validated.cli.includes("codex")) {
+    err(
+      c.yellow(
+        "[WARN] --with-codex-prompts requires --cli codex. Skipping (no Codex prompts will be installed).",
+      ),
+    );
+  }
   if (!validated.ok) {
     err(status.failure(c.red(`ERROR: ${validated.message}`)));
     exit(1);
@@ -293,6 +301,17 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
                 ? "already present"
                 : (trust.message ?? "error");
           log(assetRow(kind, "~/.codex/config.toml trust entry", meta));
+        }
+        // v0.7.0 — Codex prompts (slash 통일) opt-in 결과
+        if (report.codexOptIn.promptsInstalled.enabled) {
+          const count = report.codexOptIn.promptsInstalled.count;
+          log(
+            assetRow(
+              count > 0 ? "success" : "skip",
+              "~/.codex/prompts/uzys-*",
+              `${count} markdown copied (/uzys-spec slash 등록)`,
+            ),
+          );
         }
       }
     }

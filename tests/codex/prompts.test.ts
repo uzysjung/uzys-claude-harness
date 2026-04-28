@@ -63,6 +63,38 @@ body
     expect(result).toContain("description:");
     expect(result).toMatch(/^---/);
   });
+
+  // Reviewer HIGH-1 fix — production source format (no frontmatter)
+  it("HIGH-1: production format (no frontmatter, line 1 = description text) — body 중복 방지", () => {
+    // templates/commands/uzys/spec.md 형식: 첫 라인이 description 그대로, 그 후 body
+    const source = `Define phase — 구조화된 스펙을 코드 작성 전에 작성한다.
+
+## Process
+
+1. SPEC 작성한다.
+`;
+    const result = renderCodexPrompt({ source, phase: "spec" });
+    // description은 첫 라인을 가져옴
+    expect(result).toContain(
+      'description: "Define phase — 구조화된 스펙을 코드 작성 전에 작성한다."',
+    );
+    // body에는 첫 라인이 다시 등장하면 안 됨 — frontmatter 안에만 1회
+    const occurrences = (result.match(/Define phase/g) ?? []).length;
+    expect(occurrences).toBe(1);
+    // body 콘텐츠는 보존
+    expect(result).toContain("## Process");
+    expect(result).toContain("SPEC 작성한다.");
+  });
+
+  it("HIGH-1: malformed frontmatter (no closing ---) — description='---' 방지", () => {
+    const source = `---
+description: "broken"
+no closing delim
+`;
+    const result = renderCodexPrompt({ source, phase: "spec" });
+    // `description: "---"` 라인이 출력되면 안 됨 (frontmatter 파싱 실패 시 description 비움)
+    expect(result).not.toContain('description: "---"');
+  });
 });
 
 describe("CODEX_PROMPT_PHASES", () => {

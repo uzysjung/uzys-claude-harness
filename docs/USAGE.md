@@ -308,6 +308,59 @@ Impeccable 스킬은 네임스페이스 없이 직접 호출:
 | `/delight` `/overdrive` | 개성 추가 / 기술적 야심 |
 | `/optimize` | UI 성능 최적화 |
 
+## Multi-CLI 설치 (v0.7.0+ BREAKING)
+
+v0.7.0부터 `--cli`는 **repeatable**. 7가지 조합 가능 (`claude`/`codex`/`opencode` 중 부분집합).
+
+```bash
+# Single CLI
+npx -y github:uzysjung/uzys-claude-harness install --track tooling --cli codex
+
+# Multi-CLI (v0.7.0 권장)
+npx -y github:uzysjung/uzys-claude-harness install --track tooling \
+  --cli claude --cli codex                       # = (legacy) --cli both
+npx -y github:uzysjung/uzys-claude-harness install --track tooling \
+  --cli claude --cli codex --cli opencode        # = (legacy) --cli all
+
+# 신규 조합 (이전 미지원)
+npx -y ... install --track tooling --cli claude --cli opencode    # Codex 제외
+npx -y ... install --track tooling --cli codex --cli opencode     # Claude 제외
+```
+
+### Deprecated alias (v0.8+ 제거 예정)
+
+```
+$ npx ... install --cli both
+[WARN] --cli both is deprecated. Use --cli claude --cli codex (will be removed in v0.8+)
+```
+
+| Legacy | 변환 |
+|--------|------|
+| `--cli both` | `--cli claude --cli codex` |
+| `--cli all` | `--cli claude --cli codex --cli opencode` |
+
+### Codex slash 통일 — `--with-codex-prompts` (v0.7.0 opt-in)
+
+Codex CLI에서 `/uzys-spec` 등 slash command를 Claude Code 컨벤션과 통일하려면:
+
+```bash
+npx ... install --track tooling --cli codex --with-codex-prompts
+# → ~/.codex/prompts/uzys-{spec,plan,build,test,review,ship}.md 6 file 글로벌 복사
+# → Codex 재시작 후 /uzys-spec 등 slash 자동 등록
+```
+
+**3 invocation 형식 비교**:
+| Tool | 형식 | 예시 |
+|------|------|------|
+| Claude Code | slash | `/uzys:spec`, `/uzys:plan` |
+| Codex (`--with-codex-prompts` 활성화) | slash | `/uzys-spec`, `/uzys-plan` |
+| Codex (default) | mention | `$uzys-spec`, `$uzys-plan` (skill 형식, 항상 작동) |
+| OpenCode | slash | `/uzys-spec` (`.opencode/commands/` 자동 등록) |
+
+**`~/.codex/prompts/`는 글로벌 영역**. D16 보호 — opt-in 강제. plugin install 미해도 정상 작동 (Codex 직접 markdown prompt 인식).
+
+---
+
 ## Multi-Track 설치 (v26.11.0+)
 
 여러 Track의 union 설치가 필요할 때 (예: tooling + Python API).
