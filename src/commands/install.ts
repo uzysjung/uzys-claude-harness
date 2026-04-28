@@ -1,10 +1,11 @@
 import { resolve } from "node:path";
+import { parseCliTargets, targetsInclude } from "../cli-targets.js";
 import type { Cli } from "../cli.js";
 import { assetRow, c, infoRow, phaseHeader, sectionHeader, status } from "../design.js";
 import { type InstallReport, runInstall as runInstallPipeline } from "../installer.js";
 import {
-  CLI_MODES,
   type CliMode,
+  type CliTargets,
   type InstallSpec,
   type Track,
   isCliMode,
@@ -13,7 +14,8 @@ import {
 
 export interface InstallOptions {
   track?: string[];
-  cli?: string;
+  /** v0.7.0 — repeatable. cac type: [String]. legacy alias 'both'/'all'은 deprecation warning. */
+  cli?: string | string[];
   projectDir?: string;
   withTauri?: boolean;
   withGsd?: boolean;
@@ -23,6 +25,8 @@ export interface InstallOptions {
   withCodexSkills?: boolean;
   withCodexTrust?: boolean;
   withKarpathyHook?: boolean;
+  /** v0.7.0 — Codex slash 통일 opt-in (~/.codex/prompts/uzys-*.md). D16 패턴. */
+  withCodexPrompts?: boolean;
 }
 
 export type CliMode_ = CliMode;
@@ -30,7 +34,9 @@ export { isCliMode };
 
 export interface RunInstallResult {
   ok: boolean;
-  cli: CliMode;
+  cli: CliTargets;
+  /** Deprecation warnings (alias 사용 시 emit). caller가 stderr로 출력. */
+  warnings: ReadonlyArray<string>;
   message: string;
   report?: InstallReport;
 }
@@ -40,36 +46,38 @@ export interface RunInstallResult {
  * Returns a Result-shaped value so callers can render errors uniformly.
  */
 export function specFromOptions(options: InstallOptions): RunInstallResult {
-  const cliRaw = options.cli ?? "claude";
-  if (!isCliMode(cliRaw)) {
+  const parsed = parseCliTargets(options.cli);
+  if (!parsed.ok) {
     return {
       ok: false,
-      cli: "claude",
-      message: `--cli must be one of ${CLI_MODES.join("|")} (got: ${cliRaw})`,
+      cli: ["claude"],
+      warnings: parsed.warnings,
+      message: parsed.error ?? "Invalid --cli value",
     };
   }
   const trackInputs = options.track ?? [];
   if (trackInputs.length === 0) {
     return {
       ok: false,
-      cli: cliRaw,
+      cli: parsed.targets,
+      warnings: parsed.warnings,
       message: "At least one --track is required (e.g. --track tooling)",
     };
   }
-  const tracks: Track[] = [];
   for (const t of trackInputs) {
     if (!isTrack(t)) {
       return {
         ok: false,
-        cli: cliRaw,
+        cli: parsed.targets,
+        warnings: parsed.warnings,
         message: `Unknown track: ${t}`,
       };
     }
-    tracks.push(t);
   }
   return {
     ok: true,
-    cli: cliRaw,
+    cli: parsed.targets,
+    warnings: parsed.warnings,
     message: "spec valid",
   };
 }
@@ -106,6 +114,10 @@ export function installAction(options: InstallOptions, deps: InstallActionDeps =
   const resolveHarnessRoot = deps.resolveHarnessRoot ?? defaultHarnessRoot;
 
   const validated = specFromOptions(options);
+  // Deprecation warnings to stderr (alias 사용 시), regardless of ok/fail.
+  for (const w of validated.warnings) {
+    err(c.yellow(`[WARN] ${w}`));
+  }
   if (!validated.ok) {
     err(status.failure(c.red(`ERROR: ${validated.message}`)));
     exit(1);
@@ -123,6 +135,7 @@ export function installAction(options: InstallOptions, deps: InstallActionDeps =
       withCodexSkills: options.withCodexSkills === true,
       withCodexTrust: options.withCodexTrust === true,
       withKarpathyHook: options.withKarpathyHook === true,
+      withCodexPrompts: options.withCodexPrompts === true,
     },
     cli: validated.cli,
     projectDir: resolve(options.projectDir ?? process.cwd()),
@@ -172,7 +185,7 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
   log("");
   log(infoRow("TARGET", shortenPath(spec.projectDir)));
   log(infoRow("TRACKS", spec.tracks.join(", ")));
-  log(infoRow("CLI", spec.cli));
+  log(infoRow("CLI", spec.cli.join(" · ")));
   log(infoRow("OPTIONS", formatOptions(spec)));
   log("");
 
@@ -235,7 +248,11 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
   }
 
   // ━━━ Phase 3 — Codex / OpenCode (CLI-specific) ━━━
-  if ((report.codex || report.opencode) && spec.cli !== "claude") {
+  // Phase 3 = Codex 또는 OpenCode 산출물이 있을 때만 출력 (claude 단독 install은 skip)
+  if (
+    (report.codex || report.opencode) &&
+    (targetsInclude(spec.cli, "codex") || targetsInclude(spec.cli, "opencode"))
+  ) {
     const phaseN = report.external && report.external.attempted.length > 0 ? 3 : 2;
     log(phaseHeader(phaseN, formatCliPhaseTitle(spec.cli)));
     log("");
@@ -478,20 +495,16 @@ function shortenPath(p: string): string {
 }
 
 /**
- * 'claude' mode never reaches here (phase 2/3 is gated on codex || opencode in executeSpec).
- * The remaining 4 modes map to phase titles.
+ * v0.7.0 — CliTargets에서 codex/opencode 포함 여부에 따라 title 결정.
+ * Phase 3는 codex 또는 opencode 1개 이상 포함 시 호출됨.
  */
-function formatCliPhaseTitle(cli: Exclude<CliMode, "claude">): string {
-  switch (cli) {
-    case "codex":
-      return "Codex artifacts";
-    case "opencode":
-      return "OpenCode artifacts";
-    case "both":
-      return "Codex artifacts";
-    case "all":
-      return "Codex + OpenCode artifacts";
-  }
+function formatCliPhaseTitle(targets: CliTargets): string {
+  const hasCodex = targets.includes("codex");
+  const hasOpenCode = targets.includes("opencode");
+  if (hasCodex && hasOpenCode) return "Codex + OpenCode artifacts";
+  if (hasCodex) return "Codex artifacts";
+  if (hasOpenCode) return "OpenCode artifacts";
+  return "CLI artifacts";
 }
 
 function defaultRunPipeline(
@@ -522,9 +535,11 @@ export function registerInstallCommand(cli: Cli): void {
   cli
     .command("install", "Install harness assets into a project")
     .option("--track <name>", "Track to install (repeatable)", { type: [String] })
-    .option("--cli <mode>", "Target CLI: claude | codex | opencode | both | all", {
-      default: "claude",
-    })
+    .option(
+      "--cli <target>",
+      "Target CLI (repeatable): claude | codex | opencode. Legacy: both | all (deprecated, alias of [claude,codex] / [claude,codex,opencode]).",
+      { type: [String], default: "claude" },
+    )
     .option("--project-dir <path>", "Target project directory", { default: process.cwd() })
     .option("--with-tauri", "Include tauri.md rule")
     .option("--with-gsd", "Include GSD orchestrator")
@@ -542,6 +557,10 @@ export function registerInstallCommand(cli: Cli): void {
     .option(
       "--with-karpathy-hook",
       "karpathy-coder pre-commit hook auto-wire (.claude/settings.json PreToolUse Write|Edit). karpathy-coder plugin install 성공 시에만 활성화. opt-in.",
+    )
+    .option(
+      "--with-codex-prompts",
+      "Codex slash 통일 (v0.7.0): ~/.codex/prompts/uzys-*.md 6 file 글로벌 복사 → /uzys-spec slash 작동. D16 opt-in.",
     )
     .action((options: InstallOptions) => installAction(options));
 }

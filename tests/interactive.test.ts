@@ -7,7 +7,7 @@ import {
 } from "../src/interactive.js";
 import type { Prompts } from "../src/prompts.js";
 import type { DetectedInstall } from "../src/state.js";
-import type { CliMode, OptionFlags, Track } from "../src/types.js";
+import type { CliTargets, OptionFlags, Track } from "../src/types.js";
 
 function makePrompts(overrides: Partial<Prompts> = {}): Prompts {
   return {
@@ -16,7 +16,7 @@ function makePrompts(overrides: Partial<Prompts> = {}): Prompts {
     cancel: vi.fn(),
     selectTracks: vi.fn(async () => ["tooling"] as Track[]),
     selectOptionKeys: vi.fn(async () => [] as Array<keyof OptionFlags>),
-    selectCli: vi.fn(async () => "claude" as CliMode),
+    selectCli: vi.fn(async () => ["claude"] as CliTargets),
     selectAction: vi.fn(async () => "add" as const),
     confirmInstall: vi.fn(async () => true),
     ...overrides,
@@ -70,8 +70,9 @@ describe("runInteractive", () => {
         withCodexSkills: false,
         withCodexTrust: false,
         withKarpathyHook: false,
+        withCodexPrompts: false,
       },
-      cli: "claude",
+      cli: ["claude"],
       projectDir: "/tmp/proj",
     });
     expect(prompts.selectAction).not.toHaveBeenCalled(); // skipped on new install
@@ -235,8 +236,9 @@ describe("formatSummary", () => {
         withCodexSkills: false,
         withCodexTrust: false,
         withKarpathyHook: false,
+        withCodexPrompts: false,
       },
-      cli: "codex",
+      cli: ["codex"],
       projectDir: "/proj",
     });
     expect(summary).toContain("tooling, csr-fastapi");
@@ -257,8 +259,9 @@ describe("formatSummary", () => {
         withCodexSkills: false,
         withCodexTrust: false,
         withKarpathyHook: false,
+        withCodexPrompts: false,
       },
-      cli: "claude",
+      cli: ["claude"],
       projectDir: "/p",
     });
     expect(summary).toContain("defaults only");
@@ -276,6 +279,7 @@ describe("toOptionFlags", () => {
       withCodexSkills: false,
       withCodexTrust: false,
       withKarpathyHook: false,
+      withCodexPrompts: false,
     });
   });
 
@@ -289,6 +293,7 @@ describe("toOptionFlags", () => {
       withCodexSkills: false,
       withCodexTrust: false,
       withKarpathyHook: false,
+      withCodexPrompts: false,
     });
   });
 });
@@ -304,6 +309,7 @@ describe("applyOptionRules", () => {
       withCodexSkills: false,
       withCodexTrust: false,
       withKarpathyHook: false,
+      withCodexPrompts: false,
     });
     expect(result.withEcc).toBe(true);
     expect(result.withPrune).toBe(true);
@@ -319,6 +325,7 @@ describe("applyOptionRules", () => {
       withCodexSkills: false,
       withCodexTrust: false,
       withKarpathyHook: false,
+      withCodexPrompts: false,
     };
     expect(applyOptionRules(flags)).toEqual(flags);
   });
@@ -333,6 +340,7 @@ describe("applyOptionRules", () => {
       withCodexSkills: false,
       withCodexTrust: false,
       withKarpathyHook: false,
+      withCodexPrompts: false,
     };
     expect(applyOptionRules(flags)).toEqual(flags);
   });

@@ -67,8 +67,9 @@ describe("defaultAction", () => {
         withCodexSkills: false,
         withCodexTrust: false,
         withKarpathyHook: false,
+        withCodexPrompts: false,
       },
-      cli: "claude" as const,
+      cli: ["claude"] as const,
       projectDir: "/p",
     };
     const run = vi.fn(
@@ -79,7 +80,7 @@ describe("defaultAction", () => {
     );
     await defaultAction({ log, err, exit, run, execute });
     expect(execute).toHaveBeenCalledOnce();
-    expect(execute.mock.calls[0]?.[0]).toMatchObject({ tracks: ["tooling"], cli: "claude" });
+    expect(execute.mock.calls[0]?.[0]).toMatchObject({ tracks: ["tooling"], cli: ["claude"] });
     expect(exit).not.toHaveBeenCalled();
   });
 

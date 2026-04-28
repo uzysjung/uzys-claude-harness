@@ -26,13 +26,14 @@ const NO_OPTS: OptionFlags = {
   withCodexSkills: false,
   withCodexTrust: false,
   withKarpathyHook: false,
+  withCodexPrompts: false,
 };
 
 function spec(tracks: Track[], options: Partial<OptionFlags>, projectDir: string): InstallSpec {
   return {
     tracks,
     options: { ...NO_OPTS, ...options },
-    cli: "claude",
+    cli: ["claude"],
     projectDir,
   };
 }

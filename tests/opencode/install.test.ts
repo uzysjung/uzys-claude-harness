@@ -33,8 +33,9 @@ describe("OpenCode install pipeline (integration)", () => {
           withCodexSkills: false,
           withCodexTrust: false,
           withKarpathyHook: false,
+          withCodexPrompts: false,
         },
-        cli: "opencode",
+        cli: ["opencode"],
         projectDir,
       },
     });
@@ -93,8 +94,9 @@ describe("OpenCode install pipeline (integration)", () => {
           withCodexSkills: false,
           withCodexTrust: false,
           withKarpathyHook: false,
+          withCodexPrompts: false,
         },
-        cli: "all",
+        cli: ["claude", "codex", "opencode"],
         projectDir,
       },
     });
@@ -127,8 +129,9 @@ describe("OpenCode install pipeline (integration)", () => {
           withCodexSkills: false,
           withCodexTrust: false,
           withKarpathyHook: false,
+          withCodexPrompts: false,
         },
-        cli: "claude",
+        cli: ["claude"],
         projectDir,
       },
     });
@@ -154,8 +157,9 @@ describe("OpenCode install pipeline (integration)", () => {
           withCodexSkills: false,
           withCodexTrust: false,
           withKarpathyHook: false,
+          withCodexPrompts: false,
         },
-        cli: "both",
+        cli: ["claude", "codex"],
         projectDir,
       },
     });

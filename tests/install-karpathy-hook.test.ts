@@ -35,8 +35,9 @@ function spec(withFlag: boolean, projectDir: string): InstallSpec {
       withCodexSkills: false,
       withCodexTrust: false,
       withKarpathyHook: withFlag,
+      withCodexPrompts: false,
     },
-    cli: "claude",
+    cli: ["claude"],
     projectDir,
   };
 }

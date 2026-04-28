@@ -1,7 +1,7 @@
 import type { InstallMode } from "./installer.js";
 import { type Prompts, defaultPrompts } from "./prompts.js";
 import { type DetectedInstall, detectInstallState } from "./state.js";
-import type { CliMode, InstallSpec, OptionFlags, Track } from "./types.js";
+import type { InstallSpec, OptionFlags, Track } from "./types.js";
 
 /** Convert an array of selected option keys into a fully-populated OptionFlags. */
 export function toOptionFlags(keys: ReadonlyArray<keyof OptionFlags>): OptionFlags {
@@ -15,6 +15,7 @@ export function toOptionFlags(keys: ReadonlyArray<keyof OptionFlags>): OptionFla
     withCodexSkills: picked.has("withCodexSkills"),
     withCodexTrust: picked.has("withCodexTrust"),
     withKarpathyHook: picked.has("withKarpathyHook"),
+    withCodexPrompts: picked.has("withCodexPrompts"),
   };
 }
 
@@ -95,7 +96,7 @@ export async function runInteractive(
       const summary = formatSummary({
         tracks: state.tracks,
         options: applyOptionRules(toOptionFlags([])),
-        cli: "claude",
+        cli: ["claude"],
         projectDir,
       });
       const confirmed = await prompts.confirmInstall(`UPDATE policy files only:\n${summary}`);
@@ -110,7 +111,7 @@ export async function runInteractive(
         spec: {
           tracks: state.tracks,
           options: applyOptionRules(toOptionFlags([])),
-          cli: "claude",
+          cli: ["claude"],
           projectDir,
         },
       };
@@ -137,7 +138,7 @@ export async function runInteractive(
   }
   const options = applyOptionRules(toOptionFlags(optionKeys));
 
-  const cli = await prompts.selectCli("claude");
+  const cli = await prompts.selectCli(["claude"]);
   if (cli === null) {
     prompts.cancel("Cancelled.");
     return { ok: false, reason: "cancelled" };
@@ -170,7 +171,7 @@ export function formatSummary(spec: InstallSpec): string {
   return [
     `Tracks:    ${spec.tracks.join(", ")}`,
     `Options:   ${optsLabel}`,
-    `CLI:       ${spec.cli satisfies CliMode}`,
+    `CLI:       ${spec.cli.join(" · ")}`,
     `Target:    ${spec.projectDir}`,
   ].join("\n");
 }

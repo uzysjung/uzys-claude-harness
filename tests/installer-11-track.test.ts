@@ -16,13 +16,14 @@ const NO_OPTS: OptionFlags = {
   withCodexSkills: false,
   withCodexTrust: false,
   withKarpathyHook: false,
+  withCodexPrompts: false,
 };
 
 function buildSpec(tracks: Track[], projectDir: string): InstallSpec {
   return {
     tracks,
     options: NO_OPTS,
-    cli: "claude",
+    cli: ["claude"],
     projectDir,
   };
 }
@@ -235,7 +236,7 @@ describe("--cli=both produces both Claude and Codex outputs", () => {
       runExternal: NO_EXTERNAL,
       harnessRoot: HARNESS_ROOT,
       projectDir,
-      spec: { ...buildSpec(["tooling"], projectDir), cli: "both" },
+      spec: { ...buildSpec(["tooling"], projectDir), cli: ["claude", "codex"] },
     });
     expect(existsSync(join(projectDir, ".claude/CLAUDE.md"))).toBe(true);
     expect(existsSync(join(projectDir, "AGENTS.md"))).toBe(true);
