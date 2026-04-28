@@ -19,13 +19,29 @@ export function isTrack(value: unknown): value is Track {
 }
 
 /**
- * CLI target.
- * - claude — baseline only (default)
- * - codex — baseline + Codex transform (templates/codex/)
- * - opencode — baseline + OpenCode transform (templates/opencode/)
- * - both — baseline + Codex (Codex 1차 호환 유지)
- * - all — baseline + Codex + OpenCode
+ * CLI target. v0.7.0 BREAKING — single enum (5 mode) → multi-select base × combination.
+ *
+ * Base CLI: claude / codex / opencode (3 base).
+ * 7 combinations possible (2^3 - 1, empty 제외).
+ *
+ * 기존 v0.6.x 5 mode (`claude/codex/opencode/both/all`)은 1 release deprecation alias로 유지:
+ *   - both → ["claude", "codex"]
+ *   - all  → ["claude", "codex", "opencode"]
+ * v0.8+에서 alias 제거.
+ *
+ * `CliMode` (legacy union) + `isCliMode` (legacy guard)는 backwards compat 위해 유지.
  */
+export const CLI_BASES = ["claude", "codex", "opencode"] as const;
+export type CliBase = (typeof CLI_BASES)[number];
+
+export function isCliBase(value: unknown): value is CliBase {
+  return typeof value === "string" && (CLI_BASES as readonly string[]).includes(value);
+}
+
+/** Sorted readonly array of CliBase. install pipeline의 분기 input. */
+export type CliTargets = ReadonlyArray<CliBase>;
+
+/** Legacy 5 mode union — alias 변환 + matrix test 호환 위해 유지. v0.8+에서 제거. */
 export const CLI_MODES = ["claude", "codex", "opencode", "both", "all"] as const;
 export type CliMode = (typeof CLI_MODES)[number];
 
@@ -51,6 +67,14 @@ export interface OptionFlags {
    * upstream `enforcement-patterns.md` "manual configuration" 권장과 정합 — opt-in 강제.
    */
   withKarpathyHook: boolean;
+  /**
+   * v0.7.0 — Codex slash 통일 opt-in.
+   * `~/.codex/prompts/uzys-{spec,plan,build,test,review,ship}.md` 6 markdown prompt 글로벌 복사.
+   * 활성화 시 Codex에서 `/uzys-spec` 등 Claude Code 컨벤션 slash 작동.
+   * D16 보호 — 글로벌 영역 침범이라 opt-in 강제.
+   * 기존 .agents/skills/uzys-(phase) 디렉토리의 SKILL.md ($name mention 형식)도 병존.
+   */
+  withCodexPrompts: boolean;
 }
 
 export const DEFAULT_OPTIONS: OptionFlags = {
@@ -62,12 +86,14 @@ export const DEFAULT_OPTIONS: OptionFlags = {
   withCodexSkills: false,
   withCodexTrust: false,
   withKarpathyHook: false,
+  withCodexPrompts: false,
 };
 
 /** Aggregate result of interactive flow — the spec the install pipeline consumes. */
 export interface InstallSpec {
   tracks: Track[];
   options: OptionFlags;
-  cli: CliMode;
+  /** v0.7.0 — sorted readonly array of CliBase (이전: single CliMode). */
+  cli: CliTargets;
   projectDir: string;
 }

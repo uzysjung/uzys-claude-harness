@@ -60,48 +60,59 @@ const fakeReport: InstallReport = {
   },
 };
 
-describe("specFromOptions", () => {
+describe("specFromOptions (v0.7.0 — CliTargets)", () => {
   it("returns ok=true with valid options", () => {
-    const result = specFromOptions({ cli: "codex", track: ["tooling"] });
+    const result = specFromOptions({ cli: ["codex"], track: ["tooling"] });
     expect(result.ok).toBe(true);
-    expect(result.cli).toBe("codex");
+    expect(result.cli).toEqual(["codex"]);
   });
 
-  it.each(["claude", "codex", "opencode", "both", "all"] as const)(
-    "accepts %s as a valid --cli",
-    (mode) => {
-      const result = specFromOptions({ cli: mode, track: ["tooling"] });
-      expect(result.ok).toBe(true);
-      expect(result.cli).toBe(mode);
-    },
-  );
+  it.each([
+    ["claude", ["claude"], 0],
+    ["codex", ["codex"], 0],
+    ["opencode", ["opencode"], 0],
+    ["both", ["claude", "codex"], 1],
+    ["all", ["claude", "codex", "opencode"], 1],
+  ] as const)("accepts %s — targets=%j, %i deprecation warning(s)", (mode, expected, warnCount) => {
+    const result = specFromOptions({ cli: mode, track: ["tooling"] });
+    expect(result.ok).toBe(true);
+    expect(result.cli).toEqual(expected);
+    expect(result.warnings).toHaveLength(warnCount);
+  });
 
   it("rejects an unknown --cli value with ok=false", () => {
     const result = specFromOptions({ cli: "rust", track: ["tooling"] });
     expect(result.ok).toBe(false);
-    expect(result.message).toContain("must be one of");
+    expect(result.message).toContain("Invalid --cli value");
     expect(result.message).toContain("rust");
   });
 
   it("rejects when --track is missing/empty", () => {
-    const noTrack = specFromOptions({ cli: "claude" });
+    const noTrack = specFromOptions({ cli: ["claude"] });
     expect(noTrack.ok).toBe(false);
     expect(noTrack.message).toContain("--track is required");
 
-    const empty = specFromOptions({ cli: "claude", track: [] });
+    const empty = specFromOptions({ cli: ["claude"], track: [] });
     expect(empty.ok).toBe(false);
   });
 
   it("rejects an unknown track name", () => {
-    const result = specFromOptions({ cli: "claude", track: ["bogus"] });
+    const result = specFromOptions({ cli: ["claude"], track: ["bogus"] });
     expect(result.ok).toBe(false);
     expect(result.message).toContain("Unknown track");
   });
 
-  it("defaults --cli to claude when omitted but track is valid", () => {
+  it("defaults --cli to [claude] when omitted but track is valid", () => {
     const result = specFromOptions({ track: ["tooling"] });
     expect(result.ok).toBe(true);
-    expect(result.cli).toBe("claude");
+    expect(result.cli).toEqual(["claude"]);
+  });
+
+  it("repeatable --cli claude --cli codex → sorted [claude, codex]", () => {
+    const result = specFromOptions({ cli: ["codex", "claude"], track: ["tooling"] });
+    expect(result.ok).toBe(true);
+    expect(result.cli).toEqual(["claude", "codex"]);
+    expect(result.warnings).toHaveLength(0);
   });
 });
 
@@ -112,7 +123,7 @@ describe("installAction", () => {
     const exit = vi.fn() as unknown as (code: number) => never;
     const runPipeline = pipelineFor(fakeReport);
     installAction(
-      { cli: "codex", track: ["tooling"], projectDir: "/tmp/p" },
+      { cli: ["codex"], track: ["tooling"], projectDir: "/tmp/p" },
       { log, err, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     expect(err).not.toHaveBeenCalled();
@@ -132,7 +143,7 @@ describe("installAction", () => {
       { cli: "rust", track: ["tooling"] },
       { log, err, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
-    expect(err).toHaveBeenCalledWith(expect.stringContaining("must be one of"));
+    expect(err).toHaveBeenCalledWith(expect.stringContaining("Invalid --cli value"));
     expect(exit).toHaveBeenCalledWith(1);
     expect(runPipeline).not.toHaveBeenCalled();
   });
@@ -145,7 +156,7 @@ describe("installAction", () => {
       throw new Error("boom");
     });
     installAction(
-      { cli: "claude", track: ["tooling"] },
+      { cli: ["claude"], track: ["tooling"] },
       { log, err, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     expect(err).toHaveBeenCalledWith(expect.stringContaining("install failed"));
@@ -162,7 +173,7 @@ describe("installAction", () => {
       return fakeReport;
     });
     installAction(
-      { cli: "claude", track: ["tooling"], withPrune: true, projectDir: "/p" },
+      { cli: ["claude"], track: ["tooling"], withPrune: true, projectDir: "/p" },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     expect(captured?.options.withPrune).toBe(true);
@@ -174,7 +185,7 @@ describe("installAction", () => {
     const exit = vi.fn() as unknown as (code: number) => never;
     const runPipeline = pipelineFor({ ...fakeReport, backup: "/backup/.claude.bak" });
     installAction(
-      { cli: "claude", track: ["tooling"] },
+      { cli: ["claude"], track: ["tooling"] },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     expect(log).toHaveBeenCalledWith(expect.stringContaining("/backup/.claude.bak"));
@@ -186,7 +197,7 @@ describe("installAction", () => {
     const exit = vi.fn() as unknown as (code: number) => never;
     const runPipeline = pipelineFor({ ...fakeReport, mcpServers: [] });
     installAction(
-      { cli: "claude", track: ["tooling"] },
+      { cli: ["claude"], track: ["tooling"] },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     expect(log).toHaveBeenCalledWith(expect.stringContaining("(none)"));
@@ -205,8 +216,9 @@ describe("executeSpec", () => {
       withCodexSkills: false,
       withCodexTrust: false,
       withKarpathyHook: false,
+      withCodexPrompts: false,
     },
-    cli: "claude",
+    cli: ["claude"],
     projectDir: "/p",
   };
 
@@ -235,7 +247,7 @@ describe("executeSpec", () => {
       },
     });
     executeSpec(
-      { ...baseSpec, cli: "codex" },
+      { ...baseSpec, cli: ["codex"] },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     expect(log).toHaveBeenCalledWith(expect.stringContaining("Codex"));
@@ -254,7 +266,7 @@ describe("executeSpec", () => {
       },
     });
     executeSpec(
-      { ...baseSpec, cli: "opencode" },
+      { ...baseSpec, cli: ["opencode"] },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     expect(log).toHaveBeenCalledWith(expect.stringContaining("OpenCode"));
@@ -296,7 +308,7 @@ describe("executeSpec", () => {
       },
     });
     executeSpec(
-      { ...baseSpec, cli: "all" },
+      { ...baseSpec, cli: ["claude", "codex", "opencode"] },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     expect(log).toHaveBeenCalledWith(expect.stringContaining("Claude · Codex · OpenCode"));
@@ -315,7 +327,7 @@ describe("executeSpec", () => {
       },
     });
     executeSpec(
-      { ...baseSpec, cli: "both" },
+      { ...baseSpec, cli: ["claude", "codex"] },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     expect(log).toHaveBeenCalledWith(expect.stringContaining("Claude · Codex"));
@@ -334,7 +346,7 @@ describe("executeSpec", () => {
       },
     });
     executeSpec(
-      { ...baseSpec, cli: "opencode" },
+      { ...baseSpec, cli: ["opencode"] },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     expect(log).toHaveBeenCalledWith(expect.stringContaining("Claude · OpenCode"));
@@ -394,6 +406,7 @@ describe("executeSpec", () => {
           withCodexSkills: false,
           withCodexTrust: false,
           withKarpathyHook: false,
+          withCodexPrompts: false,
         },
       },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
@@ -519,7 +532,7 @@ describe("executeSpec", () => {
       },
     });
     executeSpec(
-      { ...baseSpec, cli: "codex" },
+      { ...baseSpec, cli: ["codex"] },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     // Phase 2 (external) + Phase 3 (codex)
@@ -612,10 +625,11 @@ describe("executeSpec", () => {
       codexOptIn: {
         skillsInstalled: { enabled: true, count: 6, targetDir: "/Users/x/.codex/skills" },
         trustEntry: { enabled: true, status: "registered" as const },
+        promptsInstalled: { enabled: false, count: 0, targetDir: "/test/.codex/prompts" },
       },
     });
     executeSpec(
-      { ...baseSpec, cli: "codex" },
+      { ...baseSpec, cli: ["codex"] },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     expect(log).toHaveBeenCalledWith(expect.stringContaining("~/.codex/skills/uzys-*"));
@@ -638,10 +652,11 @@ describe("executeSpec", () => {
       codexOptIn: {
         skillsInstalled: { enabled: false, count: 0, targetDir: "/Users/x/.codex/skills" },
         trustEntry: { enabled: true, status: "already-present" as const },
+        promptsInstalled: { enabled: false, count: 0, targetDir: "/test/.codex/prompts" },
       },
     });
     executeSpec(
-      { ...baseSpec, cli: "codex" },
+      { ...baseSpec, cli: ["codex"] },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     expect(log).toHaveBeenCalledWith(expect.stringContaining("already present"));
@@ -661,10 +676,11 @@ describe("executeSpec", () => {
       codexOptIn: {
         skillsInstalled: { enabled: false, count: 0, targetDir: "/Users/x/.codex/skills" },
         trustEntry: { enabled: true, status: "error" as const, message: "permission denied" },
+        promptsInstalled: { enabled: false, count: 0, targetDir: "/test/.codex/prompts" },
       },
     });
     executeSpec(
-      { ...baseSpec, cli: "codex" },
+      { ...baseSpec, cli: ["codex"] },
       { log, exit, runPipeline, resolveHarnessRoot: () => "/h" },
     );
     expect(log).toHaveBeenCalledWith(expect.stringContaining("permission denied"));

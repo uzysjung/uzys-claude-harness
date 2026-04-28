@@ -280,21 +280,27 @@ export function runInstall(ctx: InstallContext): InstallReport {
   // Codex transform when --cli ∈ {codex, both, all}
   let codex: CodexTransformReport | null = null;
   let codexOptIn: CodexOptInReport | null = null;
-  if (spec.cli === "codex" || spec.cli === "both" || spec.cli === "all") {
+  if (spec.cli.includes("codex")) {
     codex = runCodexTransform({ harnessRoot, projectDir });
     // Codex global opt-in (D16): only when user explicitly enabled at least one flag
-    if (spec.options.withCodexSkills || spec.options.withCodexTrust) {
+    if (
+      spec.options.withCodexSkills ||
+      spec.options.withCodexTrust ||
+      spec.options.withCodexPrompts
+    ) {
       codexOptIn = runCodexOptIn({
         projectDir,
+        harnessRoot,
         withCodexSkills: spec.options.withCodexSkills,
         withCodexTrust: spec.options.withCodexTrust,
+        withCodexPrompts: spec.options.withCodexPrompts,
       });
     }
   }
 
   // OpenCode transform when --cli ∈ {opencode, all}
   let opencode: OpencodeTransformReport | null = null;
-  if (spec.cli === "opencode" || spec.cli === "all") {
+  if (spec.cli.includes("opencode")) {
     opencode = runOpencodeTransform({ harnessRoot, projectDir });
   }
 

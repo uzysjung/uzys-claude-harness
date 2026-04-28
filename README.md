@@ -373,7 +373,22 @@ Flag mode (CI / automation):
 npx -y github:uzysjung/uzys-claude-harness --track tooling --cli codex --project-dir .
 ```
 
-`--cli` accepts `claude` (default), `codex`, `opencode`, `both` (Claude+Codex), or `all` (Claude+Codex+OpenCode). Default is `claude` so existing flows are unaffected.
+`--cli` is **repeatable** (v0.7.0+). Accepts any combination of `claude` / `codex` / `opencode` (3 base × 7 combination):
+
+```bash
+# Single CLI
+--cli codex
+
+# Multi-CLI (v0.7.0 — repeatable)
+--cli claude --cli codex                # 2 CLI
+--cli claude --cli codex --cli opencode # all 3
+--cli claude --cli opencode             # 신규 — Codex 제외
+--cli codex --cli opencode              # 신규 — Claude 제외
+```
+
+**Legacy alias (deprecated, v0.8+ 제거)**: `--cli both` = `--cli claude --cli codex`, `--cli all` = `--cli claude --cli codex --cli opencode`. v0.7.0에서 사용 시 deprecation warning emit.
+
+**Codex slash 통일**: `--with-codex-prompts` 추가하면 `~/.codex/prompts/uzys-*.md` 6 file 글로벌 복사 → Codex에서 `/uzys-spec` slash 작동. opt-in (D16). 자세한 내용 [USAGE.md](./docs/USAGE.md#multi-cli-설치-v070-breaking).
 
 ### What gets installed
 

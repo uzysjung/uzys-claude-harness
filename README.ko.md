@@ -331,7 +331,19 @@ npx -y github:uzysjung/uzys-claude-harness
 npx -y github:uzysjung/uzys-claude-harness --track tooling --cli codex --project-dir .
 ```
 
-`--cli`는 `claude` (기본), `codex`, `both` 셋 중 하나. 기본값 `claude`라 기존 워크플로우는 영향 없음.
+`--cli`는 **repeatable** (v0.7.0+). `claude` / `codex` / `opencode` 중 부분집합 (3 base × 7 combination).
+
+```bash
+--cli codex                            # 단일
+--cli claude --cli codex               # multi (= legacy --cli both)
+--cli claude --cli codex --cli opencode  # 3개 (= legacy --cli all)
+--cli claude --cli opencode            # Codex 제외 (신규)
+--cli codex --cli opencode             # Claude 제외 (신규)
+```
+
+**Legacy alias deprecated (v0.8+ 제거)**: `--cli both`/`--cli all` 사용 시 warning + 자동 변환.
+
+**Codex slash 통일**: `--with-codex-prompts` 추가 → `~/.codex/prompts/uzys-*.md` 6 file 글로벌 복사 (D16 opt-in) → Codex에서 `/uzys-spec` slash 작동. 자세한 내용 [USAGE.md](./docs/USAGE.md#multi-cli-설치-v070-breaking).
 
 ### 생성되는 자산
 

@@ -5,7 +5,7 @@
 import { cancel, confirm, intro, isCancel, multiselect, outro, select } from "@clack/prompts";
 import { type RouterAction, buildRouterChoices, summarizeState } from "./router.js";
 import type { DetectedInstall } from "./state.js";
-import { type CliMode, type OptionFlags, TRACKS, type Track } from "./types.js";
+import { type CliBase, type CliTargets, type OptionFlags, TRACKS, type Track } from "./types.js";
 
 export interface Prompts {
   intro: (msg: string) => void;
@@ -16,7 +16,8 @@ export interface Prompts {
   selectOptionKeys: (
     initial?: ReadonlyArray<keyof OptionFlags>,
   ) => Promise<Array<keyof OptionFlags> | null>;
-  selectCli: (initial?: CliMode) => Promise<CliMode | null>;
+  /** v0.7.0 — single select → multiselect (3 base 체크박스). default `["claude"]`. */
+  selectCli: (initial?: CliTargets) => Promise<CliTargets | null>;
   selectAction: (state: DetectedInstall) => Promise<RouterAction | null>;
   confirmInstall: (summary: string) => Promise<boolean | null>;
 }
@@ -46,7 +47,18 @@ const OPTION_DEFS: ReadonlyArray<{ key: keyof OptionFlags; label: string; hint: 
     label: "karpathy-coder pre-commit hook (opt-in)",
     hint: "Claude Code Write|Edit gate · Python 3 권장 · 비차단 (warn-only)",
   },
+  {
+    key: "withCodexPrompts",
+    label: "Codex slash commands (opt-in)",
+    hint: "~/.codex/prompts/uzys-*.md 6 file 글로벌 복사 · /uzys-spec slash 등록 · D16 opt-in",
+  },
 ];
+
+const CLI_BASE_LABELS: Record<CliBase, string> = {
+  claude: "Claude Code",
+  codex: "Codex (OpenAI)",
+  opencode: "OpenCode (anomalyco)",
+};
 
 export const defaultPrompts: Prompts = {
   intro: (msg) => intro(msg),
@@ -74,18 +86,22 @@ export const defaultPrompts: Prompts = {
   },
 
   selectCli: async (initial) => {
-    const result = await select({
-      message: "Target CLI:",
+    // v0.7.0 — multiselect (3 base 체크박스). default ["claude"]. required: true.
+    const initialValues: CliBase[] = initial && initial.length > 0 ? [...initial] : ["claude"];
+    const result = await multiselect({
+      message: "Target CLI(s) (Space to toggle, Enter to confirm):",
       options: [
-        { value: "claude" as const, label: "Claude Code (default)" },
-        { value: "codex" as const, label: "Codex (OpenAI)" },
-        { value: "opencode" as const, label: "OpenCode (anomalyco)" },
-        { value: "both" as const, label: "Claude + Codex" },
-        { value: "all" as const, label: "All (Claude + Codex + OpenCode)" },
+        { value: "claude" as const, label: CLI_BASE_LABELS.claude },
+        { value: "codex" as const, label: CLI_BASE_LABELS.codex },
+        { value: "opencode" as const, label: CLI_BASE_LABELS.opencode },
       ],
-      initialValue: initial ?? "claude",
+      initialValues,
+      required: true,
     });
-    return isCancel(result) ? null : result;
+    if (isCancel(result)) return null;
+    // sorted (claude → codex → opencode 순)
+    const sortOrder: Record<CliBase, number> = { claude: 0, codex: 1, opencode: 2 };
+    return [...(result as CliBase[])].sort((a, b) => sortOrder[a] - sortOrder[b]);
   },
 
   selectAction: async (state) => {

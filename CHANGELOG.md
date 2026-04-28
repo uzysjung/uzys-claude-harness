@@ -5,6 +5,77 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.7.0] — 2026-04-28 (BREAKING)
+
+### Breaking — CLI multi-select
+
+`--cli` 단일 enum (5 mode: claude/codex/opencode/both/all) → **repeatable** (3 base × 7 combination).
+
+#### 마이그레이션
+
+```bash
+# Before (v0.6.x)
+npx ... install --cli codex
+npx ... install --cli both    # claude + codex
+npx ... install --cli all     # claude + codex + opencode
+
+# After (v0.7.0+)
+npx ... install --cli codex                                 # 단일 (변경 없음)
+npx ... install --cli claude --cli codex                    # = (legacy) both
+npx ... install --cli claude --cli codex --cli opencode     # = (legacy) all
+
+# 신규 조합 (이전 미지원)
+npx ... install --cli claude --cli opencode    # Codex 제외
+npx ... install --cli codex --cli opencode     # Claude 제외
+```
+
+기존 `--cli both`/`--cli all`은 **1 release deprecation alias**로 유지. 사용 시 stderr deprecation warning emit. **v0.8+에서 제거 예정**.
+
+```
+$ npx ... install --cli both
+[WARN] --cli both is deprecated. Use --cli claude --cli codex (will be removed in v0.8+)
+```
+
+### Added — Codex slash 통일 (Major CR)
+
+`--with-codex-prompts` opt-in 시 `~/.codex/prompts/uzys-{spec,plan,build,test,review,ship}.md` 6 file 글로벌 복사. Codex CLI에서 `/uzys-spec` 등 Claude Code 컨벤션 slash 작동 ([공식 docs](https://developers.openai.com/codex/cli/slash-commands)).
+
+```bash
+npx ... install --track tooling --cli codex --with-codex-prompts
+# → ~/.codex/prompts/uzys-*.md 6 file 생성
+# → Codex 재시작 → /uzys-spec, /uzys-plan, ... slash 자동 등록
+```
+
+D16 보호 — opt-in 강제. 기존 `.agents/skills/uzys-*/SKILL.md` (`$uzys-spec` mention 형식)도 병존.
+
+### Internal
+
+- `src/types.ts` `CliBase` (`"claude" | "codex" | "opencode"`) + `CliTargets` (sorted readonly array)
+- `InstallSpec.cli`: `CliMode` (single string) → `CliTargets` (array)
+- `OptionFlags.withCodexPrompts: boolean` (default false)
+- `src/cli-targets.ts` (신규) — `parseCliTargets()` repeatable + alias 변환 + invalid reject + warning 수집
+- `src/codex/prompts.ts` (신규) — `renderCodexPrompt()` markdown 변환 + slash rename
+- `src/codex/opt-in.ts` `runCodexOptIn` 분기 — `withCodexPrompts=true` 시 6 file 글로벌 복사
+- `CodexOptInReport.promptsInstalled` 필드 추가
+- `src/prompts.ts` `selectCli` `select` → `multiselect` (3 base 체크박스, default `["claude"]`, required: true)
+- 매트릭스 11×5=55 → **11×7=77** + invariant 8 = 신규 조합 (claude+opencode, codex+opencode) 검증 추가
+
+### 검증
+- vitest **506 tests PASS** (이전 451 → 506 = +55)
+- coverage stmt 96.18% / branches 88.48% / funcs 95.62% / lines 96.18% — threshold 90/88/90/90 충족
+- npm run ci PASS
+- 5축 reviewer (별도 진행)
+
+### Driver
+- 사용자 질문 (2026-04-28) — "왜 CLI 선택이 multi-select 아닌가?"
+- 사용자 보고 (2026-04-27 AutoBlogEngine) — Codex `/uzys-*` slash 미인식 (`.agents/skills/`는 `$<name>` mention만)
+- 두 issue를 단일 BREAKING release로 묶음 (사용자 마이그레이션 1회)
+
+### Reference
+- SPEC `docs/specs/cli-multi-select.md` (Accepted, Major CR)
+- Plan `docs/plans/cli-multi-select-plan.md`
+- Dogfood `docs/dogfood/v0.7.0-2026-04-28.md`
+
 ## [v0.6.6] — 2026-04-28
 
 ### Fixed — prune-ecc.sh 상대경로 dest 변환 버그
