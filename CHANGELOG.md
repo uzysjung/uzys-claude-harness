@@ -5,6 +5,42 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.7.1] — 2026-04-29
+
+### Added — Codex `.codex/prompts/` project-scoped pre-positioning (Path 1)
+
+`--cli codex` 포함 시 installer가 `<projectDir>/.codex/prompts/uzys-{spec,plan,build,test,review,ship}.md` 6 file을 자동 생성. **글로벌 `~/.codex/prompts/` 영향 0**.
+
+현재 Codex CLI는 project-scoped prompts 미지원 ([openai/codex#9848](https://github.com/openai/codex/issues/9848) feature request open). **upstream 지원 시 자동 작동 — free upgrade 패턴**.
+
+기존 v0.7.0 `--with-codex-prompts` 글로벌 opt-in (Path 2)은 그대로 유지 — 즉시 효과 원하는 사용자용.
+
+### Improved — v0.7.0 reviewer followup
+
+- `CliMode` / `isCliMode` `@deprecated` JSDoc 마크 (v0.8.0 제거 예정 명시)
+- `SORT_ORDER` 중복 해소 — `src/cli-targets.ts`에 `CLI_BASE_SORT_ORDER` SSOT export → `prompts.ts`/`installer-cli-matrix.test.ts` 재사용
+- `parseCliTargets` comma-separated 입력 (예: `--cli claude,codex`) 시 에러 메시지에 "Tip: --cli A --cli B 형식으로" 힌트 추가
+
+### Internal
+
+- `src/codex/transform.ts` step 5 추가 — `.codex/prompts/uzys-*.md` 6 file 변환 복사. `renderCodexPrompt` (v0.7.0) 재사용
+- `CodexTransformReport.promptFiles: string[]` 필드
+- install renderer Phase 3에 `.codex/prompts/uzys-*` row 추가
+- `tests/codex/transform.test.ts` promptFiles 검증
+- `tests/cli-targets.test.ts` comma hint 검증
+
+### 검증
+- vitest **509 tests PASS** (이전 508 → 509 = +1 cli-targets case)
+- coverage stmt 95.36 / branches 88.18 / funcs 95.62 / lines 95.36 (threshold 90/88/90/90)
+- npm run ci PASS
+
+### Driver
+사용자 — "글로벌은 안 건드리기로 했잖아". v0.7.0 글로벌 opt-in (D16 합의된 패턴) 유지하되, project-scoped pre-positioning 추가로 미래 upstream 지원 시 글로벌 영향 0 path 제공.
+
+### Reference
+- SPEC `docs/specs/codex-project-prompts.md`
+- upstream [openai/codex#9848](https://github.com/openai/codex/issues/9848)
+
 ## [v0.7.0] — 2026-04-28 (BREAKING)
 
 ### Breaking — CLI multi-select

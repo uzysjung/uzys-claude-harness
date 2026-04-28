@@ -21,7 +21,8 @@ import { CLI_BASES, type CliBase, type CliTargets, isCliBase } from "./types.js"
 const ALIAS_BOTH: ReadonlyArray<CliBase> = ["claude", "codex"];
 const ALIAS_ALL: ReadonlyArray<CliBase> = ["claude", "codex", "opencode"];
 
-const SORT_ORDER: Record<CliBase, number> = {
+/** SSOT — claude → codex → opencode 정렬 순서. prompts.ts에서 import. */
+export const CLI_BASE_SORT_ORDER: Record<CliBase, number> = {
   claude: 0,
   codex: 1,
   opencode: 2,
@@ -67,17 +68,21 @@ export function parseCliTargets(input: string | string[] | undefined): ParseCliT
       continue;
     }
     if (!isCliBase(item)) {
+      // v0.7.1 — comma-separated 입력 힌트 (사용자 흔한 실수)
+      const hint = item.includes(",")
+        ? "\n         Tip: comma-separated 값은 미지원. 여러 CLI는 --cli A --cli B 형식으로."
+        : "";
       return {
         ok: false,
         targets: ["claude"],
         warnings,
-        error: `Invalid --cli value: ${item}. Must be one of: ${CLI_BASES.join(" | ")} (or legacy alias: both | all)`,
+        error: `Invalid --cli value: ${item}. Must be one of: ${CLI_BASES.join(" | ")} (or legacy alias: both | all)${hint}`,
       };
     }
     collected.add(item);
   }
 
-  const targets = [...collected].sort((a, b) => SORT_ORDER[a] - SORT_ORDER[b]);
+  const targets = [...collected].sort((a, b) => CLI_BASE_SORT_ORDER[a] - CLI_BASE_SORT_ORDER[b]);
   return { ok: true, targets, warnings };
 }
 

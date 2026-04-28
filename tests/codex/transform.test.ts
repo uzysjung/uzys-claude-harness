@@ -17,12 +17,14 @@ describe("runCodexTransform (E2E against templates/)", () => {
     rmSync(project, { recursive: true, force: true });
   });
 
-  it("produces AGENTS.md, .codex/config.toml, hooks, skills", () => {
+  it("produces AGENTS.md, .codex/config.toml, hooks, skills, prompts (v0.7.1)", () => {
     const report = runCodexTransform({ harnessRoot: HARNESS_ROOT, projectDir: project });
     expect(existsSync(report.agentsMdPath)).toBe(true);
     expect(existsSync(report.configTomlPath)).toBe(true);
     expect(report.hookFiles).toHaveLength(3);
     expect(report.skillFiles).toHaveLength(6);
+    // v0.7.1 — project-scoped .codex/prompts/ pre-positioning (글로벌 영향 0)
+    expect(report.promptFiles).toHaveLength(6);
 
     const agents = readFileSync(report.agentsMdPath, "utf8");
     expect(agents).not.toContain("/uzys:");
@@ -40,6 +42,18 @@ describe("runCodexTransform (E2E against templates/)", () => {
       const body = readFileSync(skill, "utf8");
       expect(body.startsWith("---")).toBe(true);
       expect(body).toMatch(/name: uzys-(spec|plan|build|test|review|ship)/);
+    }
+
+    // v0.7.1 — Codex project-scoped prompts (frontmatter description, slash rename)
+    for (const promptFile of report.promptFiles) {
+      const body = readFileSync(promptFile, "utf8");
+      expect(body).toMatch(/^---/);
+      expect(body).toContain("description:");
+      // /uzys: → /uzys- 변환 검증
+      expect(body).not.toContain("/uzys:");
+      // 글로벌 영향 0 — path는 <project>/.codex/prompts/uzys-*.md
+      expect(promptFile).toContain(".codex/prompts/uzys-");
+      expect(promptFile).not.toContain("/.codex/prompts/uzys-spec".replace(".codex", "_codex_"));
     }
   });
 

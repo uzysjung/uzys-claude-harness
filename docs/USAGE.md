@@ -339,7 +339,20 @@ $ npx ... install --cli both
 | `--cli both` | `--cli claude --cli codex` |
 | `--cli all` | `--cli claude --cli codex --cli opencode` |
 
-### Codex slash 통일 — `--with-codex-prompts` (v0.7.0 opt-in)
+### Codex slash 통일 — 2 path (v0.7.1+)
+
+#### Path 1 (default, 글로벌 영향 0): `.codex/prompts/` project-scoped pre-positioning
+
+`--cli codex` 포함 시 installer가 `<project>/.codex/prompts/uzys-{6 phase}.md`를 자동 생성. 글로벌 `~/.codex/prompts/` 영향 **0**.
+
+```bash
+npx ... install --track tooling --cli codex
+# → <project>/.codex/prompts/uzys-*.md 6 file 자동 생성 (글로벌 영향 0)
+```
+
+**현재 상태**: Codex CLI는 project-scoped prompts 미지원. [openai/codex#9848](https://github.com/openai/codex/issues/9848) feature request 진행 중. **upstream 지원 시 자동 작동** (free upgrade 패턴).
+
+#### Path 2 (즉시 작동, 글로벌 opt-in): `--with-codex-prompts` (v0.7.0)
 
 Codex CLI에서 `/uzys-spec` 등 slash command를 Claude Code 컨벤션과 통일하려면:
 

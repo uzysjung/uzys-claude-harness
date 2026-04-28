@@ -25,6 +25,7 @@ import { ensureDir } from "../fs-ops.js";
 import type { McpJson } from "../mcp-merge.js";
 import { renderAgentsMd } from "./agents-md.js";
 import { renderConfigToml } from "./config-toml.js";
+import { renderCodexPrompt } from "./prompts.js";
 import { renderSkill } from "./skills.js";
 
 export interface CodexTransformParams {
@@ -37,6 +38,11 @@ export interface CodexTransformReport {
   configTomlPath: string;
   hookFiles: string[];
   skillFiles: string[];
+  /**
+   * v0.7.1 — `<projectDir>/.codex/prompts/uzys-{phase}.md` 6 markdown.
+   * 글로벌 영향 0. upstream Codex Issue #9848 (project-scoped prompts) 지원 시 자동 작동.
+   */
+  promptFiles: string[];
 }
 
 const PHASES = ["spec", "plan", "build", "test", "review", "ship"];
@@ -108,7 +114,24 @@ export function runCodexTransform(params: CodexTransformParams): CodexTransformR
     skillFiles.push(target);
   }
 
-  return { agentsMdPath, configTomlPath, hookFiles, skillFiles };
+  // 5. v0.7.1 — .codex/prompts/uzys-{phase}.md (project-scoped pre-positioning)
+  // 글로벌 ~/.codex/prompts/ 영향 0. Codex upstream Issue #9848 지원 시 자동 작동.
+  // 현재는 Codex가 project-scoped prompts 미지원 — pre-position만 (free upgrade 패턴).
+  const promptDir = join(projectDir, ".codex", "prompts");
+  ensureDir(promptDir);
+  const promptFiles: string[] = [];
+  for (const phase of PHASES) {
+    const cmdSrc = join(harnessRoot, "templates/commands/uzys", `${phase}.md`);
+    if (!existsSync(cmdSrc)) {
+      continue;
+    }
+    const source = readFileSync(cmdSrc, "utf8");
+    const target = join(promptDir, `uzys-${phase}.md`);
+    writeFileSync(target, renderCodexPrompt({ source, phase }));
+    promptFiles.push(target);
+  }
+
+  return { agentsMdPath, configTomlPath, hookFiles, skillFiles, promptFiles };
 }
 
 function readRequired(path: string): string {
