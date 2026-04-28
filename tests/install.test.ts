@@ -244,6 +244,7 @@ describe("executeSpec", () => {
         configTomlPath: "/p/.codex/config.toml",
         hookFiles: ["/p/.codex/hooks/a.sh", "/p/.codex/hooks/b.sh"],
         skillFiles: ["/p/.agents/skills/uzys-spec/SKILL.md"],
+        promptFiles: [],
       },
     });
     executeSpec(
@@ -299,6 +300,7 @@ describe("executeSpec", () => {
         configTomlPath: "/p/.codex/config.toml",
         hookFiles: [],
         skillFiles: [],
+        promptFiles: [],
       },
       opencode: {
         agentsMdPath: "/p/AGENTS.md",
@@ -324,6 +326,7 @@ describe("executeSpec", () => {
         configTomlPath: "/p/.codex/config.toml",
         hookFiles: [],
         skillFiles: [],
+        promptFiles: [],
       },
     });
     executeSpec(
@@ -529,6 +532,7 @@ describe("executeSpec", () => {
         configTomlPath: "/p/.codex/config.toml",
         hookFiles: [],
         skillFiles: [],
+        promptFiles: [],
       },
     });
     executeSpec(
@@ -621,6 +625,7 @@ describe("executeSpec", () => {
         configTomlPath: "/p/.codex/config.toml",
         hookFiles: [],
         skillFiles: [],
+        promptFiles: [],
       },
       codexOptIn: {
         skillsInstalled: { enabled: true, count: 6, targetDir: "/Users/x/.codex/skills" },
@@ -648,6 +653,7 @@ describe("executeSpec", () => {
         configTomlPath: "/p/.codex/config.toml",
         hookFiles: [],
         skillFiles: [],
+        promptFiles: [],
       },
       codexOptIn: {
         skillsInstalled: { enabled: false, count: 0, targetDir: "/Users/x/.codex/skills" },
@@ -672,6 +678,7 @@ describe("executeSpec", () => {
         configTomlPath: "/p/.codex/config.toml",
         hookFiles: [],
         skillFiles: [],
+        promptFiles: [],
       },
       codexOptIn: {
         skillsInstalled: { enabled: false, count: 0, targetDir: "/Users/x/.codex/skills" },

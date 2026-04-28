@@ -41,10 +41,15 @@ export function isCliBase(value: unknown): value is CliBase {
 /** Sorted readonly array of CliBase. install pipeline의 분기 input. */
 export type CliTargets = ReadonlyArray<CliBase>;
 
-/** Legacy 5 mode union — alias 변환 + matrix test 호환 위해 유지. v0.8+에서 제거. */
+/**
+ * @deprecated v0.7.0 — Use `CliBase` + `CliTargets`. v0.8.0에서 제거 예정.
+ * Legacy 5 mode union — alias 변환 + matrix test 호환 위해 유지.
+ */
 export const CLI_MODES = ["claude", "codex", "opencode", "both", "all"] as const;
+/** @deprecated v0.7.0 — Use `CliBase` + `CliTargets`. v0.8.0에서 제거 예정. */
 export type CliMode = (typeof CLI_MODES)[number];
 
+/** @deprecated v0.7.0 — Use `isCliBase`. v0.8.0에서 제거 예정. */
 export function isCliMode(value: unknown): value is CliMode {
   return typeof value === "string" && (CLI_MODES as readonly string[]).includes(value);
 }

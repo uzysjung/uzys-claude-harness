@@ -277,9 +277,19 @@ export function executeSpec(spec: InstallSpec, deps: ExecuteSpecDeps = {}): void
         assetRow(
           "success",
           ".agents/skills/uzys-*/SKILL.md",
-          `${report.codex.skillFiles.length} skills`,
+          `${report.codex.skillFiles.length} skills ($uzys-spec mention)`,
         ),
       );
+      // v0.7.1 — project-scoped prompts pre-positioning (글로벌 영향 0)
+      if (report.codex.promptFiles.length > 0) {
+        log(
+          assetRow(
+            "success",
+            ".codex/prompts/uzys-*.md",
+            `${report.codex.promptFiles.length} prompts (upstream #9848 지원 시 /uzys-spec 자동 작동)`,
+          ),
+        );
+      }
       // Codex global opt-in (D16) — only when explicitly enabled
       if (report.codexOptIn) {
         if (report.codexOptIn.skillsInstalled.enabled) {

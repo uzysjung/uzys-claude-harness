@@ -3,6 +3,7 @@
 // is excluded from coverage in vitest.config.ts (justification at exclude line).
 
 import { cancel, confirm, intro, isCancel, multiselect, outro, select } from "@clack/prompts";
+import { CLI_BASE_SORT_ORDER } from "./cli-targets.js";
 import { type RouterAction, buildRouterChoices, summarizeState } from "./router.js";
 import type { DetectedInstall } from "./state.js";
 import { type CliBase, type CliTargets, type OptionFlags, TRACKS, type Track } from "./types.js";
@@ -99,9 +100,10 @@ export const defaultPrompts: Prompts = {
       required: true,
     });
     if (isCancel(result)) return null;
-    // sorted (claude → codex → opencode 순)
-    const sortOrder: Record<CliBase, number> = { claude: 0, codex: 1, opencode: 2 };
-    return [...(result as CliBase[])].sort((a, b) => sortOrder[a] - sortOrder[b]);
+    // sorted (claude → codex → opencode 순). cli-targets.ts SSOT.
+    return [...(result as CliBase[])].sort(
+      (a, b) => CLI_BASE_SORT_ORDER[a] - CLI_BASE_SORT_ORDER[b],
+    );
   },
 
   selectAction: async (state) => {

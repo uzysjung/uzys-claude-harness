@@ -119,6 +119,14 @@ describe("parseCliTargets — invalid reject", () => {
     const r = parseCliTargets(["claude", "rust"]);
     expect(r.ok).toBe(false);
   });
+
+  // v0.7.1 — comma-separated 입력 힌트 (사용자 흔한 실수)
+  it("comma-separated 'claude,codex' → ok=false + Tip 힌트 포함", () => {
+    const r = parseCliTargets("claude,codex");
+    expect(r.ok).toBe(false);
+    expect(r.error).toContain("comma-separated 값은 미지원");
+    expect(r.error).toContain("--cli A --cli B");
+  });
 });
 
 describe("targetsInclude", () => {
