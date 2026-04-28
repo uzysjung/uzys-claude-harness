@@ -76,29 +76,27 @@ describe("parseCliTargets — multi-select (repeatable)", () => {
   });
 });
 
-describe("parseCliTargets — alias deprecation", () => {
-  it("'both' alias → [claude, codex] + warning", () => {
+describe("parseCliTargets — alias removed (v0.8.0 BREAKING)", () => {
+  it("'both' is invalid + migration hint", () => {
     const r = parseCliTargets("both");
-    expect(r.ok).toBe(true);
-    expect(r.targets).toEqual(["claude", "codex"]);
-    expect(r.warnings).toHaveLength(1);
-    expect(r.warnings[0]).toContain("deprecated");
-    expect(r.warnings[0]).toContain("--cli claude --cli codex");
+    expect(r.ok).toBe(false);
+    expect(r.error).toContain("Invalid --cli value: both");
+    expect(r.error).toContain("v0.8.0에서 'both' alias 제거");
+    expect(r.error).toContain("--cli claude --cli codex");
   });
 
-  it("'all' alias → [claude, codex, opencode] + warning", () => {
+  it("'all' is invalid + migration hint", () => {
     const r = parseCliTargets("all");
-    expect(r.ok).toBe(true);
-    expect(r.targets).toEqual(["claude", "codex", "opencode"]);
-    expect(r.warnings).toHaveLength(1);
-    expect(r.warnings[0]).toContain("deprecated");
-    expect(r.warnings[0]).toContain("--cli claude --cli codex --cli opencode");
+    expect(r.ok).toBe(false);
+    expect(r.error).toContain("Invalid --cli value: all");
+    expect(r.error).toContain("v0.8.0에서 'all' alias 제거");
+    expect(r.error).toContain("--cli claude --cli codex --cli opencode");
   });
 
-  it("alias + base mixed [both, opencode] → all 3 + 1 warning", () => {
+  it("['both', 'opencode'] mixed — also reject ('both' is invalid)", () => {
     const r = parseCliTargets(["both", "opencode"]);
-    expect(r.targets).toEqual(["claude", "codex", "opencode"]);
-    expect(r.warnings).toHaveLength(1);
+    expect(r.ok).toBe(false);
+    expect(r.error).toContain("Invalid --cli value: both");
   });
 });
 

@@ -308,7 +308,7 @@ Impeccable 스킬은 네임스페이스 없이 직접 호출:
 | `/delight` `/overdrive` | 개성 추가 / 기술적 야심 |
 | `/optimize` | UI 성능 최적화 |
 
-## Multi-CLI 설치 (v0.7.0+ BREAKING)
+## Multi-CLI 설치 (v0.7.0+ BREAKING / v0.8.0 alias 제거)
 
 v0.7.0부터 `--cli`는 **repeatable**. 7가지 조합 가능 (`claude`/`codex`/`opencode` 중 부분집합).
 
@@ -316,28 +316,49 @@ v0.7.0부터 `--cli`는 **repeatable**. 7가지 조합 가능 (`claude`/`codex`/
 # Single CLI
 npx -y github:uzysjung/uzys-claude-harness install --track tooling --cli codex
 
-# Multi-CLI (v0.7.0 권장)
+# Multi-CLI
 npx -y github:uzysjung/uzys-claude-harness install --track tooling \
-  --cli claude --cli codex                       # = (legacy) --cli both
+  --cli claude --cli codex                       # 2 CLI
 npx -y github:uzysjung/uzys-claude-harness install --track tooling \
-  --cli claude --cli codex --cli opencode        # = (legacy) --cli all
+  --cli claude --cli codex --cli opencode        # all 3
 
-# 신규 조합 (이전 미지원)
+# Codex/OpenCode 제외 조합
 npx -y ... install --track tooling --cli claude --cli opencode    # Codex 제외
 npx -y ... install --track tooling --cli codex --cli opencode     # Claude 제외
 ```
 
-### Deprecated alias (v0.8+ 제거 예정)
+### v0.8.0 BREAKING — `both` / `all` alias 제거
+
+v0.7.0에서 deprecation warning과 함께 1 release 거친 후 v0.8.0에서 invalid input.
 
 ```
 $ npx ... install --cli both
-[WARN] --cli both is deprecated. Use --cli claude --cli codex (will be removed in v0.8+)
+ERROR: 'both' is not a valid CLI base.
+       v0.8.0에서 'both' alias 제거됨. --cli claude --cli codex 사용.
 ```
 
-| Legacy | 변환 |
-|--------|------|
+| v0.7.x (legacy alias) | v0.8.0+ (canonical) |
+|-----------------------|---------------------|
 | `--cli both` | `--cli claude --cli codex` |
 | `--cli all` | `--cli claude --cli codex --cli opencode` |
+
+### v0.8.0 BREAKING — `.claude/` 조건부 생성
+
+`--cli` 에 `claude` 가 없으면 (예: `--cli codex` 단독) `.claude/` baseline (CLAUDE.md / agents / hooks / commands / rules / skills) **미생성**. Codex/OpenCode 단독 사용자의 dead weight 회피.
+
+| `--cli` 조합 | `.claude/` | `.codex/` | `opencode.json` | `.mcp.json` |
+|---|:-:|:-:|:-:|:-:|
+| `claude` | ✅ | — | — | ✅ |
+| `codex` | — | ✅ | — | ✅ |
+| `opencode` | — | — | ✅ | ✅ |
+| `claude` + `codex` | ✅ | ✅ | — | ✅ |
+| `claude` + `opencode` | ✅ | — | ✅ | ✅ |
+| `codex` + `opencode` | — | ✅ | ✅ | ✅ |
+| 3 CLI | ✅ | ✅ | ✅ | ✅ |
+
+`.mcp.json` 은 모든 CLI 가 사용하므로 `cli` 무관 항상 생성.
+
+`--with-karpathy-hook` 은 `.claude/settings.json` PreToolUse 의존이므로 `--cli` 에 `claude` 미포함 시 자동 skip (`reason: "claude-not-selected"`).
 
 ### Codex slash 통일 — 2 path (v0.7.1+)
 

@@ -60,15 +60,19 @@ function spec(track: Track, cli: CliTargets, projectDir: string): InstallSpec {
 }
 
 interface ExpectedArtifacts {
+  /** v0.8.0 — claude 포함 시에만 .claude/ baseline 생성 */
+  claudeBaseline: boolean;
   agentsMd: boolean;
   codexConfig: boolean;
   opencodeJson: boolean;
 }
 
 function expectedFor(targets: CliTargets): ExpectedArtifacts {
+  const hasClaude = targets.includes("claude");
   const hasCodex = targets.includes("codex");
   const hasOpenCode = targets.includes("opencode");
   return {
+    claudeBaseline: hasClaude,
     agentsMd: hasCodex || hasOpenCode,
     codexConfig: hasCodex,
     opencodeJson: hasOpenCode,
@@ -100,9 +104,10 @@ describe("11 Track × 7 CLI combination matrix (77 scenarios) — E2E install", 
           spec: spec(track, cli, projectDir),
         });
 
-        // 1. baseline: .claude/CLAUDE.md + .mcp.json (항상)
-        expect(existsSync(join(projectDir, ".claude/CLAUDE.md"))).toBe(true);
-        expect(existsSync(join(projectDir, ".claude/settings.json"))).toBe(true);
+        // 1. baseline: .claude/ 조건부 (v0.8.0 — claude 포함 시만), .mcp.json 항상
+        const exp = expectedFor(cli);
+        expect(existsSync(join(projectDir, ".claude/CLAUDE.md"))).toBe(exp.claudeBaseline);
+        expect(existsSync(join(projectDir, ".claude/settings.json"))).toBe(exp.claudeBaseline);
         expect(existsSync(join(projectDir, ".mcp.json"))).toBe(true);
 
         // 2. installed-tracks meta
@@ -112,7 +117,6 @@ describe("11 Track × 7 CLI combination matrix (77 scenarios) — E2E install", 
         expect(report.mcpServers).toContain("context7");
 
         // 4. CLI artifacts per combination
-        const exp = expectedFor(cli);
         expect(existsSync(join(projectDir, "AGENTS.md"))).toBe(exp.agentsMd);
         expect(existsSync(join(projectDir, ".codex/config.toml"))).toBe(exp.codexConfig);
         expect(existsSync(join(projectDir, "opencode.json"))).toBe(exp.opencodeJson);
@@ -202,6 +206,48 @@ describe("Matrix invariants — cross-cutting", () => {
     expect(existsSync(join(projectDir, "opencode.json"))).toBe(true);
   });
 
+  // v0.8.0 — .claude/ 조건부 생성 검증 (Codex/OpenCode 단독 dead weight 제거)
+  it("[codex] only: .claude/ 디렉토리 자체 미생성", () => {
+    runInstall({
+      runExternal: null,
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: spec("tooling", ["codex"], projectDir),
+    });
+    expect(existsSync(join(projectDir, ".claude/CLAUDE.md"))).toBe(false);
+    expect(existsSync(join(projectDir, ".claude/settings.json"))).toBe(false);
+    expect(existsSync(join(projectDir, ".claude/.installed-tracks"))).toBe(false);
+    // Codex 산출물은 정상 생성
+    expect(existsSync(join(projectDir, ".codex/config.toml"))).toBe(true);
+    expect(existsSync(join(projectDir, "AGENTS.md"))).toBe(true);
+    // .mcp.json은 Codex도 사용 (cli 무관 항상)
+    expect(existsSync(join(projectDir, ".mcp.json"))).toBe(true);
+  });
+
+  it("[opencode] only: .claude/ 미생성, opencode.json만", () => {
+    runInstall({
+      runExternal: null,
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: spec("tooling", ["opencode"], projectDir),
+    });
+    expect(existsSync(join(projectDir, ".claude/CLAUDE.md"))).toBe(false);
+    expect(existsSync(join(projectDir, "opencode.json"))).toBe(true);
+  });
+
+  it("[codex, opencode] (Claude 제외): .claude/ 미생성, Codex+OpenCode 둘 다 생성", () => {
+    runInstall({
+      runExternal: null,
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: spec("tooling", ["codex", "opencode"], projectDir),
+    });
+    expect(existsSync(join(projectDir, ".claude/CLAUDE.md"))).toBe(false);
+    expect(existsSync(join(projectDir, ".codex/config.toml"))).toBe(true);
+    expect(existsSync(join(projectDir, "opencode.json"))).toBe(true);
+    expect(existsSync(join(projectDir, "AGENTS.md"))).toBe(true);
+  });
+
   it("Codex global opt-in stays OFF when withCodex* flags false (D16)", () => {
     const report = runInstall({
       runExternal: null,
@@ -210,6 +256,45 @@ describe("Matrix invariants — cross-cutting", () => {
       spec: spec("tooling", ["codex"], projectDir),
     });
     expect(report.codexOptIn).toBeNull();
+  });
+
+  // v0.8.0 HIGH-1 — withKarpathyHook + claude 미선택 시 silent skip (reason="claude-not-selected")
+  it("[codex] + withKarpathyHook=true: hook 미와이어 + reason=claude-not-selected", () => {
+    const report = runInstall({
+      runExternal: null,
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: {
+        tracks: ["tooling"],
+        options: { ...DEFAULT_OPTIONS, withKarpathyHook: true },
+        cli: ["codex"],
+        projectDir,
+      },
+    });
+    expect(report.karpathyHook).toEqual({
+      wired: false,
+      reason: "claude-not-selected",
+    });
+    // .claude/settings.json 자체가 없어야 (cli=codex 단독)
+    expect(existsSync(join(projectDir, ".claude/settings.json"))).toBe(false);
+  });
+
+  it("[opencode] + withKarpathyHook=true: hook 미와이어 + reason=claude-not-selected", () => {
+    const report = runInstall({
+      runExternal: null,
+      harnessRoot: HARNESS_ROOT,
+      projectDir,
+      spec: {
+        tracks: ["tooling"],
+        options: { ...DEFAULT_OPTIONS, withKarpathyHook: true },
+        cli: ["opencode"],
+        projectDir,
+      },
+    });
+    expect(report.karpathyHook).toEqual({
+      wired: false,
+      reason: "claude-not-selected",
+    });
   });
 
   // v0.7.0 신규 조합 검증 (이전 5 mode에 없던 조합)
@@ -224,18 +309,5 @@ describe("Matrix invariants — cross-cutting", () => {
     expect(existsSync(join(projectDir, "AGENTS.md"))).toBe(true);
     expect(existsSync(join(projectDir, "opencode.json"))).toBe(true);
     expect(existsSync(join(projectDir, ".codex/config.toml"))).toBe(false);
-  });
-
-  it("[codex, opencode] (Claude 제외): AGENTS.md + 둘 다, baseline .claude/는 그대로", () => {
-    // baseline은 항상 .claude/ 생성. spec.cli에 claude 미포함이어도.
-    runInstall({
-      runExternal: null,
-      harnessRoot: HARNESS_ROOT,
-      projectDir,
-      spec: spec("tooling", ["codex", "opencode"], projectDir),
-    });
-    expect(existsSync(join(projectDir, ".claude/CLAUDE.md"))).toBe(true); // baseline always
-    expect(existsSync(join(projectDir, ".codex/config.toml"))).toBe(true);
-    expect(existsSync(join(projectDir, "opencode.json"))).toBe(true);
   });
 });

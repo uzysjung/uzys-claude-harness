@@ -3,18 +3,11 @@ import { parseCliTargets, targetsInclude } from "../cli-targets.js";
 import type { Cli } from "../cli.js";
 import { assetRow, c, infoRow, phaseHeader, sectionHeader, status } from "../design.js";
 import { type InstallReport, runInstall as runInstallPipeline } from "../installer.js";
-import {
-  type CliMode,
-  type CliTargets,
-  type InstallSpec,
-  type Track,
-  isCliMode,
-  isTrack,
-} from "../types.js";
+import { type CliTargets, type InstallSpec, type Track, isTrack } from "../types.js";
 
 export interface InstallOptions {
   track?: string[];
-  /** v0.7.0 — repeatable. cac type: [String]. legacy alias 'both'/'all'은 deprecation warning. */
+  /** v0.7.0 — repeatable. cac type: [String]. v0.8.0 — legacy alias 'both'/'all' 제거됨. */
   cli?: string | string[];
   projectDir?: string;
   withTauri?: boolean;
@@ -28,9 +21,6 @@ export interface InstallOptions {
   /** v0.7.0 — Codex slash 통일 opt-in (~/.codex/prompts/uzys-*.md). D16 패턴. */
   withCodexPrompts?: boolean;
 }
-
-export type CliMode_ = CliMode;
-export { isCliMode };
 
 export interface RunInstallResult {
   ok: boolean;
@@ -475,6 +465,15 @@ function renderPhase1Rows(
   if (baseline.envFiles.gitignoreEnvAdded) {
     log(assetRow("success", ".gitignore", "+ .env"));
   }
+  if (baseline.envFiles.gitignoreNpxSkillsAdded.length > 0) {
+    log(
+      assetRow(
+        "success",
+        ".gitignore",
+        `+ ${baseline.envFiles.gitignoreNpxSkillsAdded.join(" ")} (npx skills universal install)`,
+      ),
+    );
+  }
   log("");
 }
 
@@ -566,7 +565,7 @@ export function registerInstallCommand(cli: Cli): void {
     .option("--track <name>", "Track to install (repeatable)", { type: [String] })
     .option(
       "--cli <target>",
-      "Target CLI (repeatable): claude | codex | opencode. Legacy: both | all (deprecated, alias of [claude,codex] / [claude,codex,opencode]).",
+      "Target CLI (repeatable): claude | codex | opencode. Multiple --cli flags combine (e.g. --cli claude --cli codex).",
       { type: [String], default: "claude" },
     )
     .option("--project-dir <path>", "Target project directory", { default: process.cwd() })
@@ -577,7 +576,7 @@ export function registerInstallCommand(cli: Cli): void {
     .option("--with-tob", "Install Trail of Bits security plugin")
     .option(
       "--with-codex-skills",
-      "Codex global opt-in: copy uzys-* skills to ~/.codex/skills/ (cli=codex/both/all only)",
+      "Codex global opt-in: copy uzys-* skills to ~/.codex/skills/ (requires --cli codex)",
     )
     .option(
       "--with-codex-trust",

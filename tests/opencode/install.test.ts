@@ -17,7 +17,7 @@ describe("OpenCode install pipeline (integration)", () => {
     rmSync(projectDir, { recursive: true, force: true });
   });
 
-  it("tooling + --cli=opencode: writes baseline + AGENTS.md + opencode.json + .opencode/{commands,plugins}", () => {
+  it("tooling + --cli=opencode (no claude): AGENTS.md + opencode.json + .opencode/{commands,plugins}, NO .claude/ baseline (v0.8.0)", () => {
     const report = runInstall({
       runExternal: null,
       harnessRoot: HARNESS_ROOT,
@@ -43,8 +43,9 @@ describe("OpenCode install pipeline (integration)", () => {
     expect(report.opencode).not.toBeNull();
     expect(report.codex).toBeNull();
 
-    // Baseline still installed
-    expect(existsSync(join(projectDir, ".claude/CLAUDE.md"))).toBe(true);
+    // v0.8.0 — claude 미포함이라 .claude/ baseline 미생성 (dead weight 제거)
+    expect(existsSync(join(projectDir, ".claude/CLAUDE.md"))).toBe(false);
+    // .mcp.json은 OpenCode도 사용 (cli 무관 항상)
     expect(existsSync(join(projectDir, ".mcp.json"))).toBe(true);
 
     // OpenCode artifacts

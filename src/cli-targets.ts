@@ -18,9 +18,6 @@
 
 import { CLI_BASES, type CliBase, type CliTargets, isCliBase } from "./types.js";
 
-const ALIAS_BOTH: ReadonlyArray<CliBase> = ["claude", "codex"];
-const ALIAS_ALL: ReadonlyArray<CliBase> = ["claude", "codex", "opencode"];
-
 /** SSOT — claude → codex → opencode 정렬 순서. prompts.ts에서 import. */
 export const CLI_BASE_SORT_ORDER: Record<CliBase, number> = {
   claude: 0,
@@ -40,8 +37,10 @@ export interface ParseCliTargetsResult {
  * `--cli` 입력을 sorted CliTargets로 정규화.
  *
  * Default `["claude"]` (비어있거나 undefined일 때).
- * Alias `both`/`all`은 warning + 변환.
  * Invalid 모드는 reject (ok=false).
+ *
+ * v0.8.0 — `both`/`all` legacy alias 제거 (v0.7.0에서 1 release deprecation 거침).
+ * `both`/`all` 입력 시 invalid reject + 마이그레이션 안내.
  */
 export function parseCliTargets(input: string | string[] | undefined): ParseCliTargetsResult {
   const items = normalizeInput(input);
@@ -53,30 +52,23 @@ export function parseCliTargets(input: string | string[] | undefined): ParseCliT
   const warnings: string[] = [];
 
   for (const item of items) {
-    if (item === "both") {
-      warnings.push(
-        "--cli both is deprecated. Use --cli claude --cli codex (will be removed in v0.8+)",
-      );
-      for (const base of ALIAS_BOTH) collected.add(base);
-      continue;
-    }
-    if (item === "all") {
-      warnings.push(
-        "--cli all is deprecated. Use --cli claude --cli codex --cli opencode (will be removed in v0.8+)",
-      );
-      for (const base of ALIAS_ALL) collected.add(base);
-      continue;
-    }
     if (!isCliBase(item)) {
-      // v0.7.1 — comma-separated 입력 힌트 (사용자 흔한 실수)
-      const hint = item.includes(",")
-        ? "\n         Tip: comma-separated 값은 미지원. 여러 CLI는 --cli A --cli B 형식으로."
-        : "";
+      // v0.8.0 — alias 제거 마이그레이션 힌트
+      let hint = "";
+      if (item === "both") {
+        hint = "\n         v0.8.0에서 'both' alias 제거됨. --cli claude --cli codex 사용.";
+      } else if (item === "all") {
+        hint =
+          "\n         v0.8.0에서 'all' alias 제거됨. --cli claude --cli codex --cli opencode 사용.";
+      } else if (item.includes(",")) {
+        // v0.7.1 — comma-separated 입력 힌트
+        hint = "\n         Tip: comma-separated 값은 미지원. 여러 CLI는 --cli A --cli B 형식으로.";
+      }
       return {
         ok: false,
         targets: ["claude"],
         warnings,
-        error: `Invalid --cli value: ${item}. Must be one of: ${CLI_BASES.join(" | ")} (or legacy alias: both | all)${hint}`,
+        error: `Invalid --cli value: ${item}. Must be one of: ${CLI_BASES.join(" | ")}${hint}`,
       };
     }
     collected.add(item);
