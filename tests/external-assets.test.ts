@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEV_PLUS_PM_TRACKS,
+  DEV_TRACKS,
+  EXECUTIVE_STYLE_TRACKS,
   EXTERNAL_ASSETS,
   filterApplicableAssets,
   shouldInstallAsset,
 } from "../src/external-assets.js";
-import { DEFAULT_OPTIONS, type OptionFlags, type Track } from "../src/types.js";
+import { DEFAULT_OPTIONS, type OptionFlags, TRACKS, type Track } from "../src/types.js";
 
 const NO_OPTIONS: OptionFlags = { ...DEFAULT_OPTIONS };
 
@@ -164,5 +167,33 @@ describe("filterApplicableAssets", () => {
     expect(ids).toContain("ecc-plugin");
     expect(ids).toContain("trailofbits-skills");
     expect(ids).toContain("gsd-orchestrator");
+  });
+});
+
+// v0.8.1 — reviewer MEDIUM-3 fix: TRACKS partition invariants.
+describe("Track partition invariants — v0.8.1 SSOT", () => {
+  it("TRACKS = DEV_TRACKS ∪ EXECUTIVE_STYLE_TRACKS (disjoint, exhaustive)", () => {
+    const dev = new Set<Track>(DEV_TRACKS);
+    const exec = new Set<Track>(EXECUTIVE_STYLE_TRACKS);
+    // disjoint: no overlap
+    for (const t of dev) expect(exec.has(t)).toBe(false);
+    // exhaustive: dev ∪ exec = TRACKS
+    const union = new Set<Track>([...dev, ...exec]);
+    expect(union.size).toBe(TRACKS.length);
+    for (const t of TRACKS) expect(union.has(t)).toBe(true);
+  });
+
+  it("DEV_PLUS_PM_TRACKS = DEV_TRACKS + project-management (8 + 1 = 9)", () => {
+    expect(DEV_PLUS_PM_TRACKS.length).toBe(DEV_TRACKS.length + 1);
+    expect(DEV_PLUS_PM_TRACKS).toContain("project-management");
+    for (const t of DEV_TRACKS) expect(DEV_PLUS_PM_TRACKS).toContain(t);
+  });
+
+  it("product-skills condition uses DEV_PLUS_PM_TRACKS (no inline duplication)", () => {
+    const ps = EXTERNAL_ASSETS.find((a) => a.id === "product-skills");
+    if (!ps) throw new Error("product-skills missing");
+    expect(ps.condition.kind).toBe("any-track");
+    if (ps.condition.kind !== "any-track") throw new Error("not any-track");
+    expect([...ps.condition.tracks].sort()).toEqual([...DEV_PLUS_PM_TRACKS].sort());
   });
 });

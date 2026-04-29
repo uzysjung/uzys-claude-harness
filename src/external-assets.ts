@@ -63,6 +63,46 @@ const CSR_SSR_NEXTJS_FULL: Track[] = [
 const RAILWAY_TRACKS: Track[] = ["csr-fastify", "csr-fastapi", "ssr-htmx", "ssr-nextjs", "full"];
 
 /**
+ * v0.8.1 — executive-style Track SSOT (reviewer MEDIUM-3 fix).
+ *
+ * 3 Track 모두 dev/UI baseline 미적용 — `.claude/agents/strategist` + project-claude/<track>.md만.
+ * `track-match.ts:hasDevTrack()` 의 negation domain. 사용처:
+ *   - `shouldInstallAsset` `has-dev-track` 분기 코멘트 (L458)
+ *   - `tests/external-assets.test.ts` invariant
+ *
+ * 신규 executive-style Track 추가 시 이 상수만 수정 → 모든 사용처 자동 반영.
+ */
+export const EXECUTIVE_STYLE_TRACKS: ReadonlyArray<Track> = [
+  "executive",
+  "project-management",
+  "growth-marketing",
+];
+
+/**
+ * v0.8.1 — `hasDevTrack` SSOT 의 array 표현 (reviewer MEDIUM-3 fix).
+ *
+ * `track-match.ts:hasDevTrack()` 와 동등 (TRACKS \ EXECUTIVE_STYLE_TRACKS = 8 Track).
+ * `any-track` condition 에 dev set 전체를 인라인하지 않도록 사용.
+ */
+export const DEV_TRACKS: ReadonlyArray<Track> = [
+  "csr-supabase",
+  "csr-fastify",
+  "csr-fastapi",
+  "ssr-htmx",
+  "ssr-nextjs",
+  "data",
+  "tooling",
+  "full",
+];
+
+/**
+ * v0.8.1 — dev + project-management 합집합 (reviewer MEDIUM-3 fix).
+ *
+ * `product-skills` (PM 도메인까지 사용) 의 9-Track 인라인 배열을 SSOT 상수로 교체.
+ */
+export const DEV_PLUS_PM_TRACKS: ReadonlyArray<Track> = [...DEV_TRACKS, "project-management"];
+
+/**
  * 32 외부 자산 매트릭스. bash setup-harness.sh@911c246~1 L791~1067 + 1320~1370 동등.
  *
  * 호출 순서: data → dev-baseline → railway → supabase-cli → impeccable → dev-tools →
@@ -318,25 +358,12 @@ export const EXTERNAL_ASSETS: ReadonlyArray<ExternalAsset> = [
       pluginId: "pm-skills@claude-code-skills",
     },
   },
-  // SPEC §3.5 — product-skills: has-dev-track + project-management 합집합.
-  // 8 dev Track + 1 project-management = 9 Track entries (executive/growth-marketing 제외).
+  // SPEC §3.5 — product-skills: has-dev-track + project-management 합집합 (executive/growth-marketing 제외).
+  // v0.8.1 — DEV_PLUS_PM_TRACKS 상수로 SSOT 통일 (reviewer MEDIUM-3 fix).
   {
     id: "product-skills",
     description: "product-skills (15 — RICE, PRD, agile PO, UX research, SaaS scaffolder ...)",
-    condition: {
-      kind: "any-track",
-      tracks: [
-        "csr-supabase",
-        "csr-fastify",
-        "csr-fastapi",
-        "ssr-htmx",
-        "ssr-nextjs",
-        "data",
-        "tooling",
-        "full",
-        "project-management",
-      ],
-    },
+    condition: { kind: "any-track", tracks: [...DEV_PLUS_PM_TRACKS] },
     method: {
       kind: "plugin",
       marketplace: "alirezarezvani/claude-skills",
@@ -454,8 +481,8 @@ export function shouldInstallAsset(
     case "any-track":
       return ctx.tracks.some((t) => cond.tracks.includes(t));
     case "has-dev-track":
-      // SSOT — track-match.ts hasDevTrack(): csr-*|ssr-*|data|full|tooling.
-      // executive + project-management + growth-marketing = executive-style → 제외.
+      // SSOT — track-match.ts hasDevTrack(): csr-*|ssr-*|data|full|tooling (= DEV_TRACKS).
+      // EXECUTIVE_STYLE_TRACKS (executive + project-management + growth-marketing) 는 제외.
       return hasDevTrack(ctx.tracks);
     case "option":
       return ctx.options[cond.flag] === true;
