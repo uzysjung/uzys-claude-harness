@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CLI_MODES, TRACKS, isCliMode, isTrack } from "../src/types.js";
+import { CLI_BASES, TRACKS, isCliBase, isTrack } from "../src/types.js";
 
 describe("isTrack", () => {
   it.each(TRACKS)("accepts known track %s", (t) => {
@@ -11,13 +11,18 @@ describe("isTrack", () => {
   });
 });
 
-describe("isCliMode", () => {
-  it.each(CLI_MODES)("accepts %s", (m) => {
-    expect(isCliMode(m)).toBe(true);
+describe("isCliBase (v0.8.0 — replaces isCliMode)", () => {
+  it.each(CLI_BASES)("accepts %s", (b) => {
+    expect(isCliBase(b)).toBe(true);
   });
 
   it("rejects an unknown CLI", () => {
-    expect(isCliMode("rust")).toBe(false);
+    expect(isCliBase("rust")).toBe(false);
+  });
+
+  it("rejects legacy alias both/all (v0.8.0 — alias removed)", () => {
+    expect(isCliBase("both")).toBe(false);
+    expect(isCliBase("all")).toBe(false);
   });
 });
 

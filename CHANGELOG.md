@@ -5,6 +5,101 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.8.0] — 2026-04-29 (BREAKING — dual)
+
+### Breaking 1 — CLI alias 제거 (v0.7.0 deprecation 약속 이행)
+
+`--cli both`/`--cli all`은 v0.7.0에서 1 release deprecation warning 후 v0.8.0에서 **invalid reject**:
+
+```bash
+# v0.7.x (warning + 작동)
+$ npx ... install --cli both
+[WARN] --cli both is deprecated. Use --cli claude --cli codex (will be removed in v0.8+)
+✓ install proceeds with [claude, codex]
+
+# v0.8.0 (제거됨)
+$ npx ... install --cli both
+✘ ERROR: Invalid --cli value: both. Must be one of: claude | codex | opencode
+        v0.8.0에서 'both' alias 제거됨. --cli claude --cli codex 사용.
+```
+
+추가:
+- `CliMode` / `CLI_MODES` / `isCliMode` legacy type/guard 완전 삭제 (v0.7.0 `@deprecated` 마크 후 1 release 거침)
+- `tests/types.test.ts` `isCliMode` → `isCliBase` 갱신 + alias reject 검증
+
+### Breaking 2 — `.claude/` 조건부 생성 (#2 사용자 보고)
+
+`--cli claude` 미포함 시 `.claude/` 디렉토리 자체 미생성. Codex/OpenCode 단독 사용자 dead weight 제거:
+
+```bash
+# v0.7.x (이전 — Codex 단독이어도 .claude/ 생성)
+$ npx ... install --track tooling --cli codex --project-dir .
+# → .claude/CLAUDE.md + .codex/ + AGENTS.md 모두 생성 (.claude/는 dead)
+
+# v0.8.0 (이후 — Codex 단독이면 .claude/ 미생성)
+$ npx ... install --track tooling --cli codex --project-dir .
+# → .codex/ + AGENTS.md + .agents/skills/ + .codex/prompts/ 만 생성
+# → .claude/ 디렉토리 자체 미생성 (manifest copy + .installed-tracks skip)
+
+# Claude 자산 원하면 명시:
+$ npx ... install --track tooling --cli claude --cli codex --project-dir .
+# → 기존과 동일 (.claude/ + .codex/ 둘 다)
+```
+
+영향:
+- baseline manifest copy (rules/agents/hooks/commands/skills) — claude 미포함 시 skip
+- `.claude/.installed-tracks` metafile — claude 미포함 시 미생성
+- `.mcp.json` — Codex/OpenCode도 사용. claude 무관 항상 생성
+- envFiles (`.env.example`, `.gitignore`, `.mcp-allowlist`) — claude 무관
+
+### Added — `.factory/`/`.goose/` `.gitignore` 자동 추가 (#3 사용자 보고)
+
+`npx skills add`가 multi-CLI universal install 동작 — Codex 사용자 환경에서 `.factory/skills/`, `.goose/skills/` 자동 생성됨. v0.8.0에서 `.gitignore`에 자동 추가하여 git noise 회피.
+
+```
+# .gitignore (auto-added by claude-harness)
+# npx skills add multi-CLI cache (auto-added by claude-harness)
+.factory/
+.goose/
+```
+
+idempotent — 이미 등록된 패턴은 skip. `.gitignore` 부재 시 skip (사용자가 git init 후 install 권장).
+
+### Internal
+
+- `src/cli-targets.ts` `parseCliTargets` — `both`/`all` alias 분기 + warning emit 제거. invalid input 처리 (마이그레이션 힌트 포함)
+- `src/types.ts` — `CliMode`/`CLI_MODES`/`isCliMode` 삭제
+- `src/installer.ts` `runInstall` — `targets.includes("claude")` false 시 baseline copy + `.claude/` 디렉토리 + `.installed-tracks` skip
+- `src/env-files.ts` — `addGitignoreNpxSkillsAgents` 신규 함수
+- `BaselineReport.envFiles.gitignoreNpxSkillsAdded: string[]` 필드 추가
+- `tests/installer-cli-matrix.test.ts` — `expectedFor()` `claudeBaseline` 필드 + 3 신규 invariant (`[codex]`/`[opencode]`/`[codex,opencode]` `.claude/` 미생성 검증)
+- `tests/env-files.test.ts` — `addGitignoreNpxSkillsAgents` 4 case
+- `tests/cli-targets.test.ts` — alias case → invalid reject로 갱신
+- `tests/install.test.ts` — `it.each` 3 base만 valid + alias reject 2 case 분리
+
+### 검증
+- vitest **516 tests PASS** (이전 510 + 신규 6)
+- coverage stmt 95.38 / branches 88.26 / funcs 95.62 / lines 95.38 (threshold 90/88/90/90)
+- npm run ci PASS
+
+### Migration
+
+| Before (v0.7.x) | After (v0.8.0) |
+|-----------------|----------------|
+| `--cli both` | `--cli claude --cli codex` |
+| `--cli all` | `--cli claude --cli codex --cli opencode` |
+| `.claude/` 항상 생성 | `--cli claude` 포함 시만 생성 |
+| `.factory/`/`.goose/` git에 추적됨 | `.gitignore`에 자동 추가 |
+
+### Driver
+- v0.7.0 deprecation 약속 이행 (1 release 후 alias 제거)
+- 사용자 환경 보고 #2/#3 (Codex 단독 dead weight + multi-CLI universal cache)
+- 사용자 — "argument 옵션 제거된 상태에서 문제점을 찾자"
+
+### Reference
+- SPEC `docs/specs/cli-cleanup-and-baseline.md`
+- v0.7.0 SPEC `cli-multi-select.md` §3.4 OQ2 약속 (alias 제거 시점)
+
 ## [v0.7.1] — 2026-04-29
 
 ### Added — Codex `.codex/prompts/` project-scoped pre-positioning (Path 1)

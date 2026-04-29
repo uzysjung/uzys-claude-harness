@@ -19,17 +19,11 @@ export function isTrack(value: unknown): value is Track {
 }
 
 /**
- * CLI target. v0.7.0 BREAKING — single enum (5 mode) → multi-select base × combination.
+ * CLI target — multi-select base × combination (v0.8.0 — alias 제거).
  *
- * Base CLI: claude / codex / opencode (3 base).
- * 7 combinations possible (2^3 - 1, empty 제외).
- *
- * 기존 v0.6.x 5 mode (`claude/codex/opencode/both/all`)은 1 release deprecation alias로 유지:
- *   - both → ["claude", "codex"]
- *   - all  → ["claude", "codex", "opencode"]
- * v0.8+에서 alias 제거.
- *
- * `CliMode` (legacy union) + `isCliMode` (legacy guard)는 backwards compat 위해 유지.
+ * Base CLI: claude / codex / opencode (3 base). 7 combinations possible (2^3 - 1, empty 제외).
+ * Legacy `both` / `all` alias는 v0.7.0 deprecation 거쳐 v0.8.0에서 invalid input.
+ * Migration: `--cli claude --cli codex` (repeatable) 또는 multiselect 인터랙티브.
  */
 export const CLI_BASES = ["claude", "codex", "opencode"] as const;
 export type CliBase = (typeof CLI_BASES)[number];
@@ -40,19 +34,6 @@ export function isCliBase(value: unknown): value is CliBase {
 
 /** Sorted readonly array of CliBase. install pipeline의 분기 input. */
 export type CliTargets = ReadonlyArray<CliBase>;
-
-/**
- * @deprecated v0.7.0 — Use `CliBase` + `CliTargets`. v0.8.0에서 제거 예정.
- * Legacy 5 mode union — alias 변환 + matrix test 호환 위해 유지.
- */
-export const CLI_MODES = ["claude", "codex", "opencode", "both", "all"] as const;
-/** @deprecated v0.7.0 — Use `CliBase` + `CliTargets`. v0.8.0에서 제거 예정. */
-export type CliMode = (typeof CLI_MODES)[number];
-
-/** @deprecated v0.7.0 — Use `isCliBase`. v0.8.0에서 제거 예정. */
-export function isCliMode(value: unknown): value is CliMode {
-  return typeof value === "string" && (CLI_MODES as readonly string[]).includes(value);
-}
 
 /** Optional opt-in feature flags collected interactively. */
 export interface OptionFlags {

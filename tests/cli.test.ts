@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { VERSION, buildCli, defaultAction } from "../src/cli.js";
-import { isCliMode } from "../src/commands/install.js";
 import type { InteractiveResult } from "../src/interactive.js";
+import { isCliBase } from "../src/types.js";
 
 describe("buildCli", () => {
   it("returns a cac instance with the expected name", () => {
@@ -136,15 +136,15 @@ describe("defaultAction", () => {
   });
 });
 
-describe("isCliMode", () => {
-  it.each(["claude", "codex", "both"])("accepts %s as a valid CLI mode", (mode) => {
-    expect(isCliMode(mode)).toBe(true);
+describe("isCliBase (v0.8.0 — replaces isCliMode)", () => {
+  it.each(["claude", "codex", "opencode"])("accepts %s as a valid CLI base", (base) => {
+    expect(isCliBase(base)).toBe(true);
   });
 
-  it.each([null, undefined, "", "invalid", 1, true, {}])(
-    "rejects %s as an invalid CLI mode",
+  it.each([null, undefined, "", "invalid", "both", "all", 1, true, {}])(
+    "rejects %s as an invalid CLI base (v0.8.0 — both/all alias removed)",
     (value) => {
-      expect(isCliMode(value)).toBe(false);
+      expect(isCliBase(value)).toBe(false);
     },
   );
 });

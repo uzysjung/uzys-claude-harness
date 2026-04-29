@@ -86,6 +86,39 @@ export function addGitignoreEnv(projectDir: string): boolean {
   return true;
 }
 
+const NPX_SKILLS_AGENT_DIRS = [".factory/", ".goose/"];
+const GITIGNORE_NPX_SKILLS_HEADER =
+  "# npx skills add multi-CLI cache (auto-added by claude-harness)";
+
+/**
+ * v0.8.0 — `.gitignore`에 `.factory/`, `.goose/` 패턴 추가 (사용자 보고 #3).
+ *
+ * `npx skills add`가 multi-CLI universal install 동작 — Codex 사용자 환경에서
+ * `.factory/skills/`, `.goose/skills/` 자동 생성. 사용자 git noise 회피용 ignore.
+ *
+ * idempotent — 이미 있으면 skip.
+ * @returns added pattern list (empty if all already present or no .gitignore)
+ */
+export function addGitignoreNpxSkillsAgents(projectDir: string): string[] {
+  const path = join(projectDir, ".gitignore");
+  if (!existsSync(path)) {
+    return [];
+  }
+  const content = readFileSync(path, "utf8");
+  const missing = NPX_SKILLS_AGENT_DIRS.filter((pattern) => {
+    // exact line match (이스케이프 후 줄 단위 비교 — 단순화: 문자열 포함)
+    const lineRegex = new RegExp(`^${pattern.replace(/\./g, "\\.").replace(/\//g, "/")}\\s*$`, "m");
+    return !lineRegex.test(content);
+  });
+  if (missing.length === 0) {
+    return [];
+  }
+  const sep = content.endsWith("\n") ? "" : "\n";
+  const block = [GITIGNORE_NPX_SKILLS_HEADER, ...missing].join("\n");
+  appendFileSync(path, `${sep}\n${block}\n`);
+  return [...missing];
+}
+
 /**
  * .mcp-allowlist 생성 from .mcp.json mcpServers keys (D35 opt-in security gate).
  * mcp-pre-exec.sh hook이 참조. 파일 부재 시 gate disabled.

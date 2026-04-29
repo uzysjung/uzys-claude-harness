@@ -9,7 +9,12 @@ import {
 import { dirname, join, resolve } from "node:path";
 import { type CodexOptInReport, runCodexOptIn } from "./codex/opt-in.js";
 import { type CodexTransformReport, runCodexTransform } from "./codex/transform.js";
-import { addGitignoreEnv, writeEnvExample, writeMcpAllowlist } from "./env-files.js";
+import {
+  addGitignoreEnv,
+  addGitignoreNpxSkillsAgents,
+  writeEnvExample,
+  writeMcpAllowlist,
+} from "./env-files.js";
 import { EXTERNAL_ASSETS, filterApplicableAssets } from "./external-assets.js";
 import {
   type ExternalInstallReport,
@@ -87,7 +92,12 @@ export interface KarpathyHookReport {
   /** withKarpathyHook=true && karpathy-coder install 성공 시 true. */
   wired: boolean;
   /** wired=false 시 사유. */
-  reason?: "opt-out" | "plugin-install-failed" | "external-skipped" | "settings-parse-error";
+  reason?:
+    | "opt-out"
+    | "plugin-install-failed"
+    | "external-skipped"
+    | "settings-parse-error"
+    | "claude-not-selected";
   /** wired=true 시 settings.json 갱신 여부 (idempotent skip 시 false). */
   settingsUpdated?: boolean;
   /** wired=true 시 hook script 복사 여부. */
@@ -131,6 +141,8 @@ export interface BaselineReport {
     envExampleCreated: boolean;
     gitignoreEnvAdded: boolean;
     mcpAllowlist: string[] | null;
+    /** v0.8.0 — `.gitignore`에 추가된 npx skills agent 디렉토리 패턴 (`.factory/`, `.goose/`). */
+    gitignoreNpxSkillsAdded: string[];
   };
   /** v0.6.1 — Phase 1 카테고리별 카운트 + names. Update mode에서는 빈 객체. */
   categories?: BaselineCategoryCounts;
@@ -143,11 +155,11 @@ export interface InstallReport {
   backup: string | null;
   installedTracks: string[];
   mcpServers: string[];
-  /** Present when CLI ∈ {codex, both, all}. */
+  /** Present when spec.cli includes "codex". */
   codex: CodexTransformReport | null;
-  /** Present when Codex transform ran AND user opted-in to global skills/trust. null when no Codex or both flags off. */
+  /** Present when Codex transform ran AND user opted-in to global skills/trust/prompts. null otherwise. */
   codexOptIn: CodexOptInReport | null;
-  /** Present when CLI ∈ {opencode, all}. */
+  /** Present when spec.cli includes "opencode". */
   opencode: OpencodeTransformReport | null;
   /** External install report (claude plugin / npm -g / npx skills). null when disabled or empty. */
   external: ExternalInstallReport | null;
@@ -165,6 +177,8 @@ export interface InstallReport {
     gitignoreEnvAdded: boolean;
     /** Server names written to .mcp-allowlist; null if skipped. */
     mcpAllowlist: string[] | null;
+    /** v0.8.0 — `.gitignore`에 추가된 npx skills agent 디렉토리 패턴 (`.factory/`, `.goose/`). */
+    gitignoreNpxSkillsAdded: string[];
   };
 }
 
@@ -216,18 +230,16 @@ export function runInstall(ctx: InstallContext): InstallReport {
         envExampleCreated: false,
         gitignoreEnvAdded: false,
         mcpAllowlist: null,
+        gitignoreNpxSkillsAdded: [],
       },
     };
     ctx.onProgress?.({ type: "baseline-complete", baseline });
     return { ...baseline, external: null, karpathyHook: null };
   }
 
-  ensureProjectSkeleton(projectDir);
-
-  const manifest = buildManifest({
-    tracks: spec.tracks,
-    withTauri: spec.options.withTauri,
-  });
+  // v0.8.0 — `.claude/` baseline은 spec.cli에 "claude" 포함 시에만 생성.
+  // Codex/OpenCode 단독 사용자는 dead weight 회피.
+  const claudeBaselineEnabled = spec.cli.includes("claude");
 
   let filesCopied = 0;
   let dirsCopied = 0;
@@ -239,45 +251,58 @@ export function runInstall(ctx: InstallContext): InstallReport {
     commands: 0,
     skills: [],
   };
-  for (const entry of manifest) {
-    if (!entry.applies({ tracks: spec.tracks, withTauri: spec.options.withTauri })) {
-      continue;
+
+  if (claudeBaselineEnabled) {
+    ensureProjectSkeleton(projectDir);
+
+    const manifest = buildManifest({
+      tracks: spec.tracks,
+      withTauri: spec.options.withTauri,
+    });
+
+    for (const entry of manifest) {
+      if (!entry.applies({ tracks: spec.tracks, withTauri: spec.options.withTauri })) {
+        continue;
+      }
+      const source = join(templatesDir, entry.source);
+      const target = join(projectDir, entry.target);
+      if (!existsSync(source)) {
+        skipped += 1;
+        continue;
+      }
+      if (entry.type === "file") {
+        copyFile(source, target);
+        filesCopied += 1;
+      } else {
+        copyDir(source, target);
+        dirsCopied += 1;
+      }
+      accumulateCategory(categories, entry);
     }
-    const source = join(templatesDir, entry.source);
-    const target = join(projectDir, entry.target);
-    if (!existsSync(source)) {
-      skipped += 1;
-      continue;
+
+    // chmod +x on hook scripts (cp does not preserve exec bit when source is non-exec)
+    const hookDir = join(projectDir, ".claude/hooks");
+    if (existsSync(hookDir)) {
+      chmodHooksSync(hookDir);
     }
-    if (entry.type === "file") {
-      copyFile(source, target);
-      filesCopied += 1;
-    } else {
-      copyDir(source, target);
-      dirsCopied += 1;
-    }
-    accumulateCategory(categories, entry);
+
+    // Write metadata file used by detect_install_state on next run (.claude/.installed-tracks)
+    writeInstalledTracks(projectDir, spec.tracks);
   }
 
-  // chmod +x on hook scripts (cp does not preserve exec bit when source is non-exec)
-  const hookDir = join(projectDir, ".claude/hooks");
-  if (existsSync(hookDir)) {
-    chmodHooksSync(hookDir);
-  }
-
-  // Compose .mcp.json from template + track-mcp-map.tsv
+  // Compose .mcp.json from template + track-mcp-map.tsv (Codex/OpenCode도 사용 — claude 무관)
   const mcpResult = composeAndWriteMcp(harnessRoot, projectDir, spec);
-  // Write metadata file used by detect_install_state on next run
-  writeInstalledTracks(projectDir, spec.tracks);
 
   // Environment files (F7/F8 — bash setup-harness.sh L880~890 + L954~996 등가)
   const envFiles = {
     envExampleCreated: writeEnvExample(projectDir, spec.tracks),
     gitignoreEnvAdded: addGitignoreEnv(projectDir),
     mcpAllowlist: writeMcpAllowlist(projectDir),
+    // v0.8.0 — `.factory/`, `.goose/` ignore (npx skills universal install 사용자 #3)
+    gitignoreNpxSkillsAdded: addGitignoreNpxSkillsAgents(projectDir),
   };
 
-  // Codex transform when --cli ∈ {codex, both, all}
+  // Codex transform when spec.cli includes "codex"
   let codex: CodexTransformReport | null = null;
   let codexOptIn: CodexOptInReport | null = null;
   if (spec.cli.includes("codex")) {
@@ -298,7 +323,7 @@ export function runInstall(ctx: InstallContext): InstallReport {
     }
   }
 
-  // OpenCode transform when --cli ∈ {opencode, all}
+  // OpenCode transform when spec.cli includes "opencode"
   let opencode: OpencodeTransformReport | null = null;
   if (spec.cli.includes("opencode")) {
     opencode = runOpencodeTransform({ harnessRoot, projectDir });
@@ -351,7 +376,8 @@ export function runInstall(ctx: InstallContext): InstallReport {
 
   // ━━━ karpathy-coder hook auto-wire (v0.6.0) ━━━
   // SPEC: docs/specs/karpathy-hook-autowire.md AC2 — opt-in 강제 + install 성공 후에만.
-  const karpathyHook = wireKarpathyHook(spec.options, external, harnessRoot, projectDir);
+  // v0.8.0 — `.claude/settings.json` PreToolUse 의존이라 spec.cli에 "claude" 포함 시에만 와이어 가능.
+  const karpathyHook = wireKarpathyHook(spec, external, harnessRoot, projectDir);
 
   return { ...baseline, external, karpathyHook };
 }
@@ -361,20 +387,25 @@ export function runInstall(ctx: InstallContext): InstallReport {
  *
  * 활성화 조건 (AND):
  *   1. spec.options.withKarpathyHook === true (opt-in 강제)
- *   2. external.attempted에 karpathy-coder ok=true (plugin install 성공)
+ *   2. spec.cli 에 "claude" 포함 (v0.8.0 — `.claude/settings.json` 미생성 시 와이어 불가)
+ *   3. external.attempted에 karpathy-coder ok=true (plugin install 성공)
  *
  * 동작:
  *   - templates/hooks/karpathy-gate.sh → <projectDir>/.claude/hooks/karpathy-gate.sh 복사
  *   - .claude/settings.json PreToolUse Write|Edit matcher에 hook entry 추가 (idempotent)
  */
 function wireKarpathyHook(
-  options: OptionFlags,
+  spec: InstallSpec,
   external: ExternalInstallReport | null,
   harnessRoot: string,
   projectDir: string,
 ): KarpathyHookReport | null {
-  if (!options.withKarpathyHook) {
+  if (!spec.options.withKarpathyHook) {
     return null;
+  }
+  // v0.8.0 가드 — `.claude/` baseline 미생성 시 hook 와이어 불가 (silent partial state 방지).
+  if (!spec.cli.includes("claude")) {
+    return { wired: false, reason: "claude-not-selected" };
   }
   if (external === null) {
     return { wired: false, reason: "external-skipped" };

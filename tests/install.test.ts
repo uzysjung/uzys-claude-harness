@@ -57,6 +57,7 @@ const fakeReport: InstallReport = {
     envExampleCreated: false,
     gitignoreEnvAdded: false,
     mcpAllowlist: null,
+    gitignoreNpxSkillsAdded: [],
   },
 };
 
@@ -67,17 +68,24 @@ describe("specFromOptions (v0.7.0 — CliTargets)", () => {
     expect(result.cli).toEqual(["codex"]);
   });
 
+  // v0.8.0 — alias 제거. 3 base CLI만 valid.
   it.each([
-    ["claude", ["claude"], 0],
-    ["codex", ["codex"], 0],
-    ["opencode", ["opencode"], 0],
-    ["both", ["claude", "codex"], 1],
-    ["all", ["claude", "codex", "opencode"], 1],
-  ] as const)("accepts %s — targets=%j, %i deprecation warning(s)", (mode, expected, warnCount) => {
+    ["claude", ["claude"]],
+    ["codex", ["codex"]],
+    ["opencode", ["opencode"]],
+  ] as const)("accepts %s — targets=%j", (mode, expected) => {
     const result = specFromOptions({ cli: mode, track: ["tooling"] });
     expect(result.ok).toBe(true);
     expect(result.cli).toEqual(expected);
-    expect(result.warnings).toHaveLength(warnCount);
+    expect(result.warnings).toHaveLength(0);
+  });
+
+  // v0.8.0 — alias 제거: both/all → invalid reject
+  it.each(["both", "all"] as const)("rejects '%s' alias (v0.8.0 BREAKING — removed)", (alias) => {
+    const result = specFromOptions({ cli: alias, track: ["tooling"] });
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain(`Invalid --cli value: ${alias}`);
+    expect(result.message).toContain(`v0.8.0에서 '${alias}' alias 제거`);
   });
 
   it("rejects an unknown --cli value with ok=false", () => {
@@ -553,6 +561,7 @@ describe("executeSpec", () => {
         envExampleCreated: true,
         gitignoreEnvAdded: true,
         mcpAllowlist: ["context7", "github", "supabase"],
+        gitignoreNpxSkillsAdded: [],
       },
     });
     executeSpec(baseSpec, { log, exit, runPipeline, resolveHarnessRoot: () => "/h" });

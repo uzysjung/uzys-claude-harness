@@ -2,7 +2,12 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { addGitignoreEnv, writeEnvExample, writeMcpAllowlist } from "../src/env-files.js";
+import {
+  addGitignoreEnv,
+  addGitignoreNpxSkillsAgents,
+  writeEnvExample,
+  writeMcpAllowlist,
+} from "../src/env-files.js";
 import type { Track } from "../src/types.js";
 
 describe("writeEnvExample", () => {
@@ -128,5 +133,41 @@ describe("writeMcpAllowlist", () => {
   it("returns null on malformed .mcp.json", () => {
     writeFileSync(join(dir, ".mcp.json"), "{ not json");
     expect(writeMcpAllowlist(dir)).toBeNull();
+  });
+});
+
+describe("addGitignoreNpxSkillsAgents (v0.8.0)", () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "ch-gi-skl-"));
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("no .gitignore → returns []", () => {
+    expect(addGitignoreNpxSkillsAgents(dir)).toEqual([]);
+  });
+
+  it("empty .gitignore → adds both .factory/ and .goose/", () => {
+    writeFileSync(join(dir, ".gitignore"), "");
+    const added = addGitignoreNpxSkillsAgents(dir);
+    expect(added).toEqual([".factory/", ".goose/"]);
+    const content = readFileSync(join(dir, ".gitignore"), "utf8");
+    expect(content).toContain(".factory/");
+    expect(content).toContain(".goose/");
+    expect(content).toContain("npx skills add multi-CLI cache");
+  });
+
+  it("idempotent — second call returns []", () => {
+    writeFileSync(join(dir, ".gitignore"), "");
+    addGitignoreNpxSkillsAgents(dir);
+    expect(addGitignoreNpxSkillsAgents(dir)).toEqual([]);
+  });
+
+  it("partial — .factory/ already present, only .goose/ added", () => {
+    writeFileSync(join(dir, ".gitignore"), ".factory/\n");
+    const added = addGitignoreNpxSkillsAgents(dir);
+    expect(added).toEqual([".goose/"]);
   });
 });

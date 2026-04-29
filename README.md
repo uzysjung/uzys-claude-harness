@@ -386,13 +386,22 @@ npx -y github:uzysjung/uzys-claude-harness --track tooling --cli codex --project
 --cli codex --cli opencode              # 신규 — Claude 제외
 ```
 
-**Legacy alias (deprecated, v0.8+ 제거)**: `--cli both` = `--cli claude --cli codex`, `--cli all` = `--cli claude --cli codex --cli opencode`. v0.7.0에서 사용 시 deprecation warning emit.
+**v0.8.0 BREAKING — `both` / `all` alias 제거됨**. v0.7.x 사용자는 마이그레이션 필요:
+
+| v0.7.x (legacy alias) | v0.8.0+ (canonical) |
+|-----------------------|---------------------|
+| `--cli both` | `--cli claude --cli codex` |
+| `--cli all` | `--cli claude --cli codex --cli opencode` |
+
+v0.8.0에서 alias를 그대로 쓰면 명확한 마이그레이션 hint와 함께 즉시 reject. CI 스크립트/문서 갱신 필수.
+
+**v0.8.0 — `.claude/` 조건부 생성**: `--cli` 에 `claude` 가 없으면 (예: `--cli codex` 단독) `.claude/` baseline 미생성. Codex/OpenCode 단독 사용자의 dead weight 회피. `.mcp.json` 은 모든 CLI 가 사용하므로 `cli` 무관 항상 생성.
 
 **Codex slash 통일**: `--with-codex-prompts` 추가하면 `~/.codex/prompts/uzys-*.md` 6 file 글로벌 복사 → Codex에서 `/uzys-spec` slash 작동. opt-in (D16). 자세한 내용 [USAGE.md](./docs/USAGE.md#multi-cli-설치-v070-breaking).
 
 ### What gets installed
 
-For `--cli=codex`, `--cli=both`, or `--cli=all`, after the standard install completes the harness runs `src/codex/transform.ts` to generate:
+When `--cli` includes `codex` (alone or combined with claude / opencode), after the standard install completes the harness runs `src/codex/transform.ts` to generate:
 
 ```
 <project>/
@@ -449,11 +458,11 @@ Flag mode (CI / automation):
 npx -y github:uzysjung/uzys-claude-harness install --track tooling --cli opencode
 ```
 
-`--cli=all` installs Claude + Codex + OpenCode in one command.
+`--cli claude --cli codex --cli opencode` installs all 3 CLI in one command (v0.8.0 — replaces deprecated `--cli all`).
 
 ### What gets installed
 
-For `--cli=opencode` or `--cli=all`, after the standard install completes the harness runs `src/opencode/transform.ts` to generate:
+When `--cli` includes `opencode` (alone or combined), after the standard install completes the harness runs `src/opencode/transform.ts` to generate:
 
 ```
 <project>/
