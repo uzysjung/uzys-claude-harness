@@ -20,12 +20,23 @@
 - 외부 사용자 환경 hito-counter.sh 로그 수집 (별도 동의 필수)
 - 또는 사용자 자가 보고 (작업 시간 + 멘탈 모델 수)
 
-### P2-02 — NSM 자동화 (feature 단위 HITO 추정)
+### P2-02 — NSM 자동화 (feature 단위 HITO 추정) ✅ Step 1 (2026-04-30)
 
-**Status**: pending
+**Status**: Step 1 completed (session 분할 + 집계). Step 2 (per-feature 자동 매핑) 보류
 **Source**: `docs/evals/hito-baseline-2026-04-30.md` §5 한계
+**Output**: `scripts/nsm-aggregate.sh` (ADR-008 알고리즘 구현)
 
-per-feature commit hash 매핑 도구 — 현재 수동 분류를 자동화.
+기능:
+- timestamp gap ≥ 60분 = 새 session (ADR-008)
+- `--summary` (기본): total prompts/sessions/avg + AC3 #2 (≥10) 자동 검증
+- `--sessions`: session boundary 표시 (start/end/prompt count)
+- `--gap-minutes <N>` / `--since <YYYY-MM-DD>` / `--until <YYYY-MM-DD>` 필터
+
+검증 결과 (baseline window 2026-04-23 ~ 04-30):
+- **16 sessions / 174 prompts / avg 10.9 prompts/session**
+- ✅ AC3 #2 (세션 ≥ 10) PASS
+
+**미완 Step 2**: per-feature 자동 매핑 (commit-window). 현재 session-level 까지. feature 라벨링은 여전히 수동 — 외부 사용자 baseline (P2-01) 후 재평가.
 
 ### P2-03 — 세션 경계 정의 ✅ (2026-04-30)
 
