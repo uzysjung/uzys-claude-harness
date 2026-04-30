@@ -5,6 +5,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.8.1] — 2026-04-29 (refactor)
+
+### Internal — Track partition SSOT 통일 (reviewer MEDIUM-3 fix)
+
+`src/external-assets.ts`의 인라인 Track 배열을 `EXECUTIVE_STYLE_TRACKS` / `DEV_TRACKS` / `DEV_PLUS_PM_TRACKS` 3 상수로 추출. behavior unchanged refactor.
+
+```ts
+// Before — product-skills entry에 9 Track 인라인
+condition: { kind: "any-track", tracks: ["csr-supabase", ..., "project-management"] }
+
+// After — SSOT 상수 참조
+condition: { kind: "any-track", tracks: [...DEV_PLUS_PM_TRACKS] }
+```
+
+추가:
+- `EXECUTIVE_STYLE_TRACKS = [executive, project-management, growth-marketing]` — `track-match.ts:hasDevTrack()` 의 negation domain SSOT
+- `DEV_TRACKS = [csr-*, ssr-*, data, tooling, full]` (8) — `hasDevTrack()` 의 array 표현
+- `DEV_PLUS_PM_TRACKS = [...DEV_TRACKS, project-management]` (9) — `product-skills` 의 도메인
+- `tests/external-assets.test.ts` 신규 invariant 3건:
+  - `TRACKS = DEV_TRACKS ∪ EXECUTIVE_STYLE_TRACKS` (disjoint + exhaustive)
+  - `DEV_PLUS_PM_TRACKS = DEV_TRACKS + project-management`
+  - `product-skills.condition.tracks === DEV_PLUS_PM_TRACKS`
+
+### 검증
+- vitest **521 tests PASS** (이전 518 + 신규 3 invariant)
+- coverage 충족
+- typecheck + lint + build 그린
+
+### Driver
+- v0.5.0 reviewer MEDIUM-3 — "EXECUTIVE_STYLE_TRACKS 상수, P10 분기" 잔여 항목 해소
+- TRACKS 변경 시 `external-assets.ts` 인라인 9-Track 배열 수동 갱신 휴먼 에러 회피
+
+### Reference
+- v0.5.0 reviewer 보고 (linked SPEC `docs/specs/new-tracks-pm-growth.md`)
+
 ## [v0.8.0] — 2026-04-29 (BREAKING — dual)
 
 ### Breaking 1 — CLI alias 제거 (v0.7.0 deprecation 약속 이행)
