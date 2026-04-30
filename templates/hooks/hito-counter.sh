@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# hito-counter.sh (v27.14.0)
+# hito-counter.sh (v26.32.0)
 # UserPromptSubmit hook — HITO (Human-In-The-Loop Occurrences) 측정용.
 #
 # NORTH_STAR.md NSM 추적을 위한 Phase 2 baseline 수집 인프라.

@@ -3,7 +3,7 @@
 > **Linked SPEC**: `docs/SPEC.md`
 > **Created**: 2026-04-23
 > **Status**: Plan
-> **Target version**: v28.0.0 (Foundation 완료 선언)
+> **Target version**: v26.38.0 (Foundation 완료 선언)
 
 ---
 
@@ -23,7 +23,7 @@ SPEC §3.2 그대로.
 
 ### 완료 기준
 
-SPEC §2 AC1-AC5 모두 Pass + v28.0.0 태그 push.
+SPEC §2 AC1-AC5 모두 Pass + v26.38.0 태그 push.
 
 ### 제약 조건
 
@@ -114,7 +114,7 @@ SPEC §2 AC1-AC5 모두 Pass + v28.0.0 태그 push.
 - **F2** ship-checklist 통과 확인
 - **F3** CLAUDE.md 업데이트 검토 (개선 프로세스 §1 Ship 후 리뷰)
 - **F4** Self-Audit 5항목 기록
-- **F5** v28.0.0 태그 + push
+- **F5** v26.38.0 태그 + push
 
 ---
 

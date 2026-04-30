@@ -67,7 +67,7 @@
   - [x] 2. test-harness PASS — vitest 521 (이전 bash test-harness 149 → TypeScript CLI rewrite으로 대체) ✅
   - [x] 3. HITO baseline 수집 완료 — `docs/evals/hito-baseline-2026-04-30.md` ✅
   - [x] 4. 글로벌 미수정 — setup-harness.sh D16 보호(L73-84) + 본 세션 `--update` 시 에러 없음. ~/.claude/ mtime은 Claude Code 자체 업데이트 (본 프로젝트 무관) ✅
-  - [x] 5. 외부 사용자 첫 설치 — **Pass (이월)** per ADR-001 OQ2. v28.0.0 Ship 시 Phase 2 백로그 P2-01로 등재
+  - [x] 5. 외부 사용자 첫 설치 — **Pass (이월)** per ADR-001 OQ2. v26.38.0 Ship 시 Phase 2 백로그 P2-01로 등재
   - [x] 6. Phase 4b D1/D2/D4 이월 소화 — commit b9d47ef + 3e5af9a ✅
   - [x] 7. v27.17 dogfood CRITICAL/HIGH = 0 — H1 fix 후 최종 판정 ✅ (commit 92982c5)
 - [x] **E2** requirements-trace.md 확장 — Part 6: v27.x Post-audit Trace ✅ (2026-04-23)
@@ -91,13 +91,13 @@
 - [x] **F2** ship-checklist 통과 — `npm run ci` PASS (521 vitest / coverage 95.12-88.22-95.62-95.12) ✅
 - [x] **F3** CLAUDE.md 개선 후보 검토 — v0.8.0 ship 직후 이미 검토 완료 (변경 후보 없음 보고)
 - [x] **F4** Self-Audit 5항목 기록 — 본 todo.md §완료 조건 + hito-baseline 보고서 §6/§7
-- [x] **F5** v28.0.0 태그 + push (Foundation 완료 선언) — 진행 중
+- [x] **F5** v26.38.0 태그 + push (Foundation 완료 선언) — 진행 중
 
 ---
 
 ## 병행 SPEC 진행 상태 (참고)
 
-- `docs/specs/codex-compat.md` — **Codex 호환 1차 완료** (2026-04-25, v27.19.0). Phase A~G 7단계 모두 완료. ADR-001과 별도 스펙. 본 todo는 Phase 1 Finalization 전용. Codex 후속(OQ7/OQ8/OpenCode 2차)은 `docs/dev/session-2026-04-25-handoff.md` 참조.
+- `docs/specs/codex-compat.md` — **Codex 호환 1차 완료** (2026-04-25, v26.37.0). Phase A~G 7단계 모두 완료. ADR-001과 별도 스펙. 본 todo는 Phase 1 Finalization 전용. Codex 후속(OQ7/OQ8/OpenCode 2차)은 `docs/dev/session-2026-04-25-handoff.md` 참조.
 
 ## 다음 세션 가이드
 
@@ -118,7 +118,7 @@
    - E1 체크리스트 7항목 판정
    - E2 requirements-trace v27.x Part 3 개별 증거 확정
    - E3 ADR-001 OQ1-3 결정
-4. **Phase F — Review & Ship** (E 완료 후 v28.0.0 태그)
+4. **Phase F — Review & Ship** (E 완료 후 v26.38.0 태그)
 
 ## 이번 세션 발견 이슈 (추후 해결 대상)
 
@@ -129,4 +129,4 @@
 - [x] SPEC AC1-AC5 모두 Pass — 2026-04-30
 - [x] Phase A-F 체크박스 완료
 - [x] Phase 2 진입 체크리스트 7항목 판정 기록 — `docs/evals/hito-baseline-2026-04-30.md` §6 (7/7 Pass, 1 이월)
-- [x] v28.0.0 태그 push — 진행 중
+- [x] v26.38.0 태그 push — 진행 중

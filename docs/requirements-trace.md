@@ -143,47 +143,47 @@
 
 **Total requirements audited (Part 1-4)**: 59 (S1-S19 + V1-V18 + D1-D22 + R1-R6, with D15 merged into D16).
 
-**Part 6 (v27.x sub-audit)**: 18 커밋 / 전부 4/4 Pass / DONE. Part 1-4 Summary에는 합산 제외 (원본 요구사항이 아닌 사후 버전별 감사).
+**Part 6 (drift period sub-audit)**: 18 커밋 / 전부 4/4 Pass / DONE. Part 1-4 Summary에는 합산 제외 (원본 요구사항이 아닌 사후 버전별 감사).
 
 **Overall assessment**: The harness is structurally complete — all 6 phase commands, 5 agents, 18 rules, 4 hooks, and 9 Tracks exist in templates and are installed by `setup-harness.sh`. Phase 1 and Phase 2 verification criteria are substantively met. The main gaps are (a) dogfood drift between `templates/hooks/` and `.claude/hooks/` (spec-drift-check.sh never installed), (b) documentation incompleteness acknowledged in `Docs/todo.md` Phase D, and (c) end-to-end workflow validation (V3) pending a real external project per Phase 4.
 
 ---
 
-## Part 6 — v27.x Post-audit Trace
+## Part 6 — Drift Period Post-audit Trace
 
-> **Context**: v27.0~v27.17 18개 버전이 SPEC 공백으로 진행됨 (P6/P8 위반). 사후 4-gate(NORTH_STAR §5) 판정 + 요구사항 역추적.
+> **Context**: v26.18.0~v26.35.0 (drift period, 18개 버전) — SPEC 공백으로 진행됨 (P6/P8 위반). 사후 4-gate(NORTH_STAR §5) 판정 + 요구사항 역추적. ADR-007 참조 (당시 v27.x prefix로 ship됨).
 > **Status**: Confirmed (2026-04-23). SPEC Phase E-E2 완료.
 > **Legend**: 4-gate 순서 = Trend · Persona · Capability · Lean. Pass(P) / Fail(F). 판정 근거는 NORTH_STAR §5 정의.
 
 | Version | Commit | Title | Source | 4-gate (T·P·C·L) | Evidence (파일·경로) | Status |
 |---------|--------|-------|--------|-------------------|---------------------|--------|
-| v27.0.0 | 6cc9016 | release: Public 공개 + rename uzys-claude-harness | S15 / OSS 공개 | P·P·P·P | `README.md` (+427 삽입), `install.sh` 보강, `CHANGELOG.md` 신설, `.github/workflows/test.yml` | DONE |
-| v27.1.0 | ae7d3db | refactor: 디렉토리 구조 OSS 표준 정리 | cleanup | P·P·P·P | `Docs/→docs/`, `setup-harness.sh→scripts/setup-harness.sh`, `test-harness.sh→scripts/test-harness.sh` | DONE |
-| v27.2.0 | 307959d | feat(setup): /dev/tty 인터랙티브 + 비대화형 플래그 | S7 설치 UX | P·P·P·P | `scripts/setup-harness.sh` +63 (fd 3 read from /dev/tty + `--non-interactive`), README UX 섹션 | DONE |
-| v27.5.0 | 21c274b + ed6f9c4 | fix(setup): --add-track ECC/ToB/GSD 재프롬프트 제거 | bugfix | P·P·P·P | `scripts/setup-harness.sh` ADD_MODE skip 로직; /dev/tty GSD 지원 | DONE |
-| v27.6.0 | f35953f | feat(setup): csr-supabase Supabase CLI 자동 설치 + 인증 doc | Track 강화 | P·P·P·P | `scripts/setup-harness.sh` csr-supabase 분기, `templates/project-claude/csr-supabase.md` +25 | DONE |
-| v27.7.0 | cd71d59 | feat(setup): csr-supabase .env.example 자동 생성 + .env gitignore | 보안 | P·P·P·P | `scripts/setup-harness.sh` +44 (.env.example 템플릿), `.gitignore` .env 패턴 | DONE |
-| v27.8.0 | d9d25fe | fix(setup): curl\|bash 설치 UX 버그 일괄 수정 | S7 설치 UX | P·P·P·P | `scripts/setup-harness.sh` +104, `install.sh` +20, `CHANGELOG.md` v27.8 섹션 | DONE (NORTH_STAR §5 사례) |
-| v27.9.0 | 8c6aacf | test(e2e): T15/T16 회귀 + entry-point 테스트 + T5 9-track 확장 | 테스트 보강 | P·P·P·P | `scripts/test-harness.sh` +92 (T15/T16 블록, T5 9-track loop) | DONE |
-| v27.10.0 | 445a49c | feat(skill): north-star + 4-gate decision skill | 메타 | P·P·P·P | `templates/skills/north-star/SKILL.md` +103, `NORTH_STAR.template.md` +114; `uzys/spec.md` + `uzys/plan.md` 연동 | DONE (NORTH_STAR §5 사례) |
-| v27.11.0 | 2cb4003 | feat(skill): ui-visual-review + Review Gate 통합 | UI track | P·P·P·P | `templates/skills/ui-visual-review/SKILL.md` +154; `uzys/review.md` +4, `uzys/test.md` +11 | DONE (NORTH_STAR §5 사례) |
-| v27.12.0 | 31a7c1a | feat(templates): GoalTrack + Vantage 외부 이식 패턴 통합 | 외부 이식 | P·P·P·P | `templates/docs/PLAN.template.md` +102, `rules/change-management.md` +33, `skills/eval-harness/SKILL.md` +53, `skills/spec-scaling/SKILL.md` +52. (NORTH_STAR §5에서 WAGI/skills-lock.json은 Lean Fail로 기각 — 본 커밋은 통과 항목만 이식) | DONE |
-| v27.12.1 | 5f9ca0d | chore(security): private repo 이름 generic placeholder 치환 | 보안 | P·P·P·P | `docs/dev/PRD.md`, `REQUIREMENTS.md`, `bootstrap-dev.sh` placeholder 치환 (총 +14/−8) | DONE |
-| v27.13.0 | 754e1ff | feat(docs): NORTH_STAR 자기 적용 + README/REFERENCE 현행화 | 문서 | P·P·P·P | `docs/NORTH_STAR.md` +133 (신규), `docs/REFERENCE.md` +33, `README.md/.ko.md` +12 각; `scripts/test-harness.sh` +14 (NORTH_STAR 존재 체크) | DONE |
-| v27.13.1 | 299c761 | test(eval): 세션 2026-04-20 dogfood 기록 | eval | P·P·P·P | `.claude/evals/session-2026-04-20.log` +66, `session-2026-04-20.md` +169 | DONE |
-| v27.14.0 | 099f05d | feat(setup): tauri opt-in + HITO counter hook + P10 재평가 | NSM 인프라 | P·P·P·P | `templates/hooks/hito-counter.sh` +26 (신규), `templates/settings.json` +12 UserPromptSubmit 등록, `scripts/setup-harness.sh` tauri opt-in | DONE (본 SPEC Phase C/D 활용) |
-| v27.15.0 | a9d97ea | feat(setup): interactive 설치 모드 — track 생략 자동 진입 | UX | P·P·P·P | `scripts/setup-harness.sh` +108, `scripts/test-harness.sh` +63 (인터랙션 시나리오 추가) | DONE |
-| v27.16.0 | 949a0a2 | feat(skill): gh-issue-workflow + 5섹션 ISSUE.template + label/Projects | GitHub 통합 (S3 부분 충족) | P·P·P·P | `templates/skills/gh-issue-workflow/SKILL.md` +184, `ISSUE.template.md` +58; `uzys/{spec,plan,build,ship}.md` 연동 훅 | DONE |
-| v27.17.0 | 0b393b1 | feat(setup): interactive 라우터 + 상태 감지 + Install/Update/Add 분기 | UX | P·P·P·P | `scripts/setup-harness.sh` +119 (라우터 로직), `scripts/test-harness.sh` +85 (3분기 시나리오), `README.md/.ko.md` 업데이트 | DONE |
+| v26.18.0 | 6cc9016 | release: Public 공개 + rename uzys-claude-harness | S15 / OSS 공개 | P·P·P·P | `README.md` (+427 삽입), `install.sh` 보강, `CHANGELOG.md` 신설, `.github/workflows/test.yml` | DONE |
+| v26.19.0 | ae7d3db | refactor: 디렉토리 구조 OSS 표준 정리 | cleanup | P·P·P·P | `Docs/→docs/`, `setup-harness.sh→scripts/setup-harness.sh`, `test-harness.sh→scripts/test-harness.sh` | DONE |
+| v26.20.0 | 307959d | feat(setup): /dev/tty 인터랙티브 + 비대화형 플래그 | S7 설치 UX | P·P·P·P | `scripts/setup-harness.sh` +63 (fd 3 read from /dev/tty + `--non-interactive`), README UX 섹션 | DONE |
+| v26.23.0 | 21c274b + ed6f9c4 | fix(setup): --add-track ECC/ToB/GSD 재프롬프트 제거 | bugfix | P·P·P·P | `scripts/setup-harness.sh` ADD_MODE skip 로직; /dev/tty GSD 지원 | DONE |
+| v26.24.0 | f35953f | feat(setup): csr-supabase Supabase CLI 자동 설치 + 인증 doc | Track 강화 | P·P·P·P | `scripts/setup-harness.sh` csr-supabase 분기, `templates/project-claude/csr-supabase.md` +25 | DONE |
+| v26.25.0 | cd71d59 | feat(setup): csr-supabase .env.example 자동 생성 + .env gitignore | 보안 | P·P·P·P | `scripts/setup-harness.sh` +44 (.env.example 템플릿), `.gitignore` .env 패턴 | DONE |
+| v26.26.0 | d9d25fe | fix(setup): curl\|bash 설치 UX 버그 일괄 수정 | S7 설치 UX | P·P·P·P | `scripts/setup-harness.sh` +104, `install.sh` +20, `CHANGELOG.md` v26.26.0 섹션 | DONE (NORTH_STAR §5 사례) |
+| v26.27.0 | 8c6aacf | test(e2e): T15/T16 회귀 + entry-point 테스트 + T5 9-track 확장 | 테스트 보강 | P·P·P·P | `scripts/test-harness.sh` +92 (T15/T16 블록, T5 9-track loop) | DONE |
+| v26.28.0 | 445a49c | feat(skill): north-star + 4-gate decision skill | 메타 | P·P·P·P | `templates/skills/north-star/SKILL.md` +103, `NORTH_STAR.template.md` +114; `uzys/spec.md` + `uzys/plan.md` 연동 | DONE (NORTH_STAR §5 사례) |
+| v26.29.0 | 2cb4003 | feat(skill): ui-visual-review + Review Gate 통합 | UI track | P·P·P·P | `templates/skills/ui-visual-review/SKILL.md` +154; `uzys/review.md` +4, `uzys/test.md` +11 | DONE (NORTH_STAR §5 사례) |
+| v26.30.0 | 31a7c1a | feat(templates): GoalTrack + Vantage 외부 이식 패턴 통합 | 외부 이식 | P·P·P·P | `templates/docs/PLAN.template.md` +102, `rules/change-management.md` +33, `skills/eval-harness/SKILL.md` +53, `skills/spec-scaling/SKILL.md` +52. (NORTH_STAR §5에서 WAGI/skills-lock.json은 Lean Fail로 기각 — 본 커밋은 통과 항목만 이식) | DONE |
+| v26.30.1 | 5f9ca0d | chore(security): private repo 이름 generic placeholder 치환 | 보안 | P·P·P·P | `docs/dev/PRD.md`, `REQUIREMENTS.md`, `bootstrap-dev.sh` placeholder 치환 (총 +14/−8) | DONE |
+| v26.31.0 | 754e1ff | feat(docs): NORTH_STAR 자기 적용 + README/REFERENCE 현행화 | 문서 | P·P·P·P | `docs/NORTH_STAR.md` +133 (신규), `docs/REFERENCE.md` +33, `README.md/.ko.md` +12 각; `scripts/test-harness.sh` +14 (NORTH_STAR 존재 체크) | DONE |
+| v26.31.1 | 299c761 | test(eval): 세션 2026-04-20 dogfood 기록 | eval | P·P·P·P | `.claude/evals/session-2026-04-20.log` +66, `session-2026-04-20.md` +169 | DONE |
+| v26.32.0 | 099f05d | feat(setup): tauri opt-in + HITO counter hook + P10 재평가 | NSM 인프라 | P·P·P·P | `templates/hooks/hito-counter.sh` +26 (신규), `templates/settings.json` +12 UserPromptSubmit 등록, `scripts/setup-harness.sh` tauri opt-in | DONE (본 SPEC Phase C/D 활용) |
+| v26.33.0 | a9d97ea | feat(setup): interactive 설치 모드 — track 생략 자동 진입 | UX | P·P·P·P | `scripts/setup-harness.sh` +108, `scripts/test-harness.sh` +63 (인터랙션 시나리오 추가) | DONE |
+| v26.34.0 | 949a0a2 | feat(skill): gh-issue-workflow + 5섹션 ISSUE.template + label/Projects | GitHub 통합 (S3 부분 충족) | P·P·P·P | `templates/skills/gh-issue-workflow/SKILL.md` +184, `ISSUE.template.md` +58; `uzys/{spec,plan,build,ship}.md` 연동 훅 | DONE |
+| v26.35.0 | 0b393b1 | feat(setup): interactive 라우터 + 상태 감지 + Install/Update/Add 분기 | UX | P·P·P·P | `scripts/setup-harness.sh` +119 (라우터 로직), `scripts/test-harness.sh` +85 (3분기 시나리오), `README.md/.ko.md` 업데이트 | DONE |
 
 ### 4-gate 판정 근거 요약
 
-- **Trend**: 전 커밋이 Claude Code 생태계(agent-skills, MCP, ECC, Ralph, spec-driven, OSS 표준) 중 1개 이상에 정렬. 예: v27.0(OSS 공개), v27.2(curl\|bash CLI 표준), v27.10(spec-driven NORTH_STAR), v27.16(GitHub Flow).
-- **Persona**: 단일 사용자 하네스 / 시니어 엔지니어 타깃. v27.5 노이즈 제거, v27.6~v27.7 Supabase 시니어 자동화, v27.8 설치 통증 해소 등 직접 가치.
+- **Trend**: 전 커밋이 Claude Code 생태계(agent-skills, MCP, ECC, Ralph, spec-driven, OSS 표준) 중 1개 이상에 정렬. 예: v26.18.0(OSS 공개), v26.20.0(curl\|bash CLI 표준), v26.28.0(spec-driven NORTH_STAR), v26.34.0(GitHub Flow).
+- **Persona**: 단일 사용자 하네스 / 시니어 엔지니어 타깃. v26.23.0 노이즈 제거, v26.24.0~v26.25.0 Supabase 시니어 자동화, v26.26.0 설치 통증 해소 등 직접 가치.
 - **Capability**: 전 커밋이 결정론적 구현 수단(script / hook / skill / template / rule)을 통해 반영됨. LLM 판단 전용 항목 없음.
 - **Lean**: 17개 커밋은 **기존 setup-harness.sh / templates / docs 확장**. 신규 범주 신설은 (a) `templates/skills/north-star/`, (b) `templates/skills/ui-visual-review/`, (c) `templates/skills/gh-issue-workflow/`, (d) `templates/hooks/hito-counter.sh`, (e) `docs/NORTH_STAR.md` — 각 항목 NORTH_STAR §5 또는 본 SPEC에서 근거 문서화.
 
 ### 사후 예방 조치
 
-- v28.0.0부터 `/uzys:spec` 없이 feat 커밋 금지 (SPEC Phase F에서 gate hook 강화 검토 — CLAUDE.md / change-management.md 개정 후보).
-- 본 Part 6는 v27.x 18개 커밋 감사 결과 **전부 Pass**로 확정. revert/Non-Goals 재분류 대상 없음.
+- v26.38.0부터 `/uzys:spec` 없이 feat 커밋 금지 (SPEC Phase F에서 gate hook 강화 검토 — CLAUDE.md / change-management.md 개정 후보).
+- 본 Part 6는 drift period (v26.18.0~v26.35.0) 18개 커밋 감사 결과 **전부 Pass**로 확정. revert/Non-Goals 재분류 대상 없음.

@@ -116,6 +116,6 @@ src/
 **Phase G 완료 + 사용자 보고 핵심 문제 해소**. ADR-003 Status: Proposed → **Accepted**.
 
 후속:
-- 본 PR(#TBD) 머지 + v0.2.0 또는 v28.0.0 태그 결정 (Foundation 통합 시점)
+- 본 PR(#TBD) 머지 + v0.2.0 또는 v26.38.0 태그 결정 (Foundation 통합 시점)
 - npm publish 결정 (별도 ADR — 외부 영입 시점)
-- Phase 1 Finalization SPEC AC3 HITO baseline 경과 후 v28.0.0 (Foundation 완료 선언)
+- Phase 1 Finalization SPEC AC3 HITO baseline 경과 후 v26.38.0 (Foundation 완료 선언)

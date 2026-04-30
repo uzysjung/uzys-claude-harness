@@ -1,7 +1,7 @@
 # CLI Dogfood — 2026-04-23
 
 **Target**: uzys-claude-harness (bash CLI 하네스)
-**Version tested**: v27.17.0 (main branch `0b393b1`)
+**Version tested**: v26.35.0 (main branch `0b393b1`)
 **Method**: 사용자 관점에서 fresh install / multi-track / --update / error paths / workflow gate / interactive router / gh-issue-workflow 실측
 **Baseline**: v26.14.1 (`docs/dogfood/cli-dogfood-2026-04-17.md` — 16 시나리오, 0 CRITICAL/HIGH)
 **Delta**: v27.0~v27.17 (18개 마이너 버전)
@@ -59,7 +59,7 @@
 | settings.json stale hook ref | 1 | **1** ❌ **H2** |
 | Backup 생성 | — | `.claude.backup-20260423-005901/` ✅ |
 
-**H2 — 2026-04-17 베이스라인 대비 회귀**: v26.14.1에서는 `settings.json`의 stale hook 참조(`bash .claude/hooks/uncommitted-check.sh`)를 `--update` 시 자동 제거했으나, v27.17.0에서는 orphan 파일은 삭제되지만 `settings.json` 안의 참조는 남아있음. `SessionStart` hook 실행 시 "file not found" 경고가 발생할 수 있음.
+**H2 — 2026-04-17 베이스라인 대비 회귀**: v26.14.1에서는 `settings.json`의 stale hook 참조(`bash .claude/hooks/uncommitted-check.sh`)를 `--update` 시 자동 제거했으나, v26.35.0에서는 orphan 파일은 삭제되지만 `settings.json` 안의 참조는 남아있음. `SessionStart` hook 실행 시 "file not found" 경고가 발생할 수 있음.
 
 ## Phase 4 — Error Paths
 
@@ -83,7 +83,7 @@
 | S14 | Write `.env` | 2 | `BLOCKED: Protected file: .env. Environment files must be edited manually.` | ✅ |
 | S15 | Write `package-lock.json` | 2 | `BLOCKED: Protected file: package-lock.json. Lock files should not be edited directly.` | ✅ |
 
-## Phase B2 — Interactive Router (v27.17.0 신규)
+## Phase B2 — Interactive Router (v26.35.0 신규)
 
 `expect`로 PTY 세션 시뮬레이션. stdin에 TTY 존재 감지 후 `detect_install_state()` 분기 검증.
 
@@ -124,7 +124,7 @@
 
 **H1. `full` Track Installation Report Rules 기대치 오차**
 - 현상: 기본 `full` 설치 시 Rules 16 설치 but Expected 17로 표기되어 ❌ 표시됨.
-- 근본 원인: v27.14.0에서 `tauri.md`를 opt-in(`--with-tauri`)으로 변경. `RULES_TO_INSTALL`에서는 제외되나 `setup-harness.sh:1202`의 `full) RULES_EXPECTED=17` 상수가 동기화되지 않음.
+- 근본 원인: v26.32.0에서 `tauri.md`를 opt-in(`--with-tauri`)으로 변경. `RULES_TO_INSTALL`에서는 제외되나 `setup-harness.sh:1202`의 `full) RULES_EXPECTED=17` 상수가 동기화되지 않음.
 - 영향: 성공 케이스가 실패로 보고됨. 사용자 혼란. CI 자동화 시 exit status 아닌 출력 파싱으로는 오판 가능.
 - 수정안 (단일 라인):
   ```bash
@@ -164,18 +164,18 @@
 
 | 변화 | 출처 | 설치 영향 |
 |------|------|-----------|
-| Hooks 7→8 | v27.14.0 `hito-counter.sh` 추가 | 모든 track +1 Hook |
+| Hooks 7→8 | v26.32.0 `hito-counter.sh` 추가 | 모든 track +1 Hook |
 | Skills 7→9+ | v27.14~v27.16 `gh-issue-workflow` 등 추가 | 모든 track Skills 증가 |
-| Rules `full` 17→16 | v27.14.0 `tauri.md` opt-in 처리 | Expected 값 비동기 (H1) |
-| Interactive router | v27.17.0 신규 | TTY 시 자동 진입, 상태별 분기 |
-| 상태 감지 | v27.17.0 `detect_install_state()` | `.installed-tracks` 메타파일 우선, legacy rules/* 추정 fallback |
-| `--add-track` 노이즈 감소 | v27.5.0 ECC 재프롬프트 제거 | UX 개선 |
-| `/dev/tty` 재부착 | v27.8.0 | `curl\|bash` 환경에서도 interactive 가능 |
-| ECC 자동 진행 | v27.2.0 `--with-ecc`/`--with-prune`/`--with-tob` 플래그 | CI 파이프라인 적합 |
+| Rules `full` 17→16 | v26.32.0 `tauri.md` opt-in 처리 | Expected 값 비동기 (H1) |
+| Interactive router | v26.35.0 신규 | TTY 시 자동 진입, 상태별 분기 |
+| 상태 감지 | v26.35.0 `detect_install_state()` | `.installed-tracks` 메타파일 우선, legacy rules/* 추정 fallback |
+| `--add-track` 노이즈 감소 | v26.23.0 ECC 재프롬프트 제거 | UX 개선 |
+| `/dev/tty` 재부착 | v26.26.0 | `curl\|bash` 환경에서도 interactive 가능 |
+| ECC 자동 진행 | v26.20.0 `--with-ecc`/`--with-prune`/`--with-tob` 플래그 | CI 파이프라인 적합 |
 
 ---
 
-## Interactive Router (v27.17.0) 분기 검증
+## Interactive Router (v26.35.0) 분기 검증
 
 상태 감지 결과 → 진입 경로 매트릭스 (설계 의도):
 

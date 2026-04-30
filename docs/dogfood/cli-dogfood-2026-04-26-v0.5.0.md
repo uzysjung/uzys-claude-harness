@@ -109,7 +109,7 @@
 ## Self-Audit (P11)
 
 1. **AC 충족 여부** — AC1~AC6 Pass (P5 Ship checklist 통과 시 최종 확정)
-2. **DO NOT CHANGE** 미변경 — `~/.claude/` 미수정. `docs/SPEC.md` (Phase 1 Finalization, v28.0.0 트랙) 미수정. ✅
+2. **DO NOT CHANGE** 미변경 — `~/.claude/` 미수정. `docs/SPEC.md` (Phase 1 Finalization, v26.38.0 트랙) 미수정. ✅
 3. **Non-Goals** 침범 없음 — karpathy 자동 와이어링/CI gate 미추가, 기존 9 Track baseline 미변경, Phase 1 Finalization 작업 미혼입. ✅
 4. **추적 불가 변경** — 0. 모든 변경 SPEC F1~F9 + Plan P1~P4에 매핑. ✅
 5. **열린 의사결정** — OQ1 (karpathy hook 자동), OQ4 (라이브 dogfood) — 본 SPEC 범위 외로 명시. ✅

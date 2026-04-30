@@ -94,7 +94,7 @@ CLAUDE.md Decision Making + NORTH_STAR §5 4-gate.
 
 ### 3.3 DO NOT CHANGE
 
-- `docs/SPEC.md` (Phase 1 Finalization, v28.0.0 트랙).
+- `docs/SPEC.md` (Phase 1 Finalization, v26.38.0 트랙).
 - `docs/specs/karpathy-hook-autowire.md` (v0.6.0 영역).
 - `docs/specs/codex-compat.md` (Codex 호환 — `runCodexTransform` 분기 보존).
 - `docs/specs/opencode-compat.md` (OpenCode 호환 — `runOpencodeTransform` 분기 보존).

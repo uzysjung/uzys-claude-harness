@@ -73,7 +73,7 @@ NORTH_STAR §5 4-gate + CLAUDE.md Decision Making.
 ### 3.3 DO NOT CHANGE
 
 - 글로벌 `~/.claude/`, `~/.codex/`, `~/.opencode/` (D16)
-- 기존 SPEC: `docs/SPEC.md` (v28.0.0), `karpathy-hook-autowire.md`, `codex-compat.md`, `opencode-compat.md`, `cli-multi-select.md` (v0.7.0 ship), `codex-project-prompts.md` (v0.7.1 ship)
+- 기존 SPEC: `docs/SPEC.md` (v26.38.0), `karpathy-hook-autowire.md`, `codex-compat.md`, `opencode-compat.md`, `cli-multi-select.md` (v0.7.0 ship), `codex-project-prompts.md` (v0.7.1 ship)
 - `Codex transform` / `OpenCode transform` 함수 자체 (분기만 변경)
 - 8 ALWAYS_HOOKS, manifest, external assets catalog
 - `.codex/prompts/` project-scoped pre-positioning (v0.7.1)

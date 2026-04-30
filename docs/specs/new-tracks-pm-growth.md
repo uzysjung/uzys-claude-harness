@@ -60,14 +60,14 @@ CLAUDE.md Decision Making 메타룰 + NORTH_STAR §5 4-gate(Trend / Persona / Ca
 - **karpathy-coder 자동 와이어링** — `.claude/settings.json` pre-commit hook 자동 활성화 / Husky 자동 설정 / GitHub Actions CI gate 자동 추가. plugin install만 제공, 활성화는 사용자 책임 (OQ1 참조).
 - **기존 9 Track baseline 변경** — 기존 manifest/template 수정 금지 (DO NOT CHANGE).
 - **다른 외부 자산 추가** — 본 SPEC 8 entry 외 추가 자산은 별도 SPEC.
-- **Phase 1 Finalization (`docs/SPEC.md`) 작업** — v28.0.0은 별도 트랙. 본 SPEC은 v0.5.0.
+- **Phase 1 Finalization (`docs/SPEC.md`) 작업** — v26.38.0은 별도 트랙. 본 SPEC은 v0.5.0.
 - **CLAUDE.md 본문 수정** — P10 주기 외에는 제안만.
 - **`product-skills` Track baseline 격상** — has-dev-track + project-management 조건 외부 자산으로만 등재 (manifest baseline 아님).
 - **multi-language Track 라벨** — 한글 라벨은 `prompts.ts`만, 매뉴얼 다국어화는 별도.
 
 ### 3.3 DO NOT CHANGE
 
-- `docs/SPEC.md` (Phase 1 Finalization, v28.0.0 트랙) — 본 SPEC과 분리.
+- `docs/SPEC.md` (Phase 1 Finalization, v26.38.0 트랙) — 본 SPEC과 분리.
 - `docs/NORTH_STAR.md` — Persona 명시 변경 X (Track 추가는 Phase 2 진입 효율 안에서 자연스러움).
 - 기존 9 Track baseline manifest entries (`src/manifest.ts` 기존 라인).
 - `templates/codex/`, `src/codex/transform.ts` (Codex 호환 영역).
@@ -162,7 +162,7 @@ vitest threshold 유지: lines/funcs/stmt **90** / branches **89** (핸드오프
 ### Never
 - 기존 9 Track baseline manifest 수정.
 - 기존 vitest 413 tests 중 어느 케이스 수정.
-- `docs/SPEC.md` (v28.0.0 트랙) 동시 변경.
+- `docs/SPEC.md` (v26.38.0 트랙) 동시 변경.
 - `~/.claude/`, `~/.codex/`, `~/.opencode/` 글로벌 수정.
 
 ## 7. Risks

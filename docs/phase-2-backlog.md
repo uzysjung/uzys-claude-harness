@@ -36,7 +36,7 @@ prompt-stream → session 분할 휴리스틱 (timestamp gap ≥ N분). 별 ADR 
 
 ### P2-04 — Dependency major bump (4 step)
 
-**Status**: pending (post-v28.0.0)
+**Status**: pending (post-v26.38.0)
 **Source**: `docs/research/dependency-bump-2026-04-30.md`
 
 Step 1 (low-risk: @types/node + biome) → Step 2 (cac + @clack) → Step 3 (typescript 6) → Step 4 (vitest 4) 순.
@@ -46,4 +46,4 @@ Step 1 (low-risk: @types/node + biome) → Step 2 (cac + @clack) → Step 3 (typ
 - **AC3 Pass**: `docs/evals/hito-baseline-2026-04-30.md`
 - **AC4 7/7 Pass** (1 이월 = P2-01)
 - **Phase D 종료**: 2026-04-30
-- **다음**: Phase F (review/ship/v28.0.0 태그) → Phase 2 본업 진입
+- **다음**: Phase F (review/ship/v26.38.0 태그) → Phase 2 본업 진입

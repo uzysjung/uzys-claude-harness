@@ -28,7 +28,7 @@ SPEC §3.1 F1~F9. 요약:
 SPEC §3.2 그대로. 핵심:
 - karpathy-coder 자동 와이어링 (pre-commit hook 자동 활성화 등)
 - 기존 9 Track baseline 변경
-- Phase 1 Finalization (v28.0.0) 작업
+- Phase 1 Finalization (v26.38.0) 작업
 - product-skills baseline 격상
 
 ### 완료 기준
@@ -161,7 +161,7 @@ SPEC §3.5에 이미 8 entries 4/4 Pass 명시. 본 plan에서는 인용만.
 - **Abort 조건**:
   - `~/.claude/`, `~/.codex/`, `~/.opencode/` mtime 변동
   - 기존 9 Track 매트릭스 회귀
-  - `docs/SPEC.md` (v28.0.0 트랙) 변경 시도
+  - `docs/SPEC.md` (v26.38.0 트랙) 변경 시도
 
 ---
 

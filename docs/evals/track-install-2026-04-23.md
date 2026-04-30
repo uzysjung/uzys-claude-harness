@@ -2,7 +2,7 @@
 
 > **Scope**: SPEC AC4 Phase 2 Entry Checklist #1 ("9 Track clean install 성공률 ≥ 95%")
 > **Context**: Phase B(2026-04-23)에서 tooling/executive/full 3 Track 검증 완료. 나머지 6 Track(csr-*, ssr-*, data) 단독 fresh install 확장 검증.
-> **Version**: v27.17.0 + main 최신 (commit 1cca8c6)
+> **Version**: v26.35.0 + main 최신 (commit 1cca8c6)
 
 ## 절차
 

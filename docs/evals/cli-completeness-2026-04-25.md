@@ -77,7 +77,7 @@ src/opencode     99.16% / 93.97% / 100%   / 99.16%
 
 | Metric | 목표 | 현재 |
 |--------|------|------|
-| HITO per Feature | ≤ 3 | 측정 별도 (Phase 1 Finalization v28.0.0 baseline) |
+| HITO per Feature | ≤ 3 | 측정 별도 (Phase 1 Finalization v26.38.0 baseline) |
 | Re-clarification Rate | ≤ 5% | 측정 별도 |
 | Time-to-first-Build | ≤ 30분 (p90) | 단독 측정 안 됨, fresh first-run 30초 이내 (작은 sample) |
 | **First-Run Success Rate** | ≥ 95% | **100%** (단독 sample, n=1 → 후속 다중 환경 검증 필요) |

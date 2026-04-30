@@ -1,7 +1,7 @@
 # SPEC: OpenCode CLI 풀 하네스 복제 (2차)
 
 > **Status**: Accepted (2026-04-25) — 사용자 승인 완료
-> **Scope**: Multi-CLI 2차 — OpenCode CLI (`anomalyco/opencode`). 1차 Codex(`docs/specs/codex-compat.md`, v27.19.0 완료)와 독립.
+> **Scope**: Multi-CLI 2차 — OpenCode CLI (`anomalyco/opencode`). 1차 Codex(`docs/specs/codex-compat.md`, v26.37.0 완료)와 독립.
 > **Relation**: 본 SPEC은 `docs/SPEC.md` (Phase 1 Finalization)와 **독립 스펙**. spec-scaling 룰 적용 — `docs/specs/` 하위. Codex 1차 산출물 재사용 가능 영역(`scripts/claude-to-codex.sh`의 5-단 transform 패턴, AGENTS.md 구조)은 명시.
 
 ---
@@ -136,5 +136,5 @@ NORTH_STAR §5 4-gate + CLAUDE.md P2(Simplicity First) 우선.
 
 ## Changelog
 
-- 2026-04-25: 초안 작성. 근거 — 사용자 요청(OpenCode 2차 진입, Codex 1차 v27.19.0 완료 후속) + Context7 리서치(`/anomalyco/opencode`, `/websites/opencode_ai_plugins`, `/kdcokenny/opencode-workspace`, `/malhashemi/opencode-skills`).
+- 2026-04-25: 초안 작성. 근거 — 사용자 요청(OpenCode 2차 진입, Codex 1차 v26.37.0 완료 후속) + Context7 리서치(`/anomalyco/opencode`, `/websites/opencode_ai_plugins`, `/kdcokenny/opencode-workspace`, `/malhashemi/opencode-skills`).
 - 2026-04-25 (Clarification CR): Phase B2 실측 결과 디렉토리명 정정 — `.opencode/command/` → `.opencode/commands/`, `templates/opencode/plugin/` → `templates/opencode/.opencode/plugins/`. OpenCode 공식 규약(plural directory) 일치. 합의된 내용의 구체화이므로 Major CR 불필요.

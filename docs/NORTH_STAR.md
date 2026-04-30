@@ -154,5 +154,5 @@ scope creep 1차 방어선. "X는 안 한다"를 명시.
 
 ## 7. Changelog
 
-- 2026-04-20: 초안 작성. 근거 — 사용자 본인 정의 Statement + v27.8~v27.12.1 7개 커밋의 4-gate 사후 검증 결과 + Phase 1 완료 상태(147 test-harness PASS).
+- 2026-04-20: 초안 작성. 근거 — 사용자 본인 정의 Statement + v27.8~v26.30.1 7개 커밋의 4-gate 사후 검증 결과 + Phase 1 완료 상태(147 test-harness PASS).
 - **2026-04-25**: **Major CR — vibe coding 정의 정확화 + 퍼블릭 publishing 전제 명시**. Statement 변경(`AI와 사용자가 하네스 규칙을 공통 언어로 삼아…`). 1차 NSM에 Re-clarification Rate 추가. 2차 NSM에 First-Run Success Rate / Promise=Implementation / Cross-CLI Parity 추가. Strategic Boundaries 갱신 (Won't에서 1인 단독 가정 삭제). Phase Roadmap 재정의 (Phase 1 = 어휘 완전성 = bash 등가성 복원). Decision Heuristics 4-gate를 Vocabulary 중심으로 재정의. 근거: 사용자 redirect — "vibe coding = AI/사용자가 하네스 규칙으로 효율적 소통해 빨리 개발하는 것" + 리포 퍼블릭 publishing 전제 인지.

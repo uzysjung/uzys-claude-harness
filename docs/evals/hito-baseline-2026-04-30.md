@@ -107,7 +107,7 @@ NSM 개선은 Phase 2 본업.
 - **AC3 Pass**: HITO baseline ≥ 7일 + ≥ 10 prompts + ≥ 3 features 모두 충족.
 - **Phase D 종료** (시작 2026-04-23, 종료 2026-04-30, 8일).
 - **AC4 충족**: 7/7 (1 이월).
-- **Phase F 진입 가능** — review/ship/v28.0.0 태그.
+- **Phase F 진입 가능** — review/ship/v26.38.0 태그.
 
 ## 8. Follow-up (Phase 2)
 

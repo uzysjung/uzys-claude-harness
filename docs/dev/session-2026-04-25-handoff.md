@@ -1,7 +1,7 @@
 # Session Handoff — 2026-04-25
 
-> **Outgoing**: Phase 1 Finalization 진행 중 + **Codex 호환 1차 완료** (v27.19.0) + **CLI rewrite 완료** (v0.2.0, 2026-04-25).
-> **Incoming**: Phase D HITO baseline 수집 경과 대기 (3/7일, 목표 ≥ 2026-04-30) → v28.0.0 (Foundation 완료 선언).
+> **Outgoing**: Phase 1 Finalization 진행 중 + **Codex 호환 1차 완료** (v26.37.0) + **CLI rewrite 완료** (v0.2.0, 2026-04-25).
+> **Incoming**: Phase D HITO baseline 수집 경과 대기 (3/7일, 목표 ≥ 2026-04-30) → v26.38.0 (Foundation 완료 선언).
 >
 > **2026-04-25 추가**: 본 세션에서 bash setup-harness.sh (1453 LOC) 폐기 + TypeScript CLI 재작성 (`@uzysjung/claude-harness` v0.2.0). PR #11~19 (9 PR / 7 Phase). 사용자 보고 핵심 문제(인터랙티브 입출력 명시성 + `/dev/tty` 노이즈) 해결.
 
@@ -15,7 +15,7 @@
 |------|----|----|
 | ADR-001 + Phase 2 Entry 결정 (OQ1-3) | #2 | — |
 | Phase E readiness — Track 9/9 PASS, requirements-trace v27.x Part 6 | #2 | — |
-| 중간 태그 (Phase E 산출 마무리) | — | **v27.18.0** |
+| 중간 태그 (Phase E 산출 마무리) | — | **v26.36.0** |
 
 ### Codex 호환 풀 하네스 복제 1차 (`docs/specs/codex-compat.md`)
 
@@ -28,7 +28,7 @@
 | D `setup-harness.sh --cli` + 인터랙티브 | #7 | T23 9 assertion |
 | E + F ADR Accepted + 2 Track dogfood | #8 | tooling + csr-fastapi 검증 |
 | G README en/ko + CHANGELOG | #9 | 사용자 가이드 |
-| **v27.19.0 태그** | — | **Codex 1차 완료** |
+| **v26.37.0 태그** | — | **Codex 1차 완료** |
 
 **SPEC AC1~AC6 전부 Pass.** ADR-002 Accepted.
 
@@ -36,7 +36,7 @@
 
 ## 2. 후속 진행 사항
 
-### 2.1 v28.0.0 — Foundation 완료 선언 (Phase 1 Finalization)
+### 2.1 v26.38.0 — Foundation 완료 선언 (Phase 1 Finalization)
 
 **조건**: `docs/SPEC.md` AC1~AC5 모두 Pass + Ship checklist 통과.
 
@@ -67,7 +67,7 @@ bash scripts/hito-aggregate.sh --summary
 # 3. 충족 시:
 # - docs/evals/hito-baseline-YYYY-MM-DD.md 작성
 # - docs/todo.md AC4 #3 → Pass
-# - /uzys:review → /uzys:ship → v28.0.0 태그
+# - /uzys:review → /uzys:ship → v26.38.0 태그
 ```
 
 **현재 진척 (2026-04-25)**:

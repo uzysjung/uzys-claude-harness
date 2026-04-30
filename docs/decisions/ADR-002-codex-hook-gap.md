@@ -128,7 +128,7 @@ Claude Code용 `.claude/hooks/*.sh` 스크립트는 stdin에서 `session_id`, `c
 ```json
 {
   "name": "uzys-harness",
-  "version": "v27.19.0",
+  "version": "v26.37.0",
   "skills": "./skills/",
   "hooks": "./hooks.json",
   "mcpServers": "./.mcp.json"

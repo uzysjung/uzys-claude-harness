@@ -69,7 +69,7 @@
 ### 3.3 DO NOT CHANGE
 
 - `~/.claude/`, `~/.codex/`, `~/.opencode/` 글로벌 영역 (D16)
-- `docs/SPEC.md` (Phase 1 Finalization, v28.0.0)
+- `docs/SPEC.md` (Phase 1 Finalization, v26.38.0)
 - 기존 `cli-multi-select.md` (v0.7.0 ship)
 - `karpathy-hook-autowire.md`, `codex-compat.md`, `opencode-compat.md`
 - 기존 8 ALWAYS_HOOKS, manifest, external assets catalog

@@ -77,7 +77,7 @@ NORTH_STAR §5 4-gate (Trend / Persona / Capability / Lean) + CLAUDE.md Decision
 
 ### 3.3 DO NOT CHANGE
 
-- `docs/SPEC.md` (v28.0.0 Foundation 트랙) — 본 SPEC과 분리.
+- `docs/SPEC.md` (v26.38.0 Foundation 트랙) — 본 SPEC과 분리.
 - `docs/specs/new-tracks-pm-growth.md` (v0.5.0 SPEC) — Non-Goals 정신 유지 (자동 활성화 X, opt-in O).
 - 기존 8 ALWAYS_HOOKS — `session-start.sh`, `protect-files.sh`, `gate-check.sh`, `agentshield-gate.sh`, `mcp-pre-exec.sh`, `spec-drift-check.sh`, `checkpoint-snapshot.sh`, `hito-counter.sh`. 추가만 허용.
 - `~/.claude/`, `~/.codex/`, `~/.opencode/` (D16 보호).
