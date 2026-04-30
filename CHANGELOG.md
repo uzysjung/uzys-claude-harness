@@ -5,6 +5,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.8.3] — 2026-04-30 (chore: deps)
+
+### Bumped — P2-04 Step 2 (medium-risk dependencies)
+
+- `cac`: `^6.7.14` → `^7.0.0` (CLI parser)
+- `@clack/prompts`: `^0.7.0` → `^1.3.0` (interactive prompts)
+
+### Internal
+- 코드 영향 0건 — typecheck + 521 vitest PASS / CLI smoke PASS
+- `src/cli.ts` `cac` import + `src/prompts.ts` `@clack/prompts` named imports 모두 새 major API 와 호환
+
+### 검증
+- npm run ci PASS (521 vitest / coverage 95.12-88.22-95.62-95.12)
+- `node dist/index.js --help`: CLI 정상 작동
+- `npm audit --omit=dev`: 0 vulnerabilities (변경 없음)
+
+### Driver
+- `docs/research/dependency-bump-2026-04-30.md` Step 2 권고 이행
+- cac 7 stable + @clack/prompts 1.x stable release 검증
+
+### Reference
+- Phase 2 backlog P2-04: `docs/phase-2-backlog.md`
+
 ## [v0.8.2] — 2026-04-30 (chore: deps)
 
 ### Bumped — P2-04 Step 1 (low-risk dependencies)
