@@ -5,6 +5,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.8.2] — 2026-04-30 (chore: deps)
+
+### Bumped — P2-04 Step 1 (low-risk dependencies)
+
+- `@types/node`: `^22.0.0` → `^25.6.0` (type-only, Node 20 CI 영향 없음)
+- `@biomejs/biome`: `^1.9.4` → `^2.4.13`
+- `biome.json` schema: 1.x → 2.x (`npx @biomejs/biome migrate --write` 자동)
+
+### Internal
+
+- 13 file `lint:fix` 자동 적용 (organize imports + 일부 minor style)
+- 코드 동작 변경 없음 — behavior unchanged
+
+### 검증
+- vitest **521 tests PASS** (이전과 동일)
+- coverage stmt 95.12 / branches 88.22 / funcs 95.62 / lines 95.12 (threshold 충족)
+- npm run ci PASS
+- `npm audit --omit=dev`: **0 vulnerabilities** (변경 없음)
+
+### Driver
+- `docs/research/dependency-bump-2026-04-30.md` Step 1 권고 이행
+- biome 1.x EOL + biome 2 안정 release 검증
+- @types/node 25 = Node 25 type. 코드는 ES2022 + Node 20 대상이라 호환 OK
+
+### Reference
+- Dependency 권고 보고서: `docs/research/dependency-bump-2026-04-30.md`
+- Phase 2 backlog: `docs/phase-2-backlog.md` P2-04
+
 ## [v0.8.1] — 2026-04-29 (refactor)
 
 ### Internal — Track partition SSOT 통일 (reviewer MEDIUM-3 fix)

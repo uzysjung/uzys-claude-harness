@@ -1,5 +1,5 @@
 import type { InstallMode } from "./installer.js";
-import { type Prompts, defaultPrompts } from "./prompts.js";
+import { defaultPrompts, type Prompts } from "./prompts.js";
 import { type DetectedInstall, detectInstallState } from "./state.js";
 import type { InstallSpec, OptionFlags, Track } from "./types.js";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type ClaudeSettings, addPreToolUseHook } from "../src/settings-merge.js";
+import { addPreToolUseHook, type ClaudeSettings } from "../src/settings-merge.js";
 
 const KARPATHY_CMD = 'bash "$CLAUDE_PROJECT_DIR/.claude/hooks/karpathy-gate.sh"';
 

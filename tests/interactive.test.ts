@@ -182,19 +182,16 @@ describe("runInteractive", () => {
     ["selectOptionKeys", { selectOptionKeys: vi.fn(async () => null) }, false],
     ["selectCli", { selectCli: vi.fn(async () => null) }, false],
     ["confirmInstall", { confirmInstall: vi.fn(async () => null) }, false],
-  ] as const)(
-    "cancellation in %s returns reason=cancelled",
-    async (_label, override, useExisting) => {
-      const prompts = makePrompts(override);
-      const result = await runInteractive("/tmp/proj", {
-        prompts,
-        detect: () => (useExisting ? existingState : newState),
-        isTty: () => true,
-      });
-      expect(result.ok).toBe(false);
-      expect(result.reason).toBe("cancelled");
-    },
-  );
+  ] as const)("cancellation in %s returns reason=cancelled", async (_label, override, useExisting) => {
+    const prompts = makePrompts(override);
+    const result = await runInteractive("/tmp/proj", {
+      prompts,
+      detect: () => (useExisting ? existingState : newState),
+      isTty: () => true,
+    });
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe("cancelled");
+  });
 
   it("user declines confirm → reason=cancelled (without prompts.cancel)", async () => {
     const prompts = makePrompts({ confirmInstall: vi.fn(async () => false) });

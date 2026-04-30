@@ -8,7 +8,7 @@
  * 호출자(installer)는 OptionFlags.withCodexSkills / withCodexTrust 둘 다 true일 때만 호출.
  */
 
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { CODEX_PROMPT_PHASES, renderCodexPrompt } from "./prompts.js";

@@ -4,7 +4,7 @@
 
 import { cancel, confirm, intro, isCancel, multiselect, outro, select } from "@clack/prompts";
 import { CLI_BASE_SORT_ORDER } from "./cli-targets.js";
-import { type RouterAction, buildRouterChoices, summarizeState } from "./router.js";
+import { buildRouterChoices, type RouterAction, summarizeState } from "./router.js";
 import type { DetectedInstall } from "./state.js";
 import { type CliBase, type CliTargets, type OptionFlags, TRACKS, type Track } from "./types.js";
 

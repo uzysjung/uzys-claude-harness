@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { VERSION, buildCli, defaultAction } from "../src/cli.js";
+import { buildCli, defaultAction, VERSION } from "../src/cli.js";
 import type { InteractiveResult } from "../src/interactive.js";
 import { isCliBase } from "../src/types.js";
 
@@ -141,10 +141,17 @@ describe("isCliBase (v0.8.0 — replaces isCliMode)", () => {
     expect(isCliBase(base)).toBe(true);
   });
 
-  it.each([null, undefined, "", "invalid", "both", "all", 1, true, {}])(
-    "rejects %s as an invalid CLI base (v0.8.0 — both/all alias removed)",
-    (value) => {
-      expect(isCliBase(value)).toBe(false);
-    },
-  );
+  it.each([
+    null,
+    undefined,
+    "",
+    "invalid",
+    "both",
+    "all",
+    1,
+    true,
+    {},
+  ])("rejects %s as an invalid CLI base (v0.8.0 — both/all alias removed)", (value) => {
+    expect(isCliBase(value)).toBe(false);
+  });
 });
