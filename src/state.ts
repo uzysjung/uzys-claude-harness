@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { type Track, isTrack } from "./types.js";
+import { isTrack, type Track } from "./types.js";
 
 export type InstallState = "new" | "existing";
 

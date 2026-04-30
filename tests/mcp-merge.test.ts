@@ -3,11 +3,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
-  type McpJson,
-  type TrackMcpRow,
   composeMcpJson,
+  type McpJson,
   mergeMcpServers,
   parseTrackMcpMap,
+  type TrackMcpRow,
   writeMcpJson,
 } from "../src/mcp-merge.js";
 

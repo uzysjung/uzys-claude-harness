@@ -2,8 +2,8 @@ import {
   chmodSync,
   existsSync,
   mkdirSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   writeFileSync,
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -17,17 +17,17 @@ import {
 } from "./env-files.js";
 import { EXTERNAL_ASSETS, filterApplicableAssets } from "./external-assets.js";
 import {
-  type ExternalInstallReport,
   type ExternalInstallerDeps,
+  type ExternalInstallReport,
   runExternalInstall,
 } from "./external-installer.js";
 import { backupDir, copyBackupDir, copyDir, copyFile, ensureProjectSkeleton } from "./fs-ops.js";
 import { buildManifest } from "./manifest.js";
 import { composeMcpJson, writeMcpJson } from "./mcp-merge.js";
 import { type OpencodeTransformReport, runOpencodeTransform } from "./opencode/transform.js";
-import { type ClaudeSettings, addPreToolUseHook } from "./settings-merge.js";
+import { addPreToolUseHook, type ClaudeSettings } from "./settings-merge.js";
 import type { InstallSpec, OptionFlags, Track } from "./types.js";
-import { type UpdateModeReport, runUpdateMode } from "./update-mode.js";
+import { runUpdateMode, type UpdateModeReport } from "./update-mode.js";
 
 /** karpathy-coder hook command — `.claude/settings.json` PreToolUse Write|Edit matcher entry. */
 const KARPATHY_HOOK_COMMAND = 'bash "$CLAUDE_PROJECT_DIR/.claude/hooks/karpathy-gate.sh"';

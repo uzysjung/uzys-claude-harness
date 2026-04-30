@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CLI_BASES, TRACKS, isCliBase, isTrack } from "../src/types.js";
+import { CLI_BASES, isCliBase, isTrack, TRACKS } from "../src/types.js";
 
 describe("isTrack", () => {
   it.each(TRACKS)("accepts known track %s", (t) => {

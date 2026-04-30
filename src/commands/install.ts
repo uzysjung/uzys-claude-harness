@@ -1,9 +1,9 @@
 import { resolve } from "node:path";
-import { parseCliTargets, targetsInclude } from "../cli-targets.js";
 import type { Cli } from "../cli.js";
+import { parseCliTargets, targetsInclude } from "../cli-targets.js";
 import { assetRow, c, infoRow, phaseHeader, sectionHeader, status } from "../design.js";
 import { type InstallReport, runInstall as runInstallPipeline } from "../installer.js";
-import { type CliTargets, type InstallSpec, type Track, isTrack } from "../types.js";
+import { type CliTargets, type InstallSpec, isTrack, type Track } from "../types.js";
 
 export interface InstallOptions {
   track?: string[];

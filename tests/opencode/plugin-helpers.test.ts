@@ -3,13 +3,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
-  type GateStatus,
-  PHASE_DEPENDENCY,
   extractFilePath,
   extractSlashCommand,
+  type GateStatus,
   gateToCommand,
   isPhaseComplete,
   isSpecPath,
+  PHASE_DEPENDENCY,
   readGateStatus,
 } from "../../src/opencode/plugin-helpers.js";
 

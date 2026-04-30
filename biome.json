@@ -1,11 +1,12 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.13/schema.json",
   "files": {
-    "ignore": [
-      "node_modules",
-      "dist",
-      ".claude.backup-*",
-      ".claude/local-plugins"
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/.claude.backup-*",
+      "!**/.claude/local-plugins"
     ]
   },
   "linter": {
@@ -38,7 +39,5 @@
       "trailingCommas": "all"
     }
   },
-  "organizeImports": {
-    "enabled": true
-  }
+  "assist": { "actions": { "source": { "organizeImports": "on" } } }
 }
