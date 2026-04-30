@@ -27,12 +27,13 @@
 
 per-feature commit hash 매핑 도구 — 현재 수동 분류를 자동화.
 
-### P2-03 — 세션 경계 정의
+### P2-03 — 세션 경계 정의 ✅ (2026-04-30)
 
-**Status**: pending
+**Status**: completed
 **Source**: 본 baseline §5 한계 #1
+**Output**: `docs/decisions/ADR-008-session-boundary-definition.md`
 
-prompt-stream → session 분할 휴리스틱 (timestamp gap ≥ N분). 별 ADR 작성.
+Decision: **session = prompt timestamp gap ≥ 60분** (휴리스틱). P2-02 NSM 자동화 도구가 본 ADR 알고리즘 구현.
 
 ### P2-04 — Dependency major bump (4 step)
 
