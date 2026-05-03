@@ -5,6 +5,46 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.8.4] — 2026-05-03 (fix: trailofbits + docs warn)
+
+### Fixed — `--with-tob` 설치 실패 (사용자 보고 #4)
+
+`Plugin "trailofbits-skills" not found in marketplace "trailofbits-skills"` 에러:
+- marketplace name = **`trailofbits`** (NOT `trailofbits-skills`) per `trailofbits/skills/.claude-plugin/marketplace.json`
+- 단일 `trailofbits-skills` plugin 자체가 marketplace 안에 없음 — 14+ 개별 plugin 존재 (`audit-context-building`, `differential-review`, `constant-time-analysis` 등)
+
+**Fix**: 가장 보편적인 보안 도구 `differential-review` 단일 매핑.
+
+```diff
+- pluginId: "trailofbits-skills@trailofbits-skills"
++ pluginId: "differential-review@trailofbits"
+```
+
+추가 trail of bits plugin 원하는 사용자: `claude plugin install <name>@trailofbits` (예: `claude plugin install audit-context-building@trailofbits`).
+
+### Docs — pnpm config npm warn 안내 (사용자 보고 #5)
+
+`npx -y github:...` 실행 시 사용자 환경 `.npmrc` 의 pnpm 설정이 다음 warn 발생:
+```
+npm warn Unknown project config "auto-install-peers". ...
+npm warn Unknown project config "strict-peer-dependencies". ...
+npm warn Unknown project config "shamefully-hoist". ...
+```
+
+`docs/USAGE.md` "설치 시 npm warn" 섹션 추가 — 무시 안전 + `--loglevel=error` 옵션 안내.
+
+### Internal
+- `tests/external-assets.test.ts` 신규 invariant — pluginId/marketplace 사실 검증 (marketplace.json 참조)
+
+### 검증
+- vitest **522 PASS** (이전 521 + 신규 invariant 1건)
+- npm run ci PASS
+- 사용자 환경 재현 시 differential-review 정상 install 예상
+
+### Reference
+- 사용자 보고: 2026-05-03 DYLD-GoalTrack 환경
+- marketplace.json: https://github.com/trailofbits/skills/blob/main/.claude-plugin/marketplace.json
+
 ## [v0.8.3] — 2026-04-30 (chore: deps)
 
 ### Bumped — P2-04 Step 2 (medium-risk dependencies)

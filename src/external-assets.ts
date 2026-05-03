@@ -438,13 +438,17 @@ export const EXTERNAL_ASSETS: ReadonlyArray<ExternalAsset> = [
     method: { kind: "npx-run", cmd: "get-shit-done-cc@latest" },
   },
   {
+    // v26.39.2 fix — marketplace name = "trailofbits" (NOT "trailofbits-skills") +
+    // "trailofbits-skills" plugin 자체가 존재하지 않음. marketplace 안에 14+ 개별 plugin.
+    // 단일 대표 plugin = `differential-review` (코드 변경 보안 리뷰, 가장 보편).
+    // 추가 plugin 원하는 사용자는: `claude plugin install <name>@trailofbits` (예: audit-context-building)
     id: "trailofbits-skills",
-    description: "Trail of Bits security plugin",
+    description: "Trail of Bits differential-review plugin (security-focused code review)",
     condition: { kind: "option", flag: "withTob" },
     method: {
       kind: "plugin",
       marketplace: "trailofbits/skills",
-      pluginId: "trailofbits-skills@trailofbits-skills",
+      pluginId: "differential-review@trailofbits",
     },
   },
   {

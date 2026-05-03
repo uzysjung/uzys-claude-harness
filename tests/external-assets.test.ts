@@ -92,6 +92,19 @@ describe("shouldInstallAsset — track conditions", () => {
     ).toBe(true);
   });
 
+  // v26.39.2 fix — marketplace.json 사실 검증 (사용자 보고 #4)
+  it("Trail of Bits pluginId matches actual marketplace.json (differential-review@trailofbits)", () => {
+    const tob = EXTERNAL_ASSETS.find((a) => a.id === "trailofbits-skills");
+    if (!tob) throw new Error("trailofbits missing");
+    expect(tob.method.kind).toBe("plugin");
+    if (tob.method.kind !== "plugin") throw new Error("not plugin");
+    // marketplace name = "trailofbits/skills" (URL form, claude plugin marketplace add)
+    expect(tob.method.marketplace).toBe("trailofbits/skills");
+    // pluginId 형식: <pluginName>@<marketplaceName-from-marketplace.json>
+    // marketplace.json 의 "name": "trailofbits" → pluginId 의 @ 뒤가 "trailofbits"
+    expect(tob.method.pluginId).toBe("differential-review@trailofbits");
+  });
+
   it("GSD orchestrator is gated on --with-gsd", () => {
     const gsd = EXTERNAL_ASSETS.find((a) => a.id === "gsd-orchestrator");
     if (!gsd) throw new Error("gsd missing");

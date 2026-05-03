@@ -10,6 +10,27 @@
 
 **게이트 강제**: 각 단계는 Hook으로 프로그래밍적 차단. 이전 단계 미완료 시 다음 단계 실행 불가 (exit code 2).
 
+### 설치 시 npm warn (pnpm 사용자 환경)
+
+`npx -y github:uzysjung/uzys-claude-harness` 실행 시 사용자 `~/.npmrc` 또는 프로젝트 `.npmrc` 에 pnpm 설정이 있으면 다음 warning 출력 — **무시 안전, 설치 동작에 영향 없음**:
+
+```
+npm warn Unknown project config "auto-install-peers". ...
+npm warn Unknown project config "strict-peer-dependencies". ...
+npm warn Unknown project config "shamefully-hoist". ...
+```
+
+원인: pnpm 전용 config 키를 npm 이 인식 못함. 우리 패키지는 npm/pnpm 양쪽 호환.
+
+**완전히 숨기려면** (선택):
+```bash
+# 옵션 1: npm log level 낮추기 (단발성)
+npx -y --loglevel=error github:uzysjung/uzys-claude-harness
+
+# 옵션 2: 사용자 .npmrc 정리 (영구) — pnpm 사용자만
+# 해당 키들이 정말 필요한지 확인 후 제거 또는 .pnpmfile.cjs로 이동
+```
+
 ## Command Namespaces
 
 | Prefix | Source | Purpose |
