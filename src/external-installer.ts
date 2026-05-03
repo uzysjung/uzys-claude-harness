@@ -14,7 +14,7 @@ import { type SpawnSyncReturns, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { EXTERNAL_ASSETS, type ExternalAsset, filterApplicableAssets } from "./external-assets.js";
-import type { OptionFlags, Track } from "./types.js";
+import type { CliTargets, OptionFlags, Track } from "./types.js";
 
 export interface ExternalInstallerDeps {
   /** Override `spawnSync` for tests (mock으로 호출 횟수 + args 검증). */
@@ -69,7 +69,7 @@ const DEFAULT_SPAWN_TIMEOUT_MS = 120_000;
  * spec에 적용 가능한 자산을 모두 시도. 실패는 warn-skip (기본).
  */
 export function runExternalInstall(
-  ctx: { tracks: ReadonlyArray<Track>; options: OptionFlags },
+  ctx: { tracks: ReadonlyArray<Track>; options: OptionFlags; cli: CliTargets },
   deps: ExternalInstallerDeps = {},
 ): ExternalInstallReport {
   const log = deps.log ?? console.log;
@@ -80,11 +80,12 @@ export function runExternalInstall(
 
   const applicable = filterApplicableAssets(assets, ctx);
   const attempted: AssetInstallResult[] = [];
+  const cli = ctx.cli;
 
   for (const asset of applicable) {
     deps.onAssetStart?.(asset);
     log(`  → ${asset.description}`);
-    const result = installOne(asset, { spawn, harnessRoot });
+    const result = installOne(asset, { spawn, harnessRoot, cli });
     deps.onAssetResult?.(result);
 
     if (!result.ok) {
@@ -119,12 +120,13 @@ function installOne(
   ctx: {
     spawn: NonNullable<ExternalInstallerDeps["spawn"]>;
     harnessRoot: string;
+    cli: CliTargets;
   },
 ): AssetInstallResult {
   const { method } = asset;
   switch (method.kind) {
     case "skill":
-      return runSpawn(asset, ctx.spawn, "npx", buildSkillArgs(method));
+      return runSpawn(asset, ctx.spawn, "npx", buildSkillArgs(method, ctx.cli));
     case "plugin":
       return installPlugin(asset, ctx.spawn, method);
     case "npm-global":
@@ -145,10 +147,25 @@ function installOne(
   }
 }
 
-function buildSkillArgs(method: { kind: "skill"; source: string; skill?: string }): string[] {
+/**
+ * v26.39.5 fix — `--agent <list>` 명시 추가 (사용자 보고 #3 진짜 fix).
+ *
+ * `npx skills add` default 동작은 `*` (all installed agents) → universal install →
+ * `.factory/skills/`, `.goose/skills/` 자동 생성. v0.8.0 의 `.gitignore` 패턴 추가만으론
+ * git noise 만 차단하고 disk 디렉토리 생성은 막지 못함.
+ *
+ * 본 fix: `spec.cli` 의 base CLI 만 콤마 구분 명시 → 의도된 agent 만 install.
+ */
+function buildSkillArgs(
+  method: { kind: "skill"; source: string; skill?: string },
+  cli: CliTargets,
+): string[] {
   const args = ["skills", "add", method.source];
   if (method.skill) {
     args.push("--skill", method.skill);
+  }
+  if (cli.length > 0) {
+    args.push("--agent", cli.join(","));
   }
   args.push("--yes");
   return args;
