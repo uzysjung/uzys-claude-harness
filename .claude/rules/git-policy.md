@@ -26,6 +26,34 @@ Types: feat, fix, refactor, docs, test, chore, perf, ci
 - git config 수정 금지
 - `.env`, credentials, lock 파일 커밋 금지
 
+## Session Cleanup (필수)
+
+세션 종료 / `/clear` / `/compact` **직전** 다음 절차 강제:
+
+1. `gh pr list --state open` 실행 — open PR 잔존 여부 확인
+2. 잔존 PR 발견 시:
+   - 자동 머지 금지 — **사용자 명시 합의 필수**
+   - 각 PR 상태 보고: `# / title / branch / CI status / mergeable`
+   - 다음 행동 옵션 제시: 머지 / 그대로 두기 / draft 전환 / 취소
+
+### "build/verify/review gate ✓" ≠ "main 반영"
+
+ship 보고 시 두 상태를 **반드시 분리**해서 보여줄 것:
+
+- **Local gate 상태**: build/verify/review checkbox completed (`.claude/gate-status.json`)
+- **Remote 상태**: PR merged into main + tag pushed + release 게시
+
+gate ✓ 만 보고 ship 완료라 단정하지 않는다. open PR 1건이라도 있으면 cycle 미완.
+
+### 보고 형식 예
+
+```
+gate:  build ✓ / verify ✓ / review ✓ / ship ✓  (local gate-status)
+main:  PR #123 merged ✓ / tag v26.39.3 pushed ✓ / release ✓
+       OR
+       PR #123 OPEN — CI pass / mergeable / 사용자 결정 대기
+```
+
 ## Versioning Convention (절대 위반 금지)
 
 **형식**: `vMAJOR.MINOR.PATCH`

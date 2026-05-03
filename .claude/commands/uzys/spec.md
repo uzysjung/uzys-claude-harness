@@ -75,8 +75,19 @@ SPEC.md가 존재하고, 최소 Objective + Boundaries가 정의되어 있어야
 
 ## Gate Status Update
 
-이 단계가 성공적으로 완료되면 `.claude/gate-status.json`의 `define.completed`를 `true`로, `define.timestamp`를 현재 시각으로 업데이트한다.
+이 단계가 성공적으로 완료되면 `.claude/gate-status.json` 을 다음 두 동작으로 갱신한다:
+
+1. `define.completed = true` + `define.timestamp = now`
+2. **후속 5단계 (`plan` / `build` / `verify` / `review` / `ship`) 모두 리셋** — `completed = false`, `timestamp = null`
+
+**원칙**: SPEC 재정의 = 새 cycle 시작 = 후속 모든 게이트 리셋. 이전 cycle 의 ship 완료 상태가 새 cycle 게이트를 만족시키는 정합성 위반을 차단한다 (gate bypass 방지).
 
 ```bash
-jq '.define.completed = true | .define.timestamp = now | .define.timestamp = (now | strftime("%Y-%m-%dT%H:%M:%SZ"))' .claude/gate-status.json > /tmp/gate-tmp.json && mv /tmp/gate-tmp.json .claude/gate-status.json
+jq '.define.completed = true
+    | .define.timestamp = (now | strftime("%Y-%m-%dT%H:%M:%SZ"))
+    | .plan.completed   = false | .plan.timestamp   = null
+    | .build.completed  = false | .build.timestamp  = null
+    | .verify.completed = false | .verify.timestamp = null
+    | .review.completed = false | .review.timestamp = null
+    | .ship.completed   = false | .ship.timestamp   = null' .claude/gate-status.json > /tmp/gate-tmp.json && mv /tmp/gate-tmp.json .claude/gate-status.json
 ```

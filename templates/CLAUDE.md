@@ -90,6 +90,7 @@ Define(/uzys:spec) → Plan(/uzys:plan) → Build(/uzys:build) → Verify(/uzys:
 ```
 
 - 각 단계 완료 없이 다음 진행 금지. 건너뛰기 시도 시 경고.
+- **SPEC 재정의 시 후속 5단계 자동 리셋** — `/uzys:spec` 가 `define.completed=true` set + `plan/build/verify/review/ship` 모두 `completed=false`, `timestamp=null` 로 리셋. 새 cycle 진입 시 이전 cycle 의 ship 완료 상태가 게이트 통과시키는 bypass 차단.
 - **Hotfix 단축**: Build → Verify → Ship (긴급 수정에 한함)
 - **Executive track**: 6단계 게이트 미적용. 자연어 요청 → strategist + document-skills → 산출물 → 검토.
 
