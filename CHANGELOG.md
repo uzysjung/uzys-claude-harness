@@ -5,6 +5,49 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.8.6] — 2026-05-03 (fix: CL-v2 observer hook 중복 제거)
+
+### Fixed — CL-v2 observer 중복 fire (사용자 보고 #6)
+
+`ps -ef` + `observations.jsonl` 실측 결과 CL-v2 observe.sh 가 매 도구 호출당 **2-3회 fire** 됨 (DYLD-GoalTrack 환경 같은 `timestamp+tool` 2-3 record 증거).
+
+원인:
+- 프로젝트 `.claude/settings.json` PreToolUse/PostToolUse `*` matcher → `<project>/.claude/skills/.../observe.sh`
+- ECC plugin (`everything-claude-code@everything-claude-code`) `pre:observe:continuous-learning` + `post:observe:continuous-learning` → `<plugin>/skills/.../observe.sh`
+- 둘 다 같은 logic + 같은 destination — 이중 기록
+
+Fix: 프로젝트 settings.json 의 CL-v2 entry 제거. ECC plugin 의 단일 경로만 신뢰.
+
+```diff
+# .claude/settings.json + templates/settings.json
+- PreToolUse[matcher="*"]: { command: "...observe.sh pre", async: true }
+- PostToolUse[matcher="*"]: { command: "...observe.sh post", async: true }
++ (제거 — ECC plugin pre:observe:continuous-learning 이 대체)
+```
+
+### Trade-off
+
+| 환경 | CL-v2 동작 |
+|------|-----------|
+| ECC plugin **enabled** (default) | 1회 fire ✓ |
+| ECC plugin **disabled/미설치** | CL-v2 미동작 |
+
+### Migration (기존 v0.8.5 이하 사용자)
+
+- 새 install 또는 `--update` mode 재실행 (`templates/settings.json` 갱신본 적용)
+- 또는 manual `.claude/settings.json` jq edit — `docs/USAGE.md` "CL-v2 동작 조건" 섹션 참조
+
+### Internal — baseline 보고서 §5 한계 inflation 주석
+- `docs/evals/hito-baseline-2026-04-30.md` §5 #1 — "166 prompts / 16 sessions" 수치는 hito-counter (별 hook) 기반이라 inflation 영향 없음 (본 보고서 신뢰 가능). CL-v2 observations.jsonl 만 v26.39.4 후 재측정 필요.
+
+### 검증
+- `ps -ef | grep observe.sh` 매 도구 호출당 1개 PID (이전 3개)
+- vitest 522 PASS / coverage 95.12-88.22-95.62-95.12
+
+### ADR-007 versioning
+- 마지막: v26.39.3 → 본 PR 머지 후 tag v26.39.4 (patch — bug fix)
+- year 26 유지
+
 ## [v0.8.5] — 2026-05-03 (fix: gate reset + session cleanup rule)
 
 ### Fixed — SPEC 재정의 시 후속 게이트 리셋 누락 (gate bypass 차단)

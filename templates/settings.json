@@ -52,32 +52,9 @@
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/mcp-pre-exec.sh\""
           }
         ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/skills/continuous-learning-v2/hooks/observe.sh\" pre",
-            "async": true,
-            "timeout": 10
-          }
-        ]
       }
     ],
-    "PostToolUse": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/skills/continuous-learning-v2/hooks/observe.sh\" post",
-            "async": true,
-            "timeout": 10
-          }
-        ]
-      }
-    ],
+    "PostToolUse": [],
     "UserPromptSubmit": [
       {
         "hooks": [
