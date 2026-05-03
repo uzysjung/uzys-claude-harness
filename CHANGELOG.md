@@ -5,6 +5,44 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.8.5] — 2026-05-03 (fix: gate reset + session cleanup rule)
+
+### Fixed — SPEC 재정의 시 후속 게이트 리셋 누락 (gate bypass 차단)
+
+`/uzys:spec` 가 `define.completed=true` 만 set 하고 후속 5단계 (`plan/build/verify/review/ship`) 는 그대로 두는 정합성 위반 수정.
+
+```diff
+# templates/commands/uzys/spec.md + .claude/commands/uzys/spec.md (sync)
+- jq '.define.completed = true | .define.timestamp = (now | strftime(...))'
++ jq '.define.completed = true | .define.timestamp = (now | strftime(...))
++    | .plan.completed = false   | .plan.timestamp   = null
++    | .build.completed = false  | .build.timestamp  = null
++    | .verify.completed = false | .verify.timestamp = null
++    | .review.completed = false | .review.timestamp = null
++    | .ship.completed = false   | .ship.timestamp   = null'
+```
+
+**원칙**: SPEC 재정의 = 새 cycle 시작 = 후속 모든 게이트 리셋. 이전 cycle 의 ship 완료 상태가 새 cycle 게이트를 통과시키는 bypass 차단. plan/build/... 재진입은 같은 cycle 내 iteration 이라 forward-only set 유지 (A 안).
+
+### Added — git-policy.md "Session Cleanup" 섹션 (사용자 요청)
+
+세션 종료 / `/clear` / `/compact` 직전 강제 절차:
+1. `gh pr list --state open` 실행 — open PR 잔존 확인
+2. 잔존 시 사용자 명시 합의 후 처리 (자동 머지 금지)
+3. ship 보고에서 **local gate ✓ ≠ main 반영** 분리 표기 강제
+
+### Internal
+- `.claude/CLAUDE.md` + `templates/CLAUDE.md` Workflow Gates 섹션에 "SPEC 재정의 시 자동 리셋" 명시 한 줄 추가
+- `templates/rules/git-policy.md` ↔ `.claude/rules/git-policy.md` sync (Versioning + Drift Period + Session Cleanup 모두)
+
+### 검증
+- vitest 522 PASS / coverage 95.12-88.22-95.62-95.12
+- spec.md `jq` pipeline syntax 검증
+
+### Driver
+- 사용자 직관 검증: "spec 정의를 다시하면 plan/build/...은 게이트 다시 리셋해야하지 않나?" — 정확. 위반 사례 발견.
+- 사용자 요청: "세션 종료 직전 `gh pr list --state open` 정리 + gate ✓ ≠ main 반영 분리"
+
 ## [v0.8.4] — 2026-05-03 (fix: trailofbits + docs warn)
 
 ### Fixed — `--with-tob` 설치 실패 (사용자 보고 #4)
