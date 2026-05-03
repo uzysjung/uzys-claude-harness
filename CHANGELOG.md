@@ -5,6 +5,57 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Sem
 
 ## [Unreleased]
 
+## [v0.8.7] — 2026-05-03 (fix: npx skills --agent 명시 — universal install 차단)
+
+### Fixed — `.factory/`/`.goose/` 디렉토리 자동 생성 (사용자 보고 #3 진짜 fix)
+
+`npx skills add` 의 default 동작이 `--agent *` (universal) 라 `.factory/skills/`, `.goose/skills/` 디렉토리가 사용자 환경에 자동 생성됨. v0.8.0 의 `.gitignore` 패턴 추가는 git noise 만 차단하고 disk 디렉토리 생성은 막지 못했음 (사용자 manual 정리 burden 잔존).
+
+Fix: `buildSkillArgs` 에 `--agent <comma-list>` 동적 명시. `spec.cli` 의 base CLI 만 install.
+
+```diff
+# Before
+npx skills add <pkg> --skill <name> --yes
+# (default --agent * → universal install)
+
+# After
+npx skills add <pkg> --skill <name> --agent claude --yes
+# (claude only → .factory/.goose 생성 X)
+```
+
+### Multi-CLI 매핑
+
+| `spec.cli` | `--agent` 인수 |
+|---|---|
+| `["claude"]` | `--agent claude` |
+| `["claude", "codex"]` | `--agent claude,codex` |
+| 3종 | `--agent claude,codex,opencode` |
+
+### Internal
+- `src/external-installer.ts` `runExternalInstall` ctx 에 `cli: CliTargets` 추가
+- `installOne` ctx 에 cli 전달 → `buildSkillArgs(method, cli)` signature 변경
+- `src/installer.ts` 호출부에 `spec.cli` 전달
+- `tests/external-installer.test.ts` 신규 invariant 1건 (multi-CLI `--agent` 콤마 검증) + 기존 2건 갱신
+
+### 검증
+- `npx skills add ... --agent claude --list` 실측 (단일 + 콤마 양쪽 정상)
+- vitest **523 PASS** (이전 522 + 신규 invariant 1건)
+- coverage 95.14-88.21-95.62-95.14
+- typecheck + lint + build PASS
+
+### Driver
+- 사용자 manual: `.factory/`/`.goose/` 디렉토리 매번 삭제 burden
+- v0.8.0 fix (`.gitignore` 패턴) 의 한계 — git noise 만 차단, disk 생성 안 막음
+- skills CLI `-a, --agent` flag 지원 확인 (`--help` + 실측)
+
+### ADR-007 versioning
+- 마지막: v26.39.4 → 본 PR 머지 후 tag v26.39.5 (patch — bug fix)
+- year 26 유지
+
+### Reference
+- skills CLI: https://github.com/vercel-labs/skills (또는 `npx skills --help`)
+- v0.8.0 ignore 패턴 fix: `src/env-files.ts` `addGitignoreNpxSkillsAgents`
+
 ## [v0.8.6] — 2026-05-03 (fix: CL-v2 observer hook 중복 제거)
 
 ### Fixed — CL-v2 observer 중복 fire (사용자 보고 #6)

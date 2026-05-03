@@ -32,7 +32,7 @@ function runForTrack(
 ): { ids: string[]; spawnCallCount: number } {
   const spawn = makeMockSpawn();
   const report = runExternalInstall(
-    { tracks, options: { ...DEFAULT_OPTIONS, ...options } },
+    { tracks, options: { ...DEFAULT_OPTIONS, ...options }, cli: ["claude"] },
     { spawn, log: () => {}, warn: () => {}, assets: EXTERNAL_ASSETS },
   );
   return {

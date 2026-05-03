@@ -370,7 +370,7 @@ export function runInstall(ctx: InstallContext): InstallReport {
       options: spec.options,
     }).length;
     ctx.onProgress?.({ type: "external-start", assetCount: applicableCount });
-    external = runExt({ tracks: spec.tracks, options: spec.options }, externalDeps);
+    external = runExt({ tracks: spec.tracks, options: spec.options, cli: spec.cli }, externalDeps);
     ctx.onProgress?.({ type: "external-complete", report: external });
   }
 

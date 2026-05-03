@@ -78,18 +78,25 @@ describe("runExternalInstall — method dispatch", () => {
   it("skill without --skill produces correct npx args", () => {
     const spawn = makeSpawnMock(() => ok());
     runExternalInstall(
-      { tracks: ["tooling"], options: DEFAULT_OPTIONS },
+      { tracks: ["tooling"], options: DEFAULT_OPTIONS, cli: ["claude"] },
       { spawn, assets: [TEST_ASSETS[0] as ExternalAsset] },
     );
     expect(spawn).toHaveBeenCalledTimes(1);
     expect(spawn.mock.calls[0]?.[0]).toBe("npx");
-    expect(spawn.mock.calls[0]?.[1]).toEqual(["skills", "add", "owner/repo", "--yes"]);
+    expect(spawn.mock.calls[0]?.[1]).toEqual([
+      "skills",
+      "add",
+      "owner/repo",
+      "--agent",
+      "claude",
+      "--yes",
+    ]);
   });
 
   it("skill with --skill includes --skill flag", () => {
     const spawn = makeSpawnMock(() => ok());
     runExternalInstall(
-      { tracks: ["tooling"], options: DEFAULT_OPTIONS },
+      { tracks: ["tooling"], options: DEFAULT_OPTIONS, cli: ["claude"] },
       { spawn, assets: [TEST_ASSETS[1] as ExternalAsset] },
     );
     expect(spawn.mock.calls[0]?.[1]).toEqual([
@@ -98,6 +105,29 @@ describe("runExternalInstall — method dispatch", () => {
       "owner/repo",
       "--skill",
       "react",
+      "--agent",
+      "claude",
+      "--yes",
+    ]);
+  });
+
+  // v26.39.5 — multi-CLI 매핑 검증 (사용자 보고 #3 진짜 fix)
+  it("skill with multi-CLI passes --agent <comma-list>", () => {
+    const spawn = makeSpawnMock(() => ok());
+    runExternalInstall(
+      {
+        tracks: ["tooling"],
+        options: DEFAULT_OPTIONS,
+        cli: ["claude", "codex", "opencode"],
+      },
+      { spawn, assets: [TEST_ASSETS[0] as ExternalAsset] },
+    );
+    expect(spawn.mock.calls[0]?.[1]).toEqual([
+      "skills",
+      "add",
+      "owner/repo",
+      "--agent",
+      "claude,codex,opencode",
       "--yes",
     ]);
   });
@@ -105,7 +135,7 @@ describe("runExternalInstall — method dispatch", () => {
   it("plugin invokes marketplace add + plugin install (2 spawn calls)", () => {
     const spawn = makeSpawnMock(() => ok());
     runExternalInstall(
-      { tracks: ["full"], options: DEFAULT_OPTIONS },
+      { tracks: ["full"], options: DEFAULT_OPTIONS, cli: ["claude"] },
       { spawn, assets: [TEST_ASSETS[2] as ExternalAsset] },
     );
     expect(spawn).toHaveBeenCalledTimes(2);
@@ -116,7 +146,7 @@ describe("runExternalInstall — method dispatch", () => {
   it("npm-global produces npm install -g <pkg>", () => {
     const spawn = makeSpawnMock(() => ok());
     runExternalInstall(
-      { tracks: ["tooling"], options: { ...DEFAULT_OPTIONS, withEcc: true } },
+      { tracks: ["tooling"], options: { ...DEFAULT_OPTIONS, withEcc: true }, cli: ["claude"] },
       { spawn, assets: [TEST_ASSETS[3] as ExternalAsset] },
     );
     expect(spawn.mock.calls[0]?.[0]).toBe("npm");
@@ -126,7 +156,7 @@ describe("runExternalInstall — method dispatch", () => {
   it("npx-run produces npx <cmd>", () => {
     const spawn = makeSpawnMock(() => ok());
     runExternalInstall(
-      { tracks: ["tooling"], options: { ...DEFAULT_OPTIONS, withGsd: true } },
+      { tracks: ["tooling"], options: { ...DEFAULT_OPTIONS, withGsd: true }, cli: ["claude"] },
       { spawn, assets: [TEST_ASSETS[4] as ExternalAsset] },
     );
     expect(spawn.mock.calls[0]?.[0]).toBe("npx");
@@ -139,7 +169,11 @@ describe("runExternalInstall — failure modes", () => {
     const spawn = makeSpawnMock(() => fail("registry down"));
     const warn = vi.fn();
     const report = runExternalInstall(
-      { tracks: ["tooling"], options: { ...DEFAULT_OPTIONS, withEcc: true, withGsd: true } },
+      {
+        tracks: ["tooling"],
+        options: { ...DEFAULT_OPTIONS, withEcc: true, withGsd: true },
+        cli: ["claude"],
+      },
       {
         spawn,
         warn,
@@ -162,7 +196,7 @@ describe("runExternalInstall — failure modes", () => {
       failureMode: "abort",
     };
     const report = runExternalInstall(
-      { tracks: ["tooling"], options: DEFAULT_OPTIONS },
+      { tracks: ["tooling"], options: DEFAULT_OPTIONS, cli: ["claude"] },
       { spawn, assets: [abortAsset, TEST_ASSETS[0] as ExternalAsset] },
     );
     expect(report.aborted?.id).toBe("must-have");
@@ -173,7 +207,7 @@ describe("runExternalInstall — failure modes", () => {
   it("skips assets that don't match the spec (dispatch never called)", () => {
     const spawn = makeSpawnMock(() => ok());
     runExternalInstall(
-      { tracks: ["executive"], options: DEFAULT_OPTIONS },
+      { tracks: ["executive"], options: DEFAULT_OPTIONS, cli: ["claude"] },
       { spawn, assets: [TEST_ASSETS[0] as ExternalAsset] }, // tooling-only
     );
     expect(spawn).not.toHaveBeenCalled();
