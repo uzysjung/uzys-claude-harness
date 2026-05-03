@@ -234,6 +234,37 @@ bash scripts/sync-cherrypicks.sh --check
 - `modified: false` + 상류 변경 → `--apply`로 자동 동기화
 - `modified: true` → 수동 merge 후 hash 갱신 (`src_hash` 수동 수정 또는 `--apply` 강제)
 
+## CL-v2 (continuous-learning-v2) — 동작 조건 (v26.39.4+)
+
+CL-v2 observer 는 ECC plugin (`everything-claude-code@everything-claude-code`) 의 `pre:observe:continuous-learning` + `post:observe:continuous-learning` hook 에서 단일 경로로 fire 됨. 프로젝트 `.claude/settings.json` 은 더 이상 별도 등록하지 않음 (v26.39.4 에서 중복 fire 제거).
+
+| 환경 | CL-v2 동작 |
+|------|-----------|
+| **ECC plugin 활성** (default) | 1회 fire ✓ (정상) |
+| **ECC plugin 비활성/미설치** | CL-v2 미동작 — instinct 추출 안 됨 |
+
+### 기존 프로젝트 마이그레이션 (v26.39.3 이하 사용자)
+
+기존 `.claude/settings.json` 에 CL-v2 PreToolUse/PostToolUse `*` matcher entry 가 있으면 **manual 제거** 또는 update mode 재설치.
+
+**Manual** (jq):
+```bash
+jq '.hooks.PreToolUse  |= map(select((.hooks // []) | all(.command // "" | tostring | test("continuous-learning") | not)))
+    | .hooks.PostToolUse |= map(select((.hooks // []) | all(.command // "" | tostring | test("continuous-learning") | not)))' \
+   .claude/settings.json > /tmp/s.json && mv /tmp/s.json .claude/settings.json
+```
+
+**또는 재설치** (단순):
+```bash
+npx -y github:uzysjung/uzys-claude-harness install --update --project-dir .
+```
+
+검증:
+```bash
+# 도구 호출 1번 후
+ps -ef | grep observe.sh | grep -v grep | wc -l   # 1 (이전 3)
+```
+
 ## HITO 측정 (NORTH_STAR NSM)
 
 `templates/hooks/hito-counter.sh`가 `UserPromptSubmit`마다 `.claude/evals/hito-YYYY-MM-DD.log`에 타임스탬프 한 줄 추가. 프롬프트 내용은 기록하지 않음 (프라이버시).

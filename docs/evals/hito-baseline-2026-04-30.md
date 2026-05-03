@@ -84,6 +84,8 @@ NSM 개선은 Phase 2 본업.
 ### 한계
 
 1. **prompt ≠ session** (해결 — ADR-008 + nsm-aggregate.sh): ADR-008 Decision (gap ≥ 60분 = 새 session)으로 명확화. `bash scripts/nsm-aggregate.sh --since 2026-04-23 --until 2026-04-30` 실행 결과 **16 sessions** (≥ 10 충족, AC3 #2 PASS). 본 보고서의 "166 prompts proxy" 가정은 보수적이었고, 자동 분할 적용 시 보다 정확한 baseline. P2-02 도구 활용으로 향후 baseline 재계산 가능.
+
+   **⚠ INFLATION 주석 (2026-05-03 발견, v26.39.4 fix)**: 별도로 CL-v2 observer hook 이 **2-3회 중복 fire** 발견됨 — `.claude/settings.json` PreToolUse/PostToolUse `*` matcher 와 ECC plugin `pre:observe:continuous-learning` 양쪽 동시 등록 (DYLD-GoalTrack `~/.claude/homunculus/projects/<hash>/observations.jsonl` 에서 같은 timestamp+tool 2-3 record 실증). 단 **본 보고서의 "166 prompts" / "16 sessions" 수치는 영향 없음** — 두 수치는 `hito-counter.sh` (UserPromptSubmit hook 단독) 기반이고 CL-v2 observer 와 별 경로. 본 baseline 신뢰 가능. CL-v2 의 `observations.jsonl` 만 v26.39.4 후 재측정 필요 (별도 dedup 또는 새 측정).
 2. **HITO/feature 추정**: 자동 분류 미구현. 본 보고서는 git log + window 내 commit 분포로 수동 추정 — Phase 2 NSM 자동화 시점에 재검증.
 3. **단독 사용자 dogfood**: 표본 1명. 외부 사용자 도입 시 NSM 분포가 달라질 가능성 — Phase 2 P2-01 task로 검증.
 4. **Phase D 측정 중 ship 다수**: 측정 window 내 v0.4.0~v0.8.1까지 ship. baseline은 "현재 상태" snapshot이 아닌 "성장 중" snapshot.
